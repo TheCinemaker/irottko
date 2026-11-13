@@ -208,8 +208,13 @@ export function ImprintPage() {
         </li>
       </ul>
 
-      <h2>Fizetés</h2>
-      <p>A kártyás fizetést a Barion Payment Zrt. biztosítja.</p>
+      <h2>Fizetési szolgáltató</h2>
+      <ul>
+        <li>Barion Payment Zrt.</li>
+        <li>Székhely: 1083 Budapest, Bókay János utca 44–46. C5. ép. 8. em.</li>
+        <li>Cégjegyzékszám: 01-10-048552</li>
+        <li>MNB engedélyszám: H-EN-I-1064/2013 · MNB intézményazonosító: 25353192</li>
+      </ul>
 
       <p className="pt-6">
         <Link to="/aszf">Általános Szerződési Feltételek</Link> · <Link to="/adatkezeles">Adatkezelési tájékoztató</Link>

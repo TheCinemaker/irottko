@@ -297,16 +297,22 @@ function SalesState({ pricing }) {
   );
 }
 
-// Barion requires its logo near the payment button. Put the official logo
-// (downloaded from the Barion merchant site) at public/barion/barion-logo.svg
-// and set BARION_LOGO below; until then a text line is shown.
-const BARION_LOGO = null; // e.g. '/barion/barion-logo.svg'
+// Barion requires its logo near the payment button. Official "Barion Smart"
+// acceptance banner, unaltered, from design.barion.com → Resources
+// (barion.com/resources/banners_cz_sk.zip, dark variant for dark backgrounds).
+const BARION_LOGO = '/barion/barion-smart-banner-dark.svg';
 
 function BarionNote() {
   return (
     <div className="mt-8 flex flex-col items-center gap-3 text-center text-[13px] text-gray-500">
       {BARION_LOGO ? (
-        <img src={BARION_LOGO} alt="Barion – biztonságos online fizetés" className="h-8 w-auto opacity-90" />
+        <img
+          src={BARION_LOGO}
+          alt="Fizetés Barionnal: Mastercard, Visa, Diners Club, Discover, Apple Pay, Google Pay"
+          width="756"
+          height="108"
+          className="h-auto w-full max-w-[420px]"
+        />
       ) : (
         <span className="font-medium text-gray-400">Biztonságos fizetés: Barion</span>
       )}
