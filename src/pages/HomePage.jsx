@@ -33,22 +33,8 @@ export default function HomePage() {
         <BarTiles carousel />
       </section>
 
-      {/* VIP */}
-      <section className="relative mt-16 overflow-hidden sm:mt-28">
-        <img src="/hero.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#05030a] via-[#05030a]/40 to-[#05030a]" />
-        <div className="relative mx-auto max-w-4xl px-5 py-20 text-center sm:py-32">
-          <div className="kicker">VIP Lounge</div>
-          <h2 className="display mt-3 text-[2rem] sm:text-6xl">A legjobb hely a házban.</h2>
-          <p className="mx-auto mt-3 max-w-lg text-[16px] text-gray-300">Soron kívüli belépés, welcome drink és saját pult.</p>
-          <Link to="/vip" className="link-more mt-5">
-            VIP részletek <ChevronRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </section>
-
       {/* Practical info */}
-      <section className="mx-auto max-w-3xl px-5 pt-12 sm:pt-20">
+      <section className="mx-auto max-w-3xl px-5 pt-16 sm:pt-28">
         <SectionHead kicker="Tudnivalók" title="Amit tudni érdemes." />
         <dl className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
           {[...INFO, { label: KITCHEN.name, value: KITCHEN.shortDesc }].map((row) => (
