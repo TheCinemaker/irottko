@@ -30,7 +30,7 @@ export default function HomePage() {
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4">
             <span className="min-w-0">
               <span className="block text-[17px] font-semibold text-white">Utastájékoztató</span>
-              <span className="block truncate text-[13px] text-gray-500">Gate open, terminál, dresscode, beszállás</span>
+              <span className="block truncate text-[13px] text-gray-500">Gate open, terminál, dress code, beszállás</span>
             </span>
             <ChevronDown className="h-5 w-5 shrink-0 text-[#d4af37] transition-transform duration-200 group-open:rotate-180" />
           </summary>

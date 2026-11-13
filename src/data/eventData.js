@@ -75,7 +75,7 @@ export const INFO = [
   { label: "Terminál", value: "Hotel Írottkő, Kőszeg, Fő tér 4." },
   { label: "DJ-pult", value: "Első emelet, karzat" },
   {
-    label: "Dresscode",
+    label: "Dress code",
     value: "Hozd a 90-es, 2000-es évek hangulatát! Kockás ing, farmer, terepnadrág – minél „akkoribb\", annál jobb.",
   },
   { label: "Beszállás", value: "Névre szóló beszállókártyával, 18 éven felülieknek. Fényképes igazolványt hozz magaddal." },

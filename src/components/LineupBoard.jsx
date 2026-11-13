@@ -9,7 +9,7 @@ import { DJS } from '../data/eventData';
   board scrolls into view. Status tags are mood only (no claims about the
   artists).
 */
-const STATUS = ['Boarding', 'Take off', 'Flight', 'Landing'];
+const STATUS = ['Boarding', 'Take-off', 'In flight', 'Landing'];
 
 function useInView(ref) {
   const [seen, setSeen] = useState(false);
