@@ -11,7 +11,7 @@ export default function LineupSection() {
             <div className="text-[15px] font-medium tabular-nums text-gray-500">{dj.time}</div>
             <div>
               {dj.headliner && <div className="kicker">Headliner</div>}
-              <h2 className={`display ${dj.headliner ? 'mt-3 text-5xl text-[#d4af37] sm:text-7xl' : 'text-4xl sm:text-5xl'}`}>{dj.name}</h2>
+              <h2 className={`artist ${dj.headliner ? 'mt-3 text-[3.25rem] text-[#d4af37] sm:text-7xl' : 'text-[2.5rem] sm:text-5xl'}`}>{dj.name}</h2>
             </div>
           </li>
         ))}

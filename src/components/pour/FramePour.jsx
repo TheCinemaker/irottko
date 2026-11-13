@@ -175,12 +175,12 @@ export default function FramePour({ clip, intro = null }) {
         {portrait && (
           <>
             <div className="pointer-events-none absolute inset-x-0 top-0 h-[34svh] bg-gradient-to-b from-[#05030a]/90 via-[#05030a]/40 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[30svh] bg-gradient-to-t from-[#05030a]/90 via-[#05030a]/40 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[calc(var(--tabbar)+30svh)] bg-gradient-to-t from-[#05030a]/90 via-[#05030a]/40 to-transparent" />
           </>
         )}
 
         {loaded < clip.count && (
-          <div className="absolute bottom-4 right-4 z-30 text-[10px] tracking-widest uppercase text-[#d4af37]/70">
+          <div className="absolute bottom-[calc(var(--tabbar)+1rem)] right-4 z-30 text-[10px] tracking-widest uppercase text-[#d4af37]/70">
             Töltés {pct}%
           </div>
         )}
@@ -198,7 +198,7 @@ export default function FramePour({ clip, intro = null }) {
               </h1>
             </div>
             <div
-              className="absolute inset-x-0 bottom-[6svh] z-20 flex flex-col items-center gap-1 text-[#d4af37] pointer-events-none"
+              className="absolute inset-x-0 bottom-[calc(var(--tabbar)+6svh)] z-20 flex flex-col items-center gap-1 text-[#d4af37] pointer-events-none"
               style={{ opacity: 1 - introT }}
             >
               <span className="text-[10px] tracking-[0.3em] uppercase">Görgess, és töltünk egyet</span>
@@ -291,7 +291,7 @@ function Caption({ progress, side, inStart, outStart, outEnd, kicker, title, tex
       ? 'top-1/2 -translate-y-1/2 right-[6vw] w-[min(30vw,440px)] text-right'
       : side === 'top'
       ? 'top-[11svh] inset-x-0 text-center'
-      : 'bottom-[9svh] inset-x-0 text-center';
+      : 'bottom-[calc(var(--tabbar)+9svh)] inset-x-0 text-center';
 
   // soft dark scrim behind the text so it stays legible over bright labels
   const scrim = smooth(inT) * (1 - smooth((outT - 0.25) / 0.75));

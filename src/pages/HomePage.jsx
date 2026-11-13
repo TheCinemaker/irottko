@@ -19,7 +19,7 @@ export default function HomePage() {
       {/* Line-up */}
       <section className="mx-auto max-w-4xl px-5 py-28 text-center sm:py-36">
         <div className="kicker">Line-up</div>
-        <h2 className="display mt-4 text-5xl sm:text-7xl">{headliner.name}</h2>
+        <h2 className="artist mt-4 text-[3.25rem] text-[#d4af37] sm:text-7xl">{headliner.name}</h2>
         <p className="mt-5 text-lg text-gray-400 sm:text-xl">
           és {others.map((d) => d.name).join(', ')} – 19:00-tól hajnalig.
         </p>

@@ -1,14 +1,21 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import TabBar from './TabBar';
 
-// Common page frame: nav, content, footer.
+// Common page frame: top bar, content (fades in on every route change),
+// footer, and the bottom tab bar on phones (its height is kept free).
 export default function PageShell({ children }) {
+  const { pathname } = useLocation();
   return (
-    <div className="min-h-screen bg-[#05030a] text-[#f5f5f7] selection:bg-[#d4af37] selection:text-black">
+    <div className="min-h-screen bg-[#05030a] pb-[var(--tabbar)] text-[#f5f5f7] selection:bg-[#d4af37] selection:text-black">
       <Navbar />
-      <main>{children}</main>
+      <main key={pathname} className="page-in">
+        {children}
+      </main>
       <Footer />
+      <TabBar />
     </div>
   );
 }
