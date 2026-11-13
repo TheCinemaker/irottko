@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import Turnstile from './Turnstile';
 import { Link } from 'react-router-dom';
 import { TICKET_PERKS } from '../data/eventData';
 import { usePricing, huf, dayHu } from '../lib/usePricing';
@@ -12,6 +13,8 @@ export default function TicketSection() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [humanToken, setHumanToken] = useState('');
+  const turnstile = useRef(null);
 
   // Form fields (invoice data for Számlázz.hu)
   const [formData, setFormData] = useState({
@@ -80,6 +83,11 @@ export default function TicketSection() {
       return;
     }
 
+    if (!humanToken) {
+      setErrorMsg('Egy pillanat – ellenőrizzük, hogy nem robot vagy. Próbáld újra pár másodperc múlva.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -92,6 +100,7 @@ export default function TicketSection() {
           kind: selectedTier.kind,
           qty: ticketCount,
           attendeeNames: attendees.map((n) => n.trim()),
+          turnstileToken: humanToken === 'no-key' ? '' : humanToken,
           isCompany,
           acceptTerms,
           ...formData,
@@ -104,6 +113,7 @@ export default function TicketSection() {
       console.error('Checkout error:', err);
       setErrorMsg(err.message);
       setSubmitting(false);
+      turnstile.current?.reset(); // tokens are single-use
     }
   };
 
@@ -290,6 +300,10 @@ export default function TicketSection() {
             Tudomásul veszem, hogy dátumhoz kötött rendezvényjegy esetén nincs elállási jog.
           </span>
         </label>
+
+        <div className="mt-6">
+          <Turnstile ref={turnstile} onToken={setHumanToken} />
+        </div>
 
         <div className="mt-10 flex flex-col gap-6 border-t border-white/[0.08] pt-8 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -4,6 +4,7 @@
 import { db, appUrl, json } from './lib/db.js';
 import { startPayment } from './lib/barion.js';
 import { loadOrder, lines } from './lib/fulfill.js';
+import { verifyTurnstile } from './lib/turnstile.js';
 
 const SLUG = () => process.env.EVENT_SLUG || process.env.VITE_EVENT_SLUG || 'one-night-irottko';
 
@@ -85,6 +86,13 @@ export const handler = async (event) => {
   }
 
   const ip = clientIp(event);
+
+  const human = await verifyTurnstile(input.turnstileToken, ip);
+  if (!human.ok) {
+    console.warn('turnstile rejected:', human.reason);
+    return json(403, { error: 'A robotellenőrzés nem sikerült. Frissítsd az oldalt, és próbáld újra.', retryTurnstile: true });
+  }
+
   try {
     const limited = await tooManyPending(b.email, ip);
     if (limited) return json(429, { error: limited });
