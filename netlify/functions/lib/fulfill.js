@@ -65,14 +65,15 @@ async function claim(orderId) {
 const release = (orderId, patch = {}) =>
   db().from('orders').update({ ...patch, fulfillment_started_at: null }).eq('id', orderId);
 
-async function fulfillPaid(orderId) {
+// opts.invoice=false: deliver tickets only (used by the retry job for older orders).
+export async function fulfillPaid(orderId, { invoice = true } = {}) {
   if (!(await claim(orderId))) return; // done already, or another call is on it
 
   try {
     let { order, tickets } = await loadOrder(orderId);
     const patch = {};
 
-    if (!order.invoice_number) {
+    if (invoice && !order.invoice_number) {
       try {
         // A previous attempt may have created the invoice but lost the answer.
         let number = order.invoice_attempted_at ? await findInvoiceByOrder(order.id) : null;
