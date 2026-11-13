@@ -5,7 +5,7 @@ import PageShell from '../components/PageShell';
 import HeroSection from '../components/HeroSection';
 import BarTiles from '../components/BarTiles';
 import { usePricing, fromLabel } from '../lib/usePricing';
-import { DJS } from '../data/eventData';
+import { DJS, INFO, KITCHEN } from '../data/eventData';
 
 export default function HomePage() {
   const pricing = usePricing();
@@ -49,6 +49,22 @@ export default function HomePage() {
             VIP részletek <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
+      </section>
+
+      {/* Practical info – like the "details" screen of an event app */}
+      <section className="mx-auto max-w-3xl px-5 pt-28 sm:pt-36">
+        <div className="mb-8 text-center">
+          <div className="kicker">Tudnivalók</div>
+          <h2 className="display mt-4 text-4xl sm:text-5xl">Amit tudni érdemes.</h2>
+        </div>
+        <dl className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
+          {[...INFO, { label: KITCHEN.name, value: KITCHEN.shortDesc }].map((row) => (
+            <div key={row.label} className="grid gap-1 py-5 sm:grid-cols-[150px_1fr] sm:gap-8">
+              <dt className="text-[13px] font-medium uppercase tracking-[0.15em] text-[#d4af37]">{row.label}</dt>
+              <dd className="text-[16px] leading-relaxed text-gray-200">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {/* Tickets */}

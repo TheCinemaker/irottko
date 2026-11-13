@@ -30,11 +30,13 @@ export const POUR_CLIPS = [
       { from: 0.31, to: 0.47, pos: 'top', kicker: '02 — A denevér', title: 'Szerencsét hoz', text: 'A legenda szerint az első lepárló gerendái közt denevérek laktak — Doña Amalia ötletére lettek a jelkép.' },
       { from: 0.53, to: 0.71, pos: 'top', kicker: '03 — Klasszikusok', title: 'Daiquirí. Cuba Libre.', text: 'Két kubai klasszikus, mindkettő a Bacardí rumhoz kötődik.' },
     ],
-    finale: { kicker: 'Ital- & Koktélbár', title: 'BACARDÍ', line: 'Santiago de Cuba · 1862 óta' },
+    finale: { kicker: 'Koktélbár', title: 'BACARDÍ', line: 'Santiago de Cuba · 1862 óta' },
   },
   {
     id: 'tokaji',
-    bar: 'wine-bar',
+    // Detached 2026-11-13: the wine bar is Jagodics Pince (Kőszeg); Tokaj captions
+    // would mislead there. New film coming – re-attach with bar: 'wine-bar'.
+    bar: null,
     dir: 'wine-portrait',
     count: 120,
     // Tokaji facts (checked 2026-11-03): 1737 decree of Charles VI made Tokaj one

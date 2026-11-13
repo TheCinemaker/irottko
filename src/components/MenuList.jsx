@@ -14,6 +14,11 @@ export default function MenuList({ bar, title = 'Itallap', bare = false }) {
           {bar.location && <p className="mt-4 text-gray-400">{bar.location}</p>}
         </div>
       )}
+      {items.length === 0 ? (
+        <p className="border-y border-white/[0.08] py-8 text-center text-[15px] text-gray-400">
+          Az itallapot hamarosan közzétesszük{bar.operator ? ` – a ${bar.operator.split(',')[0]} kínálatával` : ''}.
+        </p>
+      ) : (
       <ul className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
         {items.map((item) => (
           <li key={item.name} className="flex items-baseline justify-between gap-6 py-5">
@@ -25,6 +30,7 @@ export default function MenuList({ bar, title = 'Itallap', bare = false }) {
           </li>
         ))}
       </ul>
+      )}
       <p className="mt-6 text-center text-[13px] text-gray-500">Fizetés kártyával és készpénzzel.</p>
     </section>
   );

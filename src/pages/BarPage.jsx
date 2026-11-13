@@ -10,6 +10,7 @@ import { POUR_CLIPS } from '../data/pourClips';
 // /barok/:slug — one bar: its pour film (if any), then only its menu.
 export default function BarPage() {
   const { slug } = useParams();
+  if (slug === 'ital') return <Navigate to='/barok/koktel' replace />; // old link
   const bar = BARS_DATA.find((b) => b.slug === slug);
   if (!bar) return <Navigate to="/barok" replace />;
   if (bar.slug === 'vip') return <Navigate to="/vip" replace />;
@@ -19,9 +20,9 @@ export default function BarPage() {
   return (
     <PageShell>
       {clip ? (
-        <FramePour clip={clip} intro={{ kicker: 'Bárok', title: bar.name }} />
+        <FramePour clip={clip} intro={{ kicker: bar.operator || 'Bárok', title: bar.name }} />
       ) : (
-        <PageHeader kicker={bar.location || 'Bárok'} title={bar.name}>
+        <PageHeader kicker={bar.operator || 'Bárok'} title={bar.name}>
           {bar.shortDesc}
         </PageHeader>
       )}

@@ -39,6 +39,7 @@ export default function BarTiles({ exclude }) {
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-[#05030a] via-[#05030a]/30 to-transparent" />
             <div className="relative">
+              {bar.operator && <div className="kicker mb-2">{bar.operator}</div>}
               <h3 className="text-2xl font-semibold text-white sm:text-3xl">{bar.name}</h3>
               <p className="mt-1 text-[15px] text-gray-300">{bar.shortDesc}</p>
               <span className="link-more mt-3">
