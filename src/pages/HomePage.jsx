@@ -4,8 +4,9 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import PageShell from '../components/PageShell';
 import HeroSection from '../components/HeroSection';
 import BarTiles from '../components/BarTiles';
+import LineupBoard from '../components/LineupBoard';
 import { usePricing, fromLabel } from '../lib/usePricing';
-import { DJS, INFO, KITCHEN } from '../data/eventData';
+import { INFO, KITCHEN } from '../data/eventData';
 
 export default function HomePage() {
   const pricing = usePricing();
@@ -14,18 +15,8 @@ export default function HomePage() {
     <PageShell>
       <HeroSection />
 
-      {/* Line-up – compact running order */}
-      <section className="mx-auto max-w-3xl px-5 pt-16 sm:pt-28">
-        <SectionHead kicker="Line-up" title="Négy fellépő." to="/lineup" more="Részletek" />
-        <ol className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
-          {DJS.map((dj) => (
-            <li key={dj.id} className="flex items-baseline justify-between gap-4 py-3.5">
-              <span className={`artist ${dj.headliner ? 'text-[1.6rem] text-[#d4af37]' : 'text-[1.25rem]'}`}>{dj.name}</span>
-              <span className="shrink-0 text-[13px] tabular-nums text-gray-500">{dj.time}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {/* Line-up – departures board */}
+      <LineupBoard />
 
       {/* Bars – one swipeable row */}
       <section className="mx-auto max-w-6xl px-5 pt-16 sm:pt-28">
