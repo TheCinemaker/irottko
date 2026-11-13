@@ -127,7 +127,15 @@ export default function TicketSection() {
     <section id="tickets" ref={top} className="mx-auto max-w-2xl px-5">
       <Progress step={step} onJump={(s) => s < step && goTo(s)} />
 
-      <div key={step} className="page-in mt-8 min-h-[50vh]">
+      <form
+        key={step}
+        className="page-in mt-8 min-h-[50vh]"
+        onSubmit={(e) => {
+          e.preventDefault();
+          document.activeElement?.blur();
+          next();
+        }}
+      >
         {/* ---------- 1. Jegy ---------- */}
         {step === 0 && (
           <>
@@ -327,10 +335,10 @@ export default function TicketSection() {
             </p>
           </>
         )}
-      </div>
+      </form>
 
       {/* ---------- sticky action bar ---------- */}
-      <div className="sticky bottom-[var(--tabbar)] z-30 -mx-5 mt-8 border-t border-white/[0.08] bg-[#05030a]/90 px-5 pb-4 pt-3 backdrop-blur-xl">
+      <div className="hide-on-keyboard sticky bottom-[var(--tabbar)] z-30 -mx-5 mt-8 border-t border-white/[0.08] bg-[#05030a]/90 px-5 pb-4 pt-3 backdrop-blur-xl">
         {errorMsg && (
           <div role="alert" className="mb-3 flex items-start gap-2.5 rounded-xl border border-red-500/40 bg-red-950/50 p-3 text-[13px] text-red-200">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />

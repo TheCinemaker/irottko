@@ -17,7 +17,7 @@ export default function TabBar() {
   return (
     <nav
       aria-label="Fő navigáció"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.08] bg-[#05030a]/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+      className="hide-on-keyboard fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.08] bg-[#05030a]/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
       <ul className="mx-auto grid h-[58px] max-w-md grid-cols-4">
         {TABS.map(({ to, label, icon: Icon, match }) => {

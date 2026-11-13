@@ -48,7 +48,7 @@ body {
     @apply rounded-3xl border border-white/10 bg-white/[0.035];
   }
   .field {
-    @apply w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder-gray-500 transition-colors focus:border-[#d4af37] focus:outline-none;
+    @apply w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[16px] text-white placeholder-gray-500 transition-colors focus:border-[#d4af37] focus:outline-none;
   }
 }
 
@@ -146,4 +146,11 @@ a, button { -webkit-tap-highlight-color: transparent; }
 }
 @media (prefers-reduced-motion: reduce) {
   .flap-in { animation: none; opacity: 1; }
+}
+
+/* On-screen keyboard open (phones): give the screen to the form – hide the tab
+   bar and the sticky checkout bar. Set by useKeyboardOpen() in PageShell. */
+@media (max-width: 767px) {
+  html.kb-open { --tabbar: 0px; }
+  html.kb-open .hide-on-keyboard { display: none !important; }
 }
