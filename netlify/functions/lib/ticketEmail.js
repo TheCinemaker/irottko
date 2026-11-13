@@ -42,7 +42,8 @@ function html(order, tickets) {
             <span style="display:inline-block;padding:6px 14px;border-radius:999px;font:600 11px/1 ${FONT};letter-spacing:2px;${
               vip ? 'background:#d4af37;color:#05030a' : 'border:1px solid #d4af37;color:#1d1d1f'
             }">${label}</span>
-            <div style="margin-top:10px;font:400 13px/1.4 ${FONT};color:#86868b">${i + 1}. jegy a(z) ${tickets.length}-ből</div>
+            <div style="margin-top:14px;font:600 20px/1.3 ${FONT};color:#1d1d1f">${esc(t.holder_name || order.full_name)}</div>
+            <div style="margin-top:4px;font:400 13px/1.4 ${FONT};color:#86868b">${i + 1}. jegy a(z) ${tickets.length}-ből · névre szóló</div>
           </td></tr>
           <tr><td align="center" style="padding:8px 20px 4px">
             <img src="cid:qr-${i}" width="220" height="220" alt="QR-kód: ${esc(t.code)}" style="display:block;width:220px;height:220px;border:0">
@@ -84,7 +85,7 @@ function html(order, tickets) {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff8e1;border-radius:12px;border:1px solid #d4af37">
           <tr><td style="padding:16px 18px;font:400 14px/1.55 ${FONT};color:#1d1d1f">
             <div style="font:600 12px/1 ${FONT};letter-spacing:2px;color:#8a6d0b;margin-bottom:10px">FONTOS</div>
-            <b>A jegy nem átruházható</b>, és egyszeri belépésre jogosít.<br>
+            <b>A jegy névre szóló, nem átruházható</b>, és egyszeri belépésre jogosít.<br>
             A QR-kódot a kapunál beolvassuk – onnantól a kód felhasznált, <b>második belépésnél a rendszer már nem enged be</b>.<br>
             Ne oszd meg a QR-kódot, és ne tedd ki közösségi oldalra: a belépésre mindig az első beolvasás jogosít.
           </td></tr>
@@ -97,7 +98,7 @@ function html(order, tickets) {
         Rendelésszám: ${esc(order.id)}<br>
         Végösszeg: ${huf(order.total_huf)}<br>
         A jegyek nyomtatható változata a csatolt PDF-ben van. A számlát a Számlázz.hu külön e-mailben küldi.<br>
-        A jegy nem átruházható. Minden kód egyszer használható, második belépésre nem jogosít. Korhatár: 18+
+        A jegy névre szóló, nem átruházható. Minden kód egyszer használható, második belépésre nem jogosít. Korhatár: 18+
       </td></tr>
     </table>
   </td></tr></table>
@@ -135,7 +136,7 @@ export async function sendTicketEmail(order, tickets) {
         `Kedves ${order.full_name}!\n\nKöszönjük a vásárlást. Jegykódjaid:\n` +
         tickets.map((t, i) => `${i + 1}. ${t.tier_kind === 'vip' ? 'VIP Lounge' : t.tier_name}: ${t.code}`).join('\n') +
         `\n\n${dateHu}, ${EVENT_DETAILS.venue}, kapunyitás ${EVENT_DETAILS.doorsOpen}.\n\n` +
-        `FONTOS: A jegy nem átruházható, és egyszeri belépésre jogosít. A QR-kódot a kapunál beolvassuk – ` +
+        `FONTOS: A jegy névre szóló, nem átruházható, és egyszeri belépésre jogosít. A QR-kódot a kapunál beolvassuk – ` +
         `második belépésnél a rendszer már nem enged be. Egy jegy egy fő belépésére szól. Ne oszd meg a QR-kódot.\n\n` +
         `A nyomtatható jegyek a csatolt PDF-ben vannak. Rendelésszám: ${order.id}`,
       attachments: [...inline, { filename: 'one-night-irottko-jegyek.pdf', content: pdf.toString('base64') }],

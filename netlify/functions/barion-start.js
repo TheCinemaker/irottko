@@ -75,6 +75,11 @@ export const handler = async (event) => {
     return json(400, { error: 'Céges vásárlásnál a cégnév és egy érvényes adószám (12345678-1-23) kötelező.' });
   }
   if (!Number.isInteger(b.qty) || b.qty < 1) return json(400, { error: KNOWN.INVALID_QTY[1] });
+  // Named tickets (like a boarding pass): one attendee name per ticket.
+  const names = Array.isArray(input.attendeeNames) ? input.attendeeNames.map((n) => clean(n, 80)) : [];
+  if (names.length !== b.qty || names.some((n) => n.length < 2)) {
+    return json(400, { error: 'Kérjük, add meg minden jegyhez a résztvevő nevét.' });
+  }
   if (input.acceptTerms !== true) {
     return json(400, { error: 'A vásárláshoz el kell fogadnod az ÁSZF-et és az adatkezelési tájékoztatót.' });
   }
@@ -110,6 +115,14 @@ export const handler = async (event) => {
       .update({ zip: b.zip, city: b.city, address: b.address, company_name: b.companyName, tax_number: b.taxNumber })
       .eq('id', orderId);
     if (upErr) throw upErr;
+
+    // One name per ticket (the reservation wrote the buyer's name on all of them).
+    const { data: held, error: heldErr } = await db().from('tickets').select('id').eq('order_id', orderId).order('id');
+    if (heldErr) throw heldErr;
+    for (const [i, t] of held.entries()) {
+      const { error: nErr } = await db().from('tickets').update({ holder_name: names[i] }).eq('id', t.id);
+      if (nErr) throw nErr;
+    }
 
     // Proof of accepting the terms (005_terms.sql). Never blocks the purchase.
     const { error: termsErr } = await db().from('orders').update({ terms_accepted_at: new Date().toISOString() }).eq('id', orderId);

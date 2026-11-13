@@ -26,7 +26,7 @@ export const handler = async (event) => {
       },
       tickets: tickets
         .filter((t) => t.status === 'valid' || t.status === 'used')
-        .map((t) => ({ code: t.code, tier: t.tier_name, vip: t.tier_kind === 'vip' })),
+        .map((t) => ({ code: t.code, tier: t.tier_name, vip: t.tier_kind === 'vip', name: t.holder_name })),
     });
   } catch (e) {
     console.error('order-status failed:', e.message);

@@ -89,7 +89,7 @@ export async function ticketsPdf(order, tickets) {
     row('RENDELÉSSZÁM', order.id);
 
     page.drawLine({ start: { x: 70, y: y + 6 }, end: { x: W - 70, y: y + 6 }, thickness: 0.8, color: LINE });
-    center('A jegy nem átruházható, és egy fő egyszeri belépésére jogosít.', semi, 9, y - 18, INK);
+    center('A jegy névre szóló, nem átruházható, és egy fő egyszeri belépésére jogosít.', semi, 9, y - 18, INK);
     center('A kód első beolvasása után érvényét veszti – második belépésnél a rendszer már nem enged be.', regular, 9, y - 32, GREY);
     center('Korhatár: 18+', regular, 9, y - 46, GREY);
   }

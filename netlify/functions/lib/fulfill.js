@@ -15,7 +15,7 @@ export async function loadOrder(orderId) {
   if (error) throw error;
   const { data: tickets, error: tErr } = await db()
     .from('tickets')
-    .select('id, code, price_huf, status, ticket_tiers(name, kind)')
+    .select('id, code, price_huf, status, holder_name, ticket_tiers(name, kind)')
     .eq('order_id', orderId)
     .order('created_at');
   if (tErr) throw tErr;

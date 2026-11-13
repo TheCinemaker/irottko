@@ -96,7 +96,7 @@ export async function applePass(ticket) {
     { key: 'code', label: 'Jegykód', value: ticket.code },
     { key: 'address', label: 'Cím', value: EVENT_DETAILS.address },
     { key: 'order', label: 'Rendelésszám', value: ticket.order_id },
-    { key: 'terms', label: 'Tudnivalók', value: 'A jegy nem átruházható, és egy fő egyszeri belépésére jogosít. A belépéskor mutasd fel a QR-kódot – az első beolvasás után a kód felhasznált, második belépésnél a rendszer már nem enged be. Korhatár: 18+.' }
+    { key: 'terms', label: 'Tudnivalók', value: 'A jegy névre szóló, nem átruházható, és egy fő egyszeri belépésére jogosít. A belépéskor mutasd fel a QR-kódot – az első beolvasás után a kód felhasznált, második belépésnél a rendszer már nem enged be. Korhatár: 18+.' }
   );
 
   pass.setBarcodes({ message: ticket.code, format: 'PKBarcodeFormatQR', messageEncoding: 'iso-8859-1', altText: ticket.code });

@@ -85,6 +85,8 @@ function Paid({ data }) {
             <div className="text-[12px] font-medium uppercase tracking-[0.15em] text-gray-400">
               {i + 1}. jegy · {t.tier}
             </div>
+            <div className="mt-2 text-xl font-semibold text-white">{t.name}
+            </div>
             <img src={qrSrc(t.code)} alt={`QR-kód: ${t.code}`} width="220" height="220" className="mt-5 rounded-xl bg-white p-2" />
             <div className="mt-4 font-mono text-[15px] tracking-[0.2em] text-white">{t.code}</div>
             {/* Official Apple / Google badges (unaltered, as required by both) */}

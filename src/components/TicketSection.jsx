@@ -25,6 +25,22 @@ export default function TicketSection() {
     taxNumber: '',
   });
 
+  // Named tickets (like a boarding pass). Ticket 1 follows the buyer's name
+  // until the buyer types something else into it.
+  const [names, setNames] = useState([]);
+  const [firstNameEdited, setFirstNameEdited] = useState(false);
+  const attendees = Array.from({ length: ticketCount }, (_, i) =>
+    i === 0 && !firstNameEdited ? formData.fullName : names[i] || ''
+  );
+  const setAttendee = (i, value) => {
+    if (i === 0) setFirstNameEdited(true);
+    setNames((prev) => {
+      const next = [...prev];
+      next[i] = value;
+      return next;
+    });
+  };
+
   const available = [pricing.standard, pricing.vip].filter(Boolean);
   const selectedTier = available.find((t) => t.kind === selectedKind) || available[0] || null;
   const totalPrice = selectedTier ? selectedTier.price_huf * ticketCount : 0;
@@ -54,6 +70,11 @@ export default function TicketSection() {
       return;
     }
 
+    if (attendees.some((n) => n.trim().length < 2)) {
+      setErrorMsg('Kérjük, add meg minden jegyhez a résztvevő nevét.');
+      return;
+    }
+
     if (!acceptTerms) {
       setErrorMsg('A vásárláshoz el kell fogadnod az ÁSZF-et és az adatkezelési tájékoztatót.');
       return;
@@ -67,7 +88,14 @@ export default function TicketSection() {
       const res = await fetch('/.netlify/functions/barion-start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: selectedTier.kind, qty: ticketCount, isCompany, acceptTerms, ...formData }),
+        body: JSON.stringify({
+          kind: selectedTier.kind,
+          qty: ticketCount,
+          attendeeNames: attendees.map((n) => n.trim()),
+          isCompany,
+          acceptTerms,
+          ...formData,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.gatewayUrl) throw new Error(data.error || 'A fizetés indítása nem sikerült. Kérjük, próbáld újra!');
@@ -186,6 +214,31 @@ export default function TicketSection() {
             <span className="mb-2 block text-[13px] text-gray-400">Telefonszám</span>
             <input className="field" type="tel" name="phone" value={formData.phone} onChange={handleInputChange} autoComplete="tel" />
           </label>
+        </div>
+
+        {/* Attendees – one name per ticket, printed on the ticket like a boarding pass */}
+        <div className="mt-10">
+          <div className="text-[15px] font-medium text-white">{ticketCount > 1 ? 'Résztvevők' : 'Résztvevő'}</div>
+          <p className="mt-1 text-[13px] text-gray-500">
+            A jegy névre szóló – ez a név kerül a jegyre és a Tárcába, ezt látja a beléptető.
+          </p>
+          <div className="mt-4 grid gap-3">
+            {attendees.map((name, i) => (
+              <label key={i} className="flex items-center gap-3">
+                <span className="w-16 shrink-0 text-[13px] tabular-nums text-gray-400">{i + 1}. jegy</span>
+                <input
+                  className="field"
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setAttendee(i, e.target.value)}
+                  placeholder={i === 0 ? 'A te neved' : 'Résztvevő neve'}
+                  autoComplete={i === 0 ? 'name' : 'off'}
+                  aria-label={`${i + 1}. jegy – résztvevő neve`}
+                />
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="mt-8 flex items-center justify-between">
