@@ -13,7 +13,7 @@ export const EVENT_DETAILS = {
 // headliner: true → big gold type.
 export const DJS = [
   { id: "saffron", name: "SAFFRON", time: "19:00 – 22:00" },
-  { id: "dj-barany", name: "DJ Bárány", time: "22:00 – 23:30", headliner: true },
+  { id: "dj-barany", name: "DJ Bárány Attila", time: "22:00 – 23:30", headliner: true },
   { id: "frombob", name: "fromBOB", time: "23:30 – 01:00" },
   { id: "tisztafaxxa", name: "TISZTAFAXXA Classics", time: "01:00-tól" },
 ];
