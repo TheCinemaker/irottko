@@ -13,6 +13,7 @@ import forge from 'node-forge';
 import { PKPass } from 'passkit-generator';
 import { EVENT_DETAILS } from '../../../src/data/eventData.js';
 import { appUrl } from './db.js';
+import { openSealed } from './sealedCerts.js';
 
 const APPLE_PASS_TYPE_ID = () => process.env.APPLE_PASS_TYPE_ID || 'pass.hu.koszeg.koszegpass';
 const APPLE_TEAM_ID = () => process.env.APPLE_TEAM_ID || '97FG847W58';
@@ -24,8 +25,10 @@ const EVENT_END = new Date(EVENT_START.getTime() + 12 * 3600 * 1000); // doors 1
 function file(rel) {
   const candidates = [path.resolve(process.cwd(), 'netlify/functions', rel), path.resolve(process.cwd(), rel)];
   const hit = candidates.find((p) => fs.existsSync(p));
-  if (!hit) throw new Error(`Missing file: ${rel}`);
-  return fs.readFileSync(hit);
+  if (hit) return fs.readFileSync(hit);
+  // On Netlify certs/ is not in git: read the encrypted copy (certs.enc + CERTS_KEY).
+  if (rel.startsWith('certs/')) return openSealed(rel.slice('certs/'.length));
+  throw new Error(`Missing file: ${rel}`);
 }
 
 /* ------------------------------ Apple ------------------------------ */
