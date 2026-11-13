@@ -11,7 +11,8 @@ import { supabase } from './supabaseClient';
 */
 const SLUG = import.meta.env.VITE_EVENT_SLUG || 'one-night-irottko';
 
-export const huf = (n) => `${Number(n).toLocaleString('hu-HU')} Ft`;
+// Always group thousands ("6 990 Ft"); hu-HU leaves 4-digit numbers ungrouped.
+export const huf = (n) => `${String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')}\u00a0Ft`;
 
 export function usePricing() {
   const [state, setState] = useState({ status: 'loading' });
@@ -28,8 +29,14 @@ export function usePricing() {
       const std = tiers.filter((t) => t.kind === 'standard').sort((a, b) => a.price_huf - b.price_huf);
       const standard = std.find((t) => t.active) || null;
       const vip = tiers.find((t) => t.kind === 'vip' && t.active && t.remaining !== 0) || null;
-      const later = standard && std.filter((t) => t.channel === standard.channel && t.sales_from && t.sales_from > (standard.sales_from || ''));
-      const next = later?.sort((a, b) => a.sales_from.localeCompare(b.sales_from))[0] || null;
+      // Next price step: the tier that starts when the current one ends (never a past one).
+      const endsAt = standard?.sales_until ? new Date(standard.sales_until) : null;
+      const next =
+        (endsAt &&
+          std
+            .filter((t) => t.channel === standard.channel && t.sales_from && new Date(t.sales_from) >= endsAt)
+            .sort((a, b) => new Date(a.sales_from) - new Date(b.sales_from))[0]) ||
+        null;
       const door = std.find((t) => t.channel === 'door');
       const onlineSoldOut = standard?.channel === 'online' && data.online_left === 0;
 

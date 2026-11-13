@@ -10,6 +10,7 @@ import TicketsPage from './pages/TicketsPage';
 import TicketSuccess from './pages/TicketSuccess';
 import TicketScanner from './pages/TicketScanner';
 import TicketAdmin from './pages/TicketAdmin';
+import { TermsPage, PrivacyPage, ImprintPage } from './pages/LegalPages';
 
 export default function App() {
   return (
@@ -24,6 +25,9 @@ export default function App() {
         <Route path="/jegyek" element={<TicketsPage />} />
 
         {/* staff / post-purchase — not linked from the public site */}
+        <Route path="/aszf" element={<TermsPage />} />
+        <Route path="/adatkezeles" element={<PrivacyPage />} />
+        <Route path="/impresszum" element={<ImprintPage />} />
         <Route path="/success" element={<TicketSuccess />} />
         <Route path="/ticket/:id" element={<TicketSuccess />} />
         <Route path="/scan" element={<TicketScanner />} />

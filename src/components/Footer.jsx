@@ -23,8 +23,12 @@ export default function Footer() {
           </nav>
         </div>
         <div className="mt-10 flex flex-col gap-2 border-t border-white/[0.06] pt-6 sm:flex-row sm:justify-between">
-          <span>© 2027 Hotel Írottkő</span>
-          <span>Korhatár: 18+</span>
+          <span>© 2027 Hotel Írottkő · Korhatár: 18+</span>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2">
+            <Link to="/aszf" className="hover:text-white">ÁSZF</Link>
+            <Link to="/adatkezeles" className="hover:text-white">Adatkezelés</Link>
+            <Link to="/impresszum" className="hover:text-white">Impresszum</Link>
+          </nav>
         </div>
       </div>
     </footer>

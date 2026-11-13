@@ -9,6 +9,7 @@ export default function TicketSection() {
   const [selectedKind, setSelectedKind] = useState('standard');
   const [ticketCount, setTicketCount] = useState(1);
   const [isCompany, setIsCompany] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -53,6 +54,11 @@ export default function TicketSection() {
       return;
     }
 
+    if (!acceptTerms) {
+      setErrorMsg('A vásárláshoz el kell fogadnod az ÁSZF-et és az adatkezelési tájékoztatót.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -61,7 +67,7 @@ export default function TicketSection() {
       const res = await fetch('/.netlify/functions/barion-start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: selectedTier.kind, qty: ticketCount, isCompany, ...formData }),
+        body: JSON.stringify({ kind: selectedTier.kind, qty: ticketCount, isCompany, acceptTerms, ...formData }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.gatewayUrl) throw new Error(data.error || 'A fizetés indítása nem sikerült. Kérjük, próbáld újra!');
@@ -216,10 +222,26 @@ export default function TicketSection() {
           )}
         </div>
 
+        <label className="mt-8 flex cursor-pointer items-start gap-3 text-[14px] leading-snug text-gray-300">
+          <input
+            type="checkbox"
+            required
+            checked={acceptTerms}
+            onChange={(e) => setAcceptTerms(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[#d4af37]"
+          />
+          <span>
+            Elfogadom az{' '}
+            <a href="/aszf" target="_blank" rel="noreferrer" className="text-[#d4af37] underline">ÁSZF-et</a>, és megismertem az{' '}
+            <a href="/adatkezeles" target="_blank" rel="noreferrer" className="text-[#d4af37] underline">adatkezelési tájékoztatót</a>.
+            Tudomásul veszem, hogy dátumhoz kötött rendezvényjegy esetén nincs elállási jog.
+          </span>
+        </label>
+
         <div className="mt-10 flex flex-col gap-6 border-t border-white/[0.08] pt-8 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-[13px] text-gray-400">Összesen</div>
-            <div className="text-3xl font-semibold tabular-nums text-white">{totalPrice.toLocaleString('hu-HU')} Ft</div>
+            <div className="text-3xl font-semibold tabular-nums text-white">{huf(totalPrice)}</div>
             <div className="text-[13px] text-gray-500">Az ár tartalmazza az áfát.</div>
           </div>
           <button type="submit" disabled={submitting} className="btn-primary w-full px-10 py-4 text-[15px] disabled:opacity-50 sm:w-auto">
@@ -236,6 +258,7 @@ export default function TicketSection() {
             )}
           </button>
         </div>
+        <BarionNote />
       </form>
       </>
       )}
@@ -270,6 +293,24 @@ function SalesState({ pricing }) {
           Vissza a főoldalra
         </Link>
       )}
+    </div>
+  );
+}
+
+// Barion requires its logo near the payment button. Put the official logo
+// (downloaded from the Barion merchant site) at public/barion/barion-logo.svg
+// and set BARION_LOGO below; until then a text line is shown.
+const BARION_LOGO = null; // e.g. '/barion/barion-logo.svg'
+
+function BarionNote() {
+  return (
+    <div className="mt-8 flex flex-col items-center gap-3 text-center text-[13px] text-gray-500">
+      {BARION_LOGO ? (
+        <img src={BARION_LOGO} alt="Barion – biztonságos online fizetés" className="h-8 w-auto opacity-90" />
+      ) : (
+        <span className="font-medium text-gray-400">Biztonságos fizetés: Barion</span>
+      )}
+      <span>A kártyaadatokat a Barion Payment Zrt. kezeli, azokat mi nem látjuk és nem tároljuk.</span>
     </div>
   );
 }

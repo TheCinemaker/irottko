@@ -46,6 +46,9 @@ export const handler = async (event) => {
     return json(400, { error: 'Céges vásárlásnál a cégnév és egy érvényes adószám (12345678-1-23) kötelező.' });
   }
   if (!Number.isInteger(b.qty) || b.qty < 1) return json(400, { error: KNOWN.INVALID_QTY[1] });
+  if (input.acceptTerms !== true) {
+    return json(400, { error: 'A vásárláshoz el kell fogadnod az ÁSZF-et és az adatkezelési tájékoztatót.' });
+  }
 
   let orderId;
   try {
@@ -70,6 +73,10 @@ export const handler = async (event) => {
       .update({ zip: b.zip, city: b.city, address: b.address, company_name: b.companyName, tax_number: b.taxNumber })
       .eq('id', orderId);
     if (upErr) throw upErr;
+
+    // Proof of accepting the terms (005_terms.sql). Never blocks the purchase.
+    const { error: termsErr } = await db().from('orders').update({ terms_accepted_at: new Date().toISOString() }).eq('id', orderId);
+    if (termsErr) console.error('terms_accepted_at not saved (run 005_terms.sql):', termsErr.message);
 
     const { data: evt } = await db().from('events').select('hold_minutes').eq('slug', SLUG()).single();
     const { tickets } = await loadOrder(orderId);

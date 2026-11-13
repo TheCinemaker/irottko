@@ -15,7 +15,7 @@ import { ticketsPdf } from './ticketPdf.js';
 const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-const huf = (n) => `${Number(n).toLocaleString('hu-HU')} Ft`;
+const huf = (n) => `${String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')}\u00a0Ft`;
 const dateHu = EVENT_DETAILS.dateString.replace(/\s*\(.*\)/, '');
 
 function asset(rel) {
