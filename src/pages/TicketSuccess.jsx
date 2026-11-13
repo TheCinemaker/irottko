@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import PageShell from '../components/PageShell';
 import { EVENT_DETAILS } from '../data/eventData';
+import { saveMyTickets } from '../lib/myTickets';
 
 /*
   Barion redirects here with ?paymentId=…  The page asks the server for the
@@ -33,6 +34,7 @@ export default function TicketSuccess() {
         const data = await res.json();
         if (stop) return;
         if (data.status === 'paid') {
+          saveMyTickets(data.order.id, data.tickets); // → Jegyek tab, on this phone
           setState(data);
           confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#d4af37', '#f7e7a9', '#ffffff'] });
           return;

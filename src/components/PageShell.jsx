@@ -21,9 +21,9 @@ export default function PageShell({ children }) {
 }
 
 // Quiet page header: kicker, one big title, one line of copy.
-export function PageHeader({ kicker, title, children }) {
+export function PageHeader({ kicker, title, children, compact = false }) {
   return (
-    <header className="mx-auto max-w-4xl px-5 pt-32 pb-14 text-center sm:pt-40 sm:pb-20">
+    <header className={`mx-auto max-w-4xl px-5 pb-14 text-center sm:pb-20 ${compact ? 'pt-14' : 'pt-32 sm:pt-40'}`}>
       {kicker && <div className="kicker">{kicker}</div>}
       <h1 className="display mt-4 text-5xl sm:text-7xl">{title}</h1>
       {children && <p className="mx-auto mt-5 max-w-xl text-lg text-gray-400 sm:text-xl">{children}</p>}

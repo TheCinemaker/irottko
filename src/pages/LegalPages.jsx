@@ -173,7 +173,7 @@ export function PrivacyPage() {
       <h2>5. Sütik</h2>
       <p>
         A weboldal nem használ követő, reklám- vagy elemző sütiket. Csak a működéshez szükséges, a böngészőben tárolt technikai
-        adatokat használ (például a beléptető személyzet bejelentkezését), ezekhez nem kell hozzájárulás.
+        adatokat használ (például a beléptető személyzet bejelentkezését, illetve a „Jegyem” részben a megvásárolt jegyeket ezen az eszközön), ezekhez nem kell hozzájárulás. A „Jegyem” adatai nem kerülnek a szerverre, és az „Eltávolítás” gombbal vagy a böngészőadatok törlésével bármikor törölhetők.
       </p>
 
       <h2>6. Az Ön jogai</h2>
