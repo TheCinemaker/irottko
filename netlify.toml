@@ -1,0 +1,27 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# supabase-js needs Node 22+ (native WebSocket); Vite 8 needs 20.19+.
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  # Signing keys and pass images read from disk at runtime (certs/ is gitignored –
+  # deploy must provide it, see README).
+  included_files = ["netlify/functions/certs/**", "netlify/functions/wallet-assets/**"]
+
+# Local: `npx netlify dev` → site + functions on http://localhost:8888
+[dev]
+  command = "npm run dev"
+  targetPort = 5173
+  port = 8888
+  framework = "#custom"
+
+# SPA: every route (/jegyek, /success, /barok/bor …) serves index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,0 +1,3 @@
+Inter (https://github.com/rsms/inter) and Cinzel (https://github.com/NDISCOVER/Cinzel)
+are licensed under the SIL Open Font License, Version 1.1 (https://openfontlicense.org).
+Embedded in the ticket PDFs. Files taken from the @expo-google-fonts packages (Google Fonts builds).

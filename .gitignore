@@ -1,0 +1,33 @@
+# --- build / deps ---
+node_modules/
+dist/
+.netlify/
+.DS_Store
+Thumbs.db
+
+# --- secrets: NEVER commit ---
+.env
+.env.*
+!.env.example
+# Wallet signing keys (Apple p12, Google service account)
+netlify/functions/certs/
+# PINs, test card, test accounts
+TESZT-ADATOK.txt
+
+# --- internal / business documents (not code) ---
+# client brief: contains internal info that must not reach guests
+PROJECT_BRIEF_AND_CONTEXT.md
+# offer and contract draft
+_ajanlat/
+# hand-over notes between machines, Claude memory and transcripts
+OTTHON-FOLYTATAS.md
+_claude-memoria/
+_claude-beszelgetes/
+
+# --- old / source material ---
+# previous project's code (TheTicket) – contains a hard-coded key
+netlify/_legacy-theticket/
+# first static version
+_static-v1/
+# original AI video clips (frames are in public/frames)
+_video-original/

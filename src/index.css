@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  --color-gold: #d4af37;
+  --color-gold-light: #f7e7a9;
+  --color-gold-dark: #aa820a;
+  --color-bg-dark: #090511;
+  --color-purple-neon: #a855f7;
+  --color-magenta-neon: #ec4899;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #05030a;
+  color: #f5f5f7;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Design system (keep it quiet: gold is for accents only) ---- */
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#d4af37] px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#e3c45c];
+}
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white transition-colors hover:border-white/50;
+}
+.link-more {
+  @apply inline-flex items-center gap-1 text-[15px] font-medium text-[#d4af37] hover:underline underline-offset-4;
+}
+.kicker {
+  @apply text-xs font-medium uppercase tracking-[0.25em] text-[#d4af37];
+}
+.display {
+  font-family: 'Cinzel', serif;
+  @apply font-bold leading-[1.1] tracking-tight text-white;
+}
+.surface {
+  @apply rounded-3xl border border-white/10 bg-white/[0.035];
+}
+.field {
+  @apply w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder-gray-500 transition-colors focus:border-[#d4af37] focus:outline-none;
+}
+
+.font-cinzel {
+  font-family: 'Cinzel', serif;
+}
+
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Gold Gradient Text */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #fff2be 0%, #d4af37 50%, #aa820a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-neon-purple {
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.7), 0 0 20px rgba(168, 85, 247, 0.4);
+}
+
+.border-gold-glow {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.15), inset 0 0 15px rgba(212, 175, 55, 0.05);
+}
+
+.border-gold-glow-hover:hover {
+  border-color: rgba(212, 175, 55, 0.8);
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 20px rgba(212, 175, 55, 0.1);
+}
+
+/* Background Grain Effect */
+.bg-grain {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: rgba(18, 11, 33, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.glass-panel-subtle {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
