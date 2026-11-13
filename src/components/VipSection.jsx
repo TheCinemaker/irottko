@@ -5,7 +5,7 @@ import { usePricing, huf } from '../lib/usePricing';
 const PERKS = [
   { title: 'Soron kívüli belépés', desc: 'Külön VIP bejárat, várakozás nélkül.' },
   { title: 'Welcome drink', desc: 'Egy pohár pezsgő vagy welcome koktél érkezéskor.' },
-  { title: 'A galérián', desc: 'Kanapék, asztalok és rálátás a táncparkettre és a DJ-pultra.' },
+  { title: 'Saját tér', desc: 'Kanapék, asztalok, nyugodtabb sarok – a buli közepén.' },
   { title: 'Saját pult', desc: 'Külön VIP ruhatár és saját pultszemélyzet.' },
 ];
 

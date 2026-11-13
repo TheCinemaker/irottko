@@ -6,7 +6,7 @@ export const EVENT_DETAILS = {
   doorsOpen: "19:00",
   venue: "Hotel Írottkő, Kőszeg",
   address: "9730 Kőszeg, Fő tér 4.",
-  description: "A patinás kőszegi Hotel Írottkő aulája kizárólag egyetlen éjszakára alakul át luxus klubtérré. Három bár, VIP galéria és négy fellépő, 19:00-tól hajnalig.",
+  description: "A patinás kőszegi Hotel Írottkő aulája kizárólag egyetlen éjszakára alakul át luxus klubtérré. Három bár, VIP Lounge és négy fellépő, 19:00-tól hajnalig.",
 };
 
 // Line-up (from the organiser, 2026-11-13). Only names and times – no invented bios.
@@ -92,7 +92,7 @@ export const TICKET_PERKS = {
   ],
   vip: [
     "Minden, ami a normál jegyben",
-    "VIP galéria saját pulttal",
+    "VIP Lounge saját pulttal",
     "Soron kívüli belépés",
     "Welcome drink érkezéskor",
   ],

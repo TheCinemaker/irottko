@@ -94,6 +94,11 @@ function html(order, tickets) {
 
       ${cards}
 
+      ${order.payment_ref ? `<tr><td align="center" style="padding:4px 8px 24px">
+        <a href="${appUrl()}/success?paymentId=${encodeURIComponent(order.payment_ref)}" style="display:inline-block;padding:14px 26px;border-radius:999px;background:#d4af37;color:#05030a;font:600 15px/1 ${FONT};text-decoration:none">Jegyeim megnyitása az appban</a>
+        <div style="margin-top:10px;font:400 12px/1.5 ${FONT};color:#86868b">Nyisd meg a telefonodon: a jegyek a Jegyek fülön is ott lesznek.</div>
+      </td></tr>` : ''}
+
       <tr><td style="padding:8px 8px 0;font:400 13px/1.7 ${FONT};color:#6e6e73">
         Rendelésszám: ${esc(order.id)}<br>
         Végösszeg: ${huf(order.total_huf)}<br>

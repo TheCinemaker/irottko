@@ -43,8 +43,8 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#05030a] via-[#05030a]/40 to-[#05030a]" />
         <div className="relative mx-auto max-w-4xl px-5 py-36 text-center sm:py-48">
           <div className="kicker">VIP Lounge</div>
-          <h2 className="display mt-4 text-4xl sm:text-6xl">A legjobb hely a galérián.</h2>
-          <p className="mx-auto mt-5 max-w-lg text-lg text-gray-300">Soron kívüli belépés, welcome drink, saját pult és kilátás a táncparkettre.</p>
+          <h2 className="display mt-4 text-4xl sm:text-6xl">A legjobb hely a házban.</h2>
+          <p className="mx-auto mt-5 max-w-lg text-lg text-gray-300">Soron kívüli belépés, welcome drink és saját pult.</p>
           <Link to="/vip" className="link-more mt-8">
             VIP részletek <ChevronRight className="h-4 w-4" />
           </Link>

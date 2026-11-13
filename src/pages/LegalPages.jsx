@@ -82,7 +82,7 @@ export function TermsPage() {
       <ul>
         <li>A rendezvény 18 éven felülieknek szól. A belépéskor az életkor igazolását kérhetik (fényképes igazolvány).</li>
         <li>A belépéskor biztonsági ellenőrzés lehet. A házirend, a biztonsági személyzet utasításai és a jogszabályok megsértése a rendezvényről való kizárást vonhatja maga után, ilyenkor a jegy árát nem térítjük vissza.</li>
-        <li>A VIP jegy a VIP galéria és a hozzá tartozó szolgáltatások igénybevételére is jogosít.</li>
+        <li>A VIP jegy a VIP Lounge és a hozzá tartozó szolgáltatások igénybevételére is jogosít.</li>
       </ul>
 
       <h2>6. Elállási jog</h2>
