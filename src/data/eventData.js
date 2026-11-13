@@ -73,7 +73,7 @@ export const KITCHEN = {
 export const INFO = [
   { label: "Gate open", value: "2027. január 15., péntek, 19:00" },
   { label: "Terminál", value: "Hotel Írottkő, Kőszeg, Fő tér 4." },
-  { label: "Pilótafülke", value: "A DJ-pult: első emelet, karzat" },
+  { label: "DJ-pult", value: "Első emelet, karzat" },
   {
     label: "Dresscode",
     value: "Hozd a 90-es, 2000-es évek hangulatát! Kockás ing, farmer, terepnadrág – minél „akkoribb\", annál jobb.",

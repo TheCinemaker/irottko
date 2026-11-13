@@ -47,7 +47,7 @@ export default function HomePage() {
 
       {/* Tickets */}
       <section className="mx-auto max-w-4xl px-5 py-16 text-center sm:py-28">
-        <h2 className="display text-[2rem] sm:text-6xl">Csak egy járat indul.</h2>
+        <h2 className="display text-[2rem] sm:text-6xl">Csak egy járat indul!</h2>
         <p className="mx-auto mt-3 max-w-sm text-[15px] text-gray-400">Nincs pótjárat, nincs második gép. Aki lemarad, a földön marad.</p>
         <Link to="/jegyek" className="btn-primary mt-6">
           {fromLabel(pricing)}

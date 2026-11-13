@@ -9,7 +9,7 @@ import { DJS } from '../data/eventData';
   board scrolls into view. Status tags are mood only (no claims about the
   artists).
 */
-const STATUS = ['Boarding', 'Take-off', 'Turbulencia', 'Landing hajnalban'];
+const STATUS = ['Boarding', 'Take off', 'Flight', 'Landing'];
 
 function useInView(ref) {
   const [seen, setSeen] = useState(false);
@@ -57,12 +57,12 @@ export default function LineupBoard() {
         <br />
         <span className="text-[#d4af37]">Leszállás hajnalban.</span>
       </h2>
-      <p className="mt-3 text-[15px] text-gray-400">Egy járat, négy pilóta, nulla megállás.</p>
+      <p className="mt-3 text-[15px] text-gray-400">Négy fellépő, nulla megállás.</p>
 
       <div ref={board} className="mt-7 overflow-hidden rounded-3xl border border-white/10 bg-[#0b0812]">
         <div className="flex items-center gap-4 border-b border-white/[0.07] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">
           <span className="w-[114px] shrink-0">Idő</span>
-          <span>A pilótafülkében</span>
+          <span>Fellépő</span>
         </div>
         <ol>
           {DJS.map((dj, i) => {
