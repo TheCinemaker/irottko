@@ -10,12 +10,12 @@ export default function TicketsPage() {
   return (
     <PageShell>
       <MyTickets />
-      <PageHeader kicker={hasTickets ? 'Új vásárlás' : 'Jegyek'} title={hasTickets ? 'Még egy jegy?' : 'Válassz jegyet.'} compact={hasTickets}>
-        A jegyet és a számlát e-mailben küldjük, Apple és Google Walletbe is menthető.
+      <PageHeader kicker={hasTickets ? 'Új foglalás' : 'Check-in'} title={hasTickets ? 'Hozol még valakit?' : 'Foglald le a helyed.'} compact={hasTickets}>
+        A beszállókártyát és a számlát e-mailben küldjük – Apple és Google Tárcába is menthető.
       </PageHeader>
       {!hasTickets && (
         <p className="mx-auto -mt-6 mb-12 max-w-md px-5 text-center text-[13px] text-gray-500">
-          Már vettél jegyet? Nyisd meg ezen a telefonon a jegy-e-mailben a „Jegyeim megnyitása az appban” gombot, és itt lesznek.
+          Már van beszállókártyád? Nyisd meg ezen a telefonon az e-mailben a „Beszállókártyák megnyitása az appban” gombot, és itt lesznek.
         </p>
       )}
       <TicketSection />

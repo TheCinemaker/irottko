@@ -9,7 +9,7 @@ import { DJS } from '../data/eventData';
   board scrolls into view. Status tags are mood only (no claims about the
   artists).
 */
-const STATUS = ['Beszállás', 'Csúcsmagasság', 'Turbulencia', 'Éjszakai járat'];
+const STATUS = ['Boarding', 'Take-off', 'Turbulencia', 'Landing hajnalban'];
 
 function useInView(ref) {
   const [seen, setSeen] = useState(false);
@@ -51,18 +51,18 @@ export default function LineupBoard() {
 
   return (
     <section className="mx-auto max-w-3xl px-5 pt-16 sm:pt-28">
-      <div className="kicker">Line-up · Indulási tábla</div>
+      <div className="kicker">Line-up · Fedélzeti menetrend</div>
       <h2 className="mt-3 text-[2rem] font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl">
         Beszállás 19:00-kor.
         <br />
         <span className="text-[#d4af37]">Leszállás hajnalban.</span>
       </h2>
-      <p className="mt-3 text-[15px] text-gray-400">Négy szett, egy kifutópálya, nulla megállás.</p>
+      <p className="mt-3 text-[15px] text-gray-400">Egy járat, négy pilóta, nulla megállás.</p>
 
       <div ref={board} className="mt-7 overflow-hidden rounded-3xl border border-white/10 bg-[#0b0812]">
         <div className="flex items-center gap-4 border-b border-white/[0.07] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">
-          <span className="w-[114px] shrink-0">Indulás</span>
-          <span>Járat</span>
+          <span className="w-[114px] shrink-0">Idő</span>
+          <span>A pilótafülkében</span>
         </div>
         <ol>
           {DJS.map((dj, i) => {

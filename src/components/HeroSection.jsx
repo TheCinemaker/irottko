@@ -43,20 +43,20 @@ export default function HeroSection() {
           One Night
           <span className="block pt-[0.06em] text-[#d4af37]">at Írottkő</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-md text-lg text-gray-300 sm:text-xl">Négy fellépő. Három bár. Egy éjszaka.</p>
+        <p className="mx-auto mt-5 max-w-md text-lg text-gray-300 sm:text-xl">Csak egy járat indul. Kőszeg → hajnal, négy fellépővel, három bárral.</p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link to="/jegyek" className="btn-primary w-full max-w-xs sm:w-auto">
             {fromLabel(pricing)}
           </Link>
           <Link to="/lineup" className="link-more">
-            Line-up <ChevronRight className="h-4 w-4" />
+            Menetrend <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
 
         {days > 0 && (
           <div className="mt-10 text-[13px] text-gray-400">
-            Kapunyitás {EVENT_DETAILS.doorsOpen} · még <span className="text-white">{days} nap</span>
+            Gate open {EVENT_DETAILS.doorsOpen} · indulásig <span className="text-white">{days} nap</span>
           </div>
         )}
       </div>

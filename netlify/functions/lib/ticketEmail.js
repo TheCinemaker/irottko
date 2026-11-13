@@ -43,7 +43,7 @@ function html(order, tickets) {
               vip ? 'background:#d4af37;color:#05030a' : 'border:1px solid #d4af37;color:#1d1d1f'
             }">${label}</span>
             <div style="margin-top:14px;font:600 20px/1.3 ${FONT};color:#1d1d1f">${esc(t.holder_name || order.full_name)}</div>
-            <div style="margin-top:4px;font:400 13px/1.4 ${FONT};color:#86868b">${i + 1}. jegy a(z) ${tickets.length}-ből · névre szóló</div>
+            <div style="margin-top:4px;font:400 13px/1.4 ${FONT};color:#86868b">${i + 1}. utas a(z) ${tickets.length}-ből · névre szóló beszállókártya</div>
           </td></tr>
           <tr><td align="center" style="padding:8px 20px 4px">
             <img src="cid:qr-${i}" width="220" height="220" alt="QR-kód: ${esc(t.code)}" style="display:block;width:220px;height:220px;border:0">
@@ -72,7 +72,7 @@ function html(order, tickets) {
 
       <tr><td style="padding:28px 8px 20px;font:400 16px/1.55 ${FONT};color:#1d1d1f">
         Kedves ${esc(order.full_name)}!<br><br>
-        Köszönjük a vásárlást, itt ${tickets.length > 1 ? `van mind a(z) ${tickets.length} jegyed` : 'a jegyed'}.
+        Check-in kész! Itt ${tickets.length > 1 ? `van mind a(z) ${tickets.length} beszállókártyád` : 'a beszállókártyád'} (belépőjegy).
         A belépéskor mutasd fel a QR-kódot – a telefonodon, a Tárcádban, vagy a csatolt PDF-ből kinyomtatva.
         ${
           tickets.length > 1
@@ -95,7 +95,7 @@ function html(order, tickets) {
       ${cards}
 
       ${order.payment_ref ? `<tr><td align="center" style="padding:4px 8px 24px">
-        <a href="${appUrl()}/success?paymentId=${encodeURIComponent(order.payment_ref)}" style="display:inline-block;padding:14px 26px;border-radius:999px;background:#d4af37;color:#05030a;font:600 15px/1 ${FONT};text-decoration:none">Jegyeim megnyitása az appban</a>
+        <a href="${appUrl()}/success?paymentId=${encodeURIComponent(order.payment_ref)}" style="display:inline-block;padding:14px 26px;border-radius:999px;background:#d4af37;color:#05030a;font:600 15px/1 ${FONT};text-decoration:none">Beszállókártyák megnyitása az appban</a>
         <div style="margin-top:10px;font:400 12px/1.5 ${FONT};color:#86868b">Nyisd meg a telefonodon: a jegyek a Jegyek fülön is ott lesznek.</div>
       </td></tr>` : ''}
 
@@ -135,10 +135,10 @@ export async function sendTicketEmail(order, tickets) {
     body: JSON.stringify({
       from,
       to: [order.email],
-      subject: `A jegyeid – ${EVENT_DETAILS.title}`,
+      subject: `Beszállókártya – ${EVENT_DETAILS.title}, gate open 19:00`,
       html: html(order, tickets),
       text:
-        `Kedves ${order.full_name}!\n\nKöszönjük a vásárlást. Jegykódjaid:\n` +
+        `Kedves ${order.full_name}!\n\nCheck-in kész! A beszállókártyáid (belépőjegyek) kódjai:\n` +
         tickets.map((t, i) => `${i + 1}. ${t.tier_kind === 'vip' ? 'VIP Lounge' : t.tier_name}: ${t.code}`).join('\n') +
         `\n\n${dateHu}, ${EVENT_DETAILS.venue}, kapunyitás ${EVENT_DETAILS.doorsOpen}.\n\n` +
         `FONTOS: A jegy névre szóló, nem átruházható, és egyszeri belépésre jogosít. A QR-kódot a kapunál beolvassuk – ` +

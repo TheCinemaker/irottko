@@ -8,8 +8,8 @@ export default function VipPage() {
   const vipBar = BARS_DATA.find((b) => b.slug === 'vip');
   return (
     <PageShell>
-      <PageHeader kicker="VIP Lounge" title="A Lounge a tiéd.">
-        Ugyanaz az éjszaka, egy fokozattal feljebb.
+      <PageHeader kicker="VIP Lounge" title="Business class.">
+        Ugyanaz a járat, egy osztállyal feljebb.
       </PageHeader>
       <VipSection />
       {vipBar && <MenuList bar={vipBar} title="Pezsgőbár" />}

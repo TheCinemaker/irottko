@@ -20,7 +20,7 @@ export default function HomePage() {
 
       {/* Bars – one swipeable row */}
       <section className="mx-auto max-w-6xl px-5 pt-16 sm:pt-28">
-        <SectionHead kicker="Bárok" title="Három bár. Minden ízlésre." to="/barok" more="Mind" />
+        <SectionHead kicker="Bárok · Fedélzeti ellátás" title="Három bár a fedélzeten." to="/barok" more="Mind" />
         <BarTiles carousel />
       </section>
 
@@ -29,8 +29,8 @@ export default function HomePage() {
         <details className="group rounded-3xl border border-white/10 bg-white/[0.03] [&_summary::-webkit-details-marker]:hidden">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4">
             <span className="min-w-0">
-              <span className="block text-[17px] font-semibold text-white">Tudnivalók</span>
-              <span className="block truncate text-[13px] text-gray-500">Időpont, helyszín, dresscode, belépés</span>
+              <span className="block text-[17px] font-semibold text-white">Utastájékoztató</span>
+              <span className="block truncate text-[13px] text-gray-500">Gate open, terminál, dresscode, beszállás</span>
             </span>
             <ChevronDown className="h-5 w-5 shrink-0 text-[#d4af37] transition-transform duration-200 group-open:rotate-180" />
           </summary>
@@ -47,7 +47,8 @@ export default function HomePage() {
 
       {/* Tickets */}
       <section className="mx-auto max-w-4xl px-5 py-16 text-center sm:py-28">
-        <h2 className="display text-[2rem] sm:text-6xl">Egy éjszaka. Ne maradj le.</h2>
+        <h2 className="display text-[2rem] sm:text-6xl">Csak egy járat indul.</h2>
+        <p className="mx-auto mt-3 max-w-sm text-[15px] text-gray-400">Nincs pótjárat, nincs második gép. Aki lemarad, a földön marad.</p>
         <Link to="/jegyek" className="btn-primary mt-6">
           {fromLabel(pricing)}
         </Link>

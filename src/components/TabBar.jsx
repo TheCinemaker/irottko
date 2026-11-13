@@ -9,7 +9,7 @@ const TABS = [
   { to: '/', label: 'Kezdőlap', icon: House, match: (p) => p === '/' },
   { to: '/lineup', label: 'Line-up', icon: Music2, match: (p) => p.startsWith('/lineup') },
   { to: '/barok', label: 'Bárok', icon: Martini, match: (p) => p.startsWith('/barok') || p.startsWith('/vip') },
-  { to: '/jegyek', label: 'Jegyek', icon: Ticket, match: (p) => p.startsWith('/jegyek') || p.startsWith('/success') },
+  { to: '/jegyek', label: 'Check-in', icon: Ticket, match: (p) => p.startsWith('/jegyek') || p.startsWith('/success') },
 ];
 
 export default function TabBar() {

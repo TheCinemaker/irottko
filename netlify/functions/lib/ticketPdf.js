@@ -65,7 +65,7 @@ export async function ticketsPdf(order, tickets) {
     center(label, semi, 12, H - 196, vip ? NIGHT : INK, 2);
 
     center(t.holder_name || order.full_name || '', semi, 20, H - 245);
-    center(`${i + 1}. jegy a(z) ${tickets.length}-ből`, regular, 10, H - 263, GREY);
+    center(`Beszállókártya · ${i + 1}. utas a(z) ${tickets.length}-ből`, regular, 10, H - 263, GREY);
 
     // QR
     const qrPng = await QRCode.toBuffer(t.code, { type: 'png', width: 720, margin: 1, errorCorrectionLevel: 'M' });

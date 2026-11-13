@@ -82,15 +82,15 @@ export async function applePass(ticket) {
   pass.setRelevantDate(EVENT_START);
   pass.setExpirationDate(EVENT_END);
 
-  pass.headerFields.push({ key: 'tier', label: 'JEGY', value: ticket.tier_kind === 'vip' ? 'VIP LOUNGE' : ticket.tier_name });
-  pass.primaryFields.push({ key: 'event', label: 'ESEMÉNY', value: 'One Night at Írottkő' });
+  pass.headerFields.push({ key: 'tier', label: 'OSZTÁLY', value: ticket.tier_kind === 'vip' ? 'BUSINESS · VIP' : ticket.tier_name });
+  pass.primaryFields.push({ key: 'event', label: 'JÁRAT', value: 'One Night at Írottkő' });
   pass.secondaryFields.push(
     { key: 'date', label: 'DÁTUM', value: dateHu },
-    { key: 'doors', label: 'KAPUNYITÁS', value: EVENT_DETAILS.doorsOpen }
+    { key: 'doors', label: 'GATE OPEN', value: EVENT_DETAILS.doorsOpen }
   );
   pass.auxiliaryFields.push(
-    { key: 'venue', label: 'HELYSZÍN', value: EVENT_DETAILS.venue },
-    { key: 'holder', label: 'NÉV', value: ticket.holder_name || '' }
+    { key: 'venue', label: 'TERMINÁL', value: EVENT_DETAILS.venue },
+    { key: 'holder', label: 'UTAS', value: ticket.holder_name || '' }
   );
   pass.backFields.push(
     { key: 'code', label: 'Jegykód', value: ticket.code },

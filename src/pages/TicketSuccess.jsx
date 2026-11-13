@@ -71,13 +71,13 @@ function Paid({ data }) {
     <>
       <div className="text-center">
         <CheckCircle2 className="mx-auto h-12 w-12 text-[#d4af37]" />
-        <h1 className="display mt-6 text-4xl sm:text-5xl">Megvan a jegyed.</h1>
+        <h1 className="display mt-6 text-4xl sm:text-5xl">Check-in kész. Jó utat!</h1>
         <p className="mt-4 text-gray-300">
-          Köszönjük, {order.fullName}! A jegyeket elküldtük ide: <span className="text-white">{order.email}</span>. A számlát a Számlázz.hu külön
+          Köszönjük, {order.fullName}! A beszállókártyákat elküldtük ide: <span className="text-white">{order.email}</span>. A számlát a Számlázz.hu külön
           e-mailben küldi.
         </p>
         <p className="mt-2 text-[13px] text-gray-500">
-          {EVENT_DETAILS.dateString} · {EVENT_DETAILS.venue} · Kapunyitás {EVENT_DETAILS.doorsOpen}
+          {EVENT_DETAILS.dateString} · {EVENT_DETAILS.venue} · Gate open {EVENT_DETAILS.doorsOpen}
         </p>
       </div>
 
@@ -114,7 +114,7 @@ function Paid({ data }) {
 const MESSAGES = {
   loading: ['Ellenőrizzük a fizetést…', null],
   pending: ['A bank még dolgozik a fizetéseden…', 'Ne zárd be az oldalt, pár másodperc az egész.'],
-  slow: ['A fizetés visszaigazolása késik.', 'Ha a fizetés sikeres volt, a jegyeket e-mailben megkapod. Ha egy órán belül nem érkeznek meg, írj nekünk.'],
+  slow: ['A fizetés visszaigazolása késik.', 'Ha a fizetés sikeres volt, a beszállókártyákat e-mailben megkapod. Ha egy órán belül nem érkeznek meg, írj nekünk.'],
   cancelled: ['A fizetés nem sikerült.', 'A kártyádat nem terheltük meg. Próbáld újra, a foglalásod felszabadult.'],
   expired: ['A fizetési idő lejárt.', 'A kártyádat nem terheltük meg. Indíts új vásárlást.'],
   unknown: ['Ezt a rendelést nem találjuk.', null],

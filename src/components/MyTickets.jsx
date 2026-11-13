@@ -41,7 +41,7 @@ function Pass({ t, onOpen }) {
           </div>
           <div className="mt-2 truncate text-2xl font-bold leading-tight">{t.name}</div>
           <div className={`mt-1 text-[13px] ${t.vip ? 'text-[#05030a]/70' : 'text-gray-400'}`}>
-            {dateHu} · Kapunyitás {EVENT_DETAILS.doorsOpen}
+            {dateHu} · Gate open {EVENT_DETAILS.doorsOpen}
           </div>
         </div>
         <Maximize2 className="mt-1 h-5 w-5 shrink-0 opacity-60" />
@@ -59,7 +59,7 @@ function Pass({ t, onOpen }) {
         <div className="min-w-0">
           <div className={`text-[11px] uppercase tracking-[0.2em] ${t.vip ? 'text-[#05030a]/60' : 'text-gray-500'}`}>Jegykód</div>
           <div className="mt-1 break-all font-mono text-[14px] tracking-[0.12em]">{t.code}</div>
-          <div className={`mt-2 text-[12px] ${t.vip ? 'text-[#05030a]/70' : 'text-gray-500'}`}>Érintsd meg a kapunál a nagyításhoz.</div>
+          <div className={`mt-2 text-[12px] ${t.vip ? 'text-[#05030a]/70' : 'text-gray-500'}`}>Érintsd meg a gate-nél a nagyításhoz.</div>
         </div>
       </div>
     </button>
@@ -120,10 +120,10 @@ export default function MyTickets() {
 
   return (
     <section className="mx-auto max-w-md px-5 pt-24 sm:pt-32">
-      <div className="kicker">Jegyem</div>
-      <h1 className="mt-3 text-3xl font-semibold text-white">{tickets.length > 1 ? `${tickets.length} jegyed van` : 'Megvan a jegyed'}</h1>
+      <div className="kicker">Beszállókártyáim</div>
+      <h1 className="mt-3 text-3xl font-semibold text-white">{tickets.length > 1 ? `${tickets.length} beszállókártyád van` : 'Megvan a beszállókártyád'}</h1>
       <p className="mt-2 text-[14px] text-gray-400">
-        Ezen a telefonon mentve. Ha a kapunál nincs térerő, a Tárcából vagy a PDF-ből is felmutathatod.
+        Ezen a telefonon mentve. Ha a gate-nél nincs térerő, a Tárcából vagy a PDF-ből is felmutathatod.
       </p>
       <div className="mt-6 space-y-4">
         {tickets.map((t) => (

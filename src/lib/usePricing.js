@@ -69,5 +69,5 @@ export const dayHu = (iso) =>
 /** Button label: "Jegyek 6 990 Ft-tól" while on sale, otherwise just "Jegyek". */
 export const fromLabel = (p) => {
   const prices = [p.standard, p.vip].filter(Boolean).map((t) => t.price_huf);
-  return prices.length ? `Jegyek ${huf(Math.min(...prices))}-tól` : 'Jegyek';
+  return prices.length ? `Beszállókártya ${huf(Math.min(...prices))}-tól` : 'Beszállókártyák';
 };

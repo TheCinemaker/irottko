@@ -14,7 +14,7 @@ import { usePricing, huf, dayHu } from '../lib/usePricing';
   A sticky bar at the bottom (above the tab bar on phones) shows the total
   and the next action. Price and availability are decided on the server.
 */
-const STEPS = ['Jegy', 'Nevek', 'Adatok', 'Fizetés'];
+const STEPS = ['Járat', 'Utasok', 'Adatok', 'Fizetés'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function TicketSection() {
@@ -56,8 +56,8 @@ export default function TicketSection() {
 
   // ---- step validation ----
   const stepError = (s) => {
-    if (s === 0) return selectedTier ? '' : 'Válassz jegytípust.';
-    if (s === 1) return attendees.some((n) => n.trim().length < 2) ? 'Add meg minden jegyhez a résztvevő nevét.' : '';
+    if (s === 0) return selectedTier ? '' : 'Válassz osztályt.';
+    if (s === 1) return attendees.some((n) => n.trim().length < 2) ? 'Add meg minden utas nevét.' : '';
     if (s === 2) {
       if (!EMAIL_RE.test(formData.email.trim())) return 'Adj meg egy érvényes e-mail címet – ide küldjük a jegyeket.';
       if (buyerName.trim().length < 2 || !formData.zip.trim() || !formData.city.trim() || !formData.address.trim())
@@ -131,7 +131,7 @@ export default function TicketSection() {
         {/* ---------- 1. Jegy ---------- */}
         {step === 0 && (
           <>
-            <StepTitle title="Milyen jegyet kérsz?" />
+            <StepTitle title="Melyik osztályon utazol?" />
             <div className="grid gap-3">
               {available.map((tier) => {
                 const on = tier.kind === selectedTier.kind;
@@ -147,7 +147,7 @@ export default function TicketSection() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="text-[12px] font-medium uppercase tracking-[0.15em] text-gray-400">
-                          {tier.kind === 'vip' ? 'VIP Lounge' : tier.channel === 'door' ? 'Helyszíni jegy' : 'Belépő'}
+                          {tier.kind === 'vip' ? 'Business · VIP Lounge' : tier.channel === 'door' ? 'Gate-nél váltott jegy' : 'Economy'}
                         </div>
                         <div className="mt-2 text-xl font-semibold text-white">{tier.name}</div>
                       </div>
@@ -181,8 +181,8 @@ export default function TicketSection() {
 
             <div className="mt-6 flex items-center justify-between rounded-3xl border border-white/10 p-5">
               <div>
-                <div className="text-[15px] font-medium text-white">Hány jegy?</div>
-                <div className="text-[13px] text-gray-500">Egy rendelésben legfeljebb 10</div>
+                <div className="text-[15px] font-medium text-white">Hány utas?</div>
+                <div className="text-[13px] text-gray-500">Egy foglalásban legfeljebb 10</div>
               </div>
               <div className="flex items-center gap-4">
                 <RoundButton label="Kevesebb jegy" disabled={ticketCount <= 1} onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}>
@@ -201,19 +201,19 @@ export default function TicketSection() {
         {step === 1 && (
           <>
             <StepTitle
-              title={ticketCount > 1 ? 'Kiknek szólnak a jegyek?' : 'Kinek szól a jegy?'}
-              sub="A jegy névre szóló, mint egy beszállókártya: ez a név kerül rá, ezt látja a beléptető."
+              title={ticketCount > 1 ? 'Kik utaznak?' : 'Ki utazik?'}
+              sub="A beszállókártya névre szóló: ez a név kerül rá, ezt ellenőrzik beszálláskor."
             />
             <div className="grid gap-3">
               {attendees.map((name, i) => (
                 <label key={i} className="block">
-                  <span className="mb-1.5 block text-[13px] text-gray-400">{i + 1}. jegy</span>
+                  <span className="mb-1.5 block text-[13px] text-gray-400">{i + 1}. utas</span>
                   <input
                     className="field"
                     type="text"
                     value={name}
                     onChange={(e) => setAttendee(i, e.target.value)}
-                    placeholder={i === 0 ? 'A te neved' : 'Résztvevő neve'}
+                    placeholder={i === 0 ? 'A te neved' : 'Utas neve'}
                     autoComplete={i === 0 ? 'name' : 'off'}
                     enterKeyHint={i === ticketCount - 1 ? 'next' : 'next'}
                   />
@@ -226,7 +226,7 @@ export default function TicketSection() {
         {/* ---------- 3. Adatok ---------- */}
         {step === 2 && (
           <>
-            <StepTitle title="Hová küldjük?" sub="A jegyeket és a számlát erre az e-mail címre küldjük." />
+            <StepTitle title="Hová küldjük a beszállókártyát?" sub="A beszállókártyákat és a számlát erre az e-mail címre küldjük." />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="E-mail *" className="sm:col-span-2">
                 <input className="field" type="email" name="email" value={formData.email} onChange={onField} autoComplete="email" inputMode="email" />
@@ -277,12 +277,12 @@ export default function TicketSection() {
         {/* ---------- 4. Fizetés ---------- */}
         {step === 3 && (
           <>
-            <StepTitle title="Minden stimmel?" />
+            <StepTitle title="Utolsó ellenőrzés." />
             <dl className="divide-y divide-white/[0.08] rounded-3xl border border-white/10 px-5">
-              <SummaryRow label="Jegy" onEdit={() => goTo(0)}>
+              <SummaryRow label="Járat" onEdit={() => goTo(0)}>
                 {ticketCount} × {selectedTier.name} · {huf(selectedTier.price_huf)}
               </SummaryRow>
-              <SummaryRow label={ticketCount > 1 ? 'Résztvevők' : 'Résztvevő'} onEdit={() => goTo(1)}>
+              <SummaryRow label={ticketCount > 1 ? 'Utasok' : 'Utas'} onEdit={() => goTo(1)}>
                 {attendees.map((n, i) => (
                   <div key={i}>{n}</div>
                 ))}
@@ -454,12 +454,12 @@ function SalesState({ pricing }) {
     loading: ['Jegyárak betöltése…', null],
     error: ['A jegyárakat most nem tudjuk betölteni.', 'Kérjük, próbáld újra pár perc múlva.'],
     between: [
-      'Az online jegyértékesítés lezárult.',
-      pricing.doorFrom ? `Jegyet a helyszínen vehetsz: ${dayHu(pricing.doorFrom)}, 19:00-tól.` : 'Jegyet a helyszínen vehetsz.',
+      'Az online check-in lezárult.',
+      pricing.doorFrom ? `Beszállókártyát a gate-nél válthatsz: ${dayHu(pricing.doorFrom)}, 19:00-tól.` : 'Beszállókártyát a gate-nél válthatsz.',
     ],
     closed: ['A jegyértékesítés jelenleg nem elérhető.', null],
     open: pricing.onlineSoldOut
-      ? ['Az online jegyek elfogytak.', pricing.doorFrom ? `Jegyet a helyszínen vehetsz: ${dayHu(pricing.doorFrom)}, 19:00-tól.` : null]
+      ? ['Az online helyek elfogytak.', pricing.doorFrom ? `Beszállókártyát a gate-nél válthatsz: ${dayHu(pricing.doorFrom)}, 19:00-tól.` : null]
       : ['Jegyárak betöltése…', null],
   }[pricing.status] || ['A jegyértékesítés jelenleg nem elérhető.', null];
 

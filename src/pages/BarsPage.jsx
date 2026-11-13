@@ -7,7 +7,7 @@ import { KITCHEN } from '../data/eventData';
 export default function BarsPage() {
   return (
     <PageShell>
-      <PageHeader kicker="Bárok" title="Válassz pultot.">
+      <PageHeader kicker="Bárok · Fedélzeti ellátás" title="Válassz pultot.">
         Koktélbár, borbár, sörbár és VIP pezsgőbár – és egy konyha a 90-es évek ízeivel.
       </PageHeader>
       <div className="mx-auto max-w-6xl px-5 pb-28">

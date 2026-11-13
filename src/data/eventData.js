@@ -64,21 +64,21 @@ export const BARS_DATA = [
 
 // Kitchen (not a bar). Menu still being planned – no dishes listed until confirmed.
 export const KITCHEN = {
-  name: "Konyha",
+  name: "Fedélzeti menü",
   shortDesc: "Falatok a 90-es évek diszkóiból: melegszendvics és apró falatkák.",
   note: "A menüt hamarosan közzétesszük.",
 };
 
 // Practical info shown on the home page.
 export const INFO = [
-  { label: "Időpont", value: "2027. január 15., péntek · kapunyitás 19:00" },
-  { label: "Helyszín", value: "Hotel Írottkő, Kőszeg, Fő tér 4." },
-  { label: "DJ-pult", value: "Az első emeleten, a karzaton" },
+  { label: "Gate open", value: "2027. január 15., péntek, 19:00" },
+  { label: "Terminál", value: "Hotel Írottkő, Kőszeg, Fő tér 4." },
+  { label: "Pilótafülke", value: "A DJ-pult: első emelet, karzat" },
   {
     label: "Dresscode",
     value: "Hozd a 90-es, 2000-es évek hangulatát! Kockás ing, farmer, terepnadrág – minél „akkoribb\", annál jobb.",
   },
-  { label: "Belépés", value: "Névre szóló jegy, 18 éven felülieknek. Fényképes igazolványt hozz magaddal." },
+  { label: "Beszállás", value: "Névre szóló beszállókártyával, 18 éven felülieknek. Fényképes igazolványt hozz magaddal." },
 ];
 
 // Ticket prices and sales windows live in the database (supabase/seed_2027.sql);
