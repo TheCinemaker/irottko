@@ -88,7 +88,7 @@ export default function LineupBoard() {
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d4af37] opacity-70" />
                           <span className="relative inline-flex h-2 w-2 rounded-full bg-[#d4af37]" />
                         </span>
-                        <span className="text-[#d4af37]">Headliner</span>
+                        <span className="text-[#d4af37]">{STATUS[i]}</span>
                       </>
                     ) : (
                       <span className="text-gray-500">{STATUS[i]}</span>
