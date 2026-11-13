@@ -1,43 +1,21 @@
 export const EVENT_DETAILS = {
   title: "ONE NIGHT AT ÍROTTKŐ",
-  tagline: "3 DJ • 3 BÁR • VIP LOUNGE",
+  tagline: "4 FELLÉPŐ • 3 BÁR • VIP LOUNGE",
   dateString: "2027. január 15. (Péntek)",
   isoDate: "2027-01-15T19:00:00+01:00",
   doorsOpen: "19:00",
   venue: "Hotel Írottkő, Kőszeg",
   address: "9730 Kőszeg, Fő tér 4.",
-  description: "A patinás kőszegi Hotel Írottkő aulája kizárólag egyetlen éjszakára alakul át luxus klubtérré. Prémium italok, 3 bárpult, VIP galéria és Magyarország legikonikusabb DJ-je a lemezjátszók mögött!",
+  description: "A patinás kőszegi Hotel Írottkő aulája kizárólag egyetlen éjszakára alakul át luxus klubtérré. Három bár, VIP galéria és négy fellépő, 19:00-tól hajnalig.",
 };
 
+// Line-up (from the organiser, 2026-11-13). Only names and times – no invented bios.
+// headliner: true → big gold type.
 export const DJS = [
-  {
-    id: "szombathelyi-dj",
-    name: "Szombathelyi DJ",
-    role: "WARM-UP & CLUB HITS",
-    genre: "Deep House / Vocal House",
-    time: "20:00 - 22:30",
-    description: "A vasi éjszakák rezidense hozza meg a lendületet és emeli a party hőfokát a nyitást követően.",
-    color: "#a855f7"
-  },
-  {
-    id: "barany-attila",
-    name: "DJ BÁRÁNY ATTILA",
-    role: "HEADLINER • SZTÁRVENDÉG",
-    genre: "Club Classics / Peak Time House",
-    time: "22:30 - 01:30",
-    badge: "EXKLUZÍV KŐSZEGI FELLÉPÉS",
-    description: "A hazai klubélet vitathatatlan legendája, a Disco's Hit motorja, aki felrobbantja az Írottkő táncterét!",
-    color: "#d4af37"
-  },
-  {
-    id: "dj-young",
-    name: "DJ Young",
-    role: "CLOSING & AFTER",
-    genre: "Tech-House / EDM Anthem",
-    time: "01:30 - 04:00",
-    description: "Modern ütemek és kőkemény groove-ok hajnalig, amíg az utolsó koktél is el nem fogy.",
-    color: "#ec4899"
-  }
+  { id: "saffron", name: "SAFFRON", time: "19:00 – 22:00" },
+  { id: "dj-barany", name: "DJ Bárány", time: "22:00 – 23:30", headliner: true },
+  { id: "frombob", name: "fromBOB", time: "23:30 – 01:00" },
+  { id: "tisztafaxxa", name: "TISZTAFAXXA Classics", time: "01:00-tól" },
 ];
 
 export const BARS_DATA = [
@@ -119,7 +97,7 @@ export const TICKET_PERKS = {
   standard: [
     "Belépés az est teljes idejére",
     "Mindhárom bár és a tánctér",
-    "Mindhárom DJ szettje",
+    "Mind a négy fellépő",
     "Digitális jegy Apple és Google Wallethez",
   ],
   vip: [

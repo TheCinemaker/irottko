@@ -9,7 +9,7 @@ import { DJS } from '../data/eventData';
 
 export default function HomePage() {
   const pricing = usePricing();
-  const headliner = DJS.find((d) => d.badge) || DJS[0];
+  const headliner = DJS.find((d) => d.headliner) || DJS[0];
   const others = DJS.filter((d) => d !== headliner);
 
   return (
@@ -21,7 +21,7 @@ export default function HomePage() {
         <div className="kicker">Line-up</div>
         <h2 className="display mt-4 text-5xl sm:text-7xl">{headliner.name}</h2>
         <p className="mt-5 text-lg text-gray-400 sm:text-xl">
-          és {others.map((d) => d.name).join(', ')} a galérián, hajnalig.
+          és {others.map((d) => d.name).join(', ')} – 19:00-tól hajnalig.
         </p>
         <Link to="/lineup" className="link-more mt-8">
           A teljes line-up <ChevronRight className="h-4 w-4" />
