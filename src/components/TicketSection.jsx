@@ -1,12 +1,28 @@
 import React, { useRef, useState } from 'react';
-import Turnstile from './Turnstile';
 import { Link } from 'react-router-dom';
+import { Check, Lock, AlertCircle, ChevronLeft, Minus, Plus } from 'lucide-react';
+import Turnstile from './Turnstile';
 import { TICKET_PERKS } from '../data/eventData';
 import { usePricing, huf, dayHu } from '../lib/usePricing';
-import { Check, Lock, AlertCircle } from 'lucide-react';
+
+/*
+  Ticket purchase in four steps, like a flight-booking app:
+    1 Jegy   – ticket type and quantity
+    2 Nevek  – one attendee name per ticket (named tickets)
+    3 Adatok – e-mail, phone, billing
+    4 Fizetés – summary, terms, bot check → Barion
+  A sticky bar at the bottom (above the tab bar on phones) shows the total
+  and the next action. Price and availability are decided on the server.
+*/
+const STEPS = ['Jegy', 'Nevek', 'Adatok', 'Fizetés'];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function TicketSection() {
   const pricing = usePricing();
+  const top = useRef(null);
+  const turnstile = useRef(null);
+
+  const [step, setStep] = useState(0);
   const [selectedKind, setSelectedKind] = useState('standard');
   const [ticketCount, setTicketCount] = useState(1);
   const [isCompany, setIsCompany] = useState(false);
@@ -14,85 +30,66 @@ export default function TicketSection() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [humanToken, setHumanToken] = useState('');
-  const turnstile = useRef(null);
 
-  // Form fields (invoice data for Számlázz.hu)
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    zip: '',
-    city: '',
-    address: '',
-    companyName: '',
-    taxNumber: '',
-  });
-
-  // Named tickets (like a boarding pass). Ticket 1 follows the buyer's name
-  // until the buyer types something else into it.
-  const [names, setNames] = useState([]);
-  const [firstNameEdited, setFirstNameEdited] = useState(false);
-  const attendees = Array.from({ length: ticketCount }, (_, i) =>
-    i === 0 && !firstNameEdited ? formData.fullName : names[i] || ''
-  );
-  const setAttendee = (i, value) => {
-    if (i === 0) setFirstNameEdited(true);
+  // Attendees come first; the billing name follows ticket 1 until edited.
+  const [names, setNames] = useState(['']);
+  const attendees = Array.from({ length: ticketCount }, (_, i) => names[i] || '');
+  const setAttendee = (i, value) =>
     setNames((prev) => {
       const next = [...prev];
       next[i] = value;
       return next;
     });
+
+  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', zip: '', city: '', address: '', companyName: '', taxNumber: '' });
+  const [buyerNameEdited, setBuyerNameEdited] = useState(false);
+  const buyerName = buyerNameEdited ? formData.fullName : attendees[0];
+  const onField = (e) => {
+    const { name, value } = e.target;
+    if (name === 'fullName') setBuyerNameEdited(true);
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const available = [pricing.standard, pricing.vip].filter(Boolean);
   const selectedTier = available.find((t) => t.kind === selectedKind) || available[0] || null;
   const totalPrice = selectedTier ? selectedTier.price_huf * ticketCount : 0;
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  // ---- step validation ----
+  const stepError = (s) => {
+    if (s === 0) return selectedTier ? '' : 'Válassz jegytípust.';
+    if (s === 1) return attendees.some((n) => n.trim().length < 2) ? 'Add meg minden jegyhez a résztvevő nevét.' : '';
+    if (s === 2) {
+      if (!EMAIL_RE.test(formData.email.trim())) return 'Adj meg egy érvényes e-mail címet – ide küldjük a jegyeket.';
+      if (buyerName.trim().length < 2 || !formData.zip.trim() || !formData.city.trim() || !formData.address.trim())
+        return 'Töltsd ki a számlázási adatokat.';
+      if (isCompany && (!formData.companyName.trim() || !/^\d{8}-?\d-?\d{2}$/.test(formData.taxNumber.trim())))
+        return 'Céges vásárlásnál a cégnév és egy érvényes adószám (12345678-1-23) kötelező.';
+      return '';
+    }
+    if (s === 3) {
+      if (!acceptTerms) return 'A vásárláshoz fogadd el az ÁSZF-et és az adatkezelési tájékoztatót.';
+      if (!humanToken) return 'Egy pillanat – ellenőrizzük, hogy nem robot vagy. Próbáld újra pár másodperc múlva.';
+    }
+    return '';
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const goTo = (s) => {
     setErrorMsg('');
+    setStep(s);
+    const y = (top.current?.getBoundingClientRect().top || 0) + window.scrollY - 72;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  };
+  const next = () => {
+    const err = stepError(step);
+    if (err) return setErrorMsg(err);
+    if (step < 3) return goTo(step + 1);
+    pay();
+  };
 
-    // Form validation
-    if (!formData.fullName.trim() || !formData.email.trim() || !formData.zip.trim() || !formData.city.trim() || !formData.address.trim()) {
-      setErrorMsg('Kérjük, tölts ki minden kötelező számlázási mezőt!');
-      return;
-    }
-
-    if (isCompany && !formData.taxNumber.trim()) {
-      setErrorMsg('Céges számla esetén az adószám megadása kötelező!');
-      return;
-    }
-
-    if (isCompany && !formData.companyName.trim()) {
-      setErrorMsg('Céges számla esetén a cégnév megadása kötelező!');
-      return;
-    }
-
-    if (attendees.some((n) => n.trim().length < 2)) {
-      setErrorMsg('Kérjük, add meg minden jegyhez a résztvevő nevét.');
-      return;
-    }
-
-    if (!acceptTerms) {
-      setErrorMsg('A vásárláshoz el kell fogadnod az ÁSZF-et és az adatkezelési tájékoztatót.');
-      return;
-    }
-
-    if (!humanToken) {
-      setErrorMsg('Egy pillanat – ellenőrizzük, hogy nem robot vagy. Próbáld újra pár másodperc múlva.');
-      return;
-    }
-
+  const pay = async () => {
     setSubmitting(true);
-
+    setErrorMsg('');
     try {
-      // Price and availability are decided on the server; the browser only
-      // sends what the guest picked. Barion takes over from here.
       const res = await fetch('/.netlify/functions/barion-start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -104,6 +101,7 @@ export default function TicketSection() {
           isCompany,
           acceptTerms,
           ...formData,
+          fullName: buyerName.trim(),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -117,219 +115,336 @@ export default function TicketSection() {
     }
   };
 
-  return (
-    <section id="tickets" className="mx-auto max-w-5xl px-5 pb-28">
-      {/* Tiers – live prices from the DB */}
-      {pricing.status !== 'open' || !selectedTier ? (
+  if (pricing.status !== 'open' || !selectedTier) {
+    return (
+      <section id="tickets" className="mx-auto max-w-5xl px-5 pb-28">
         <SalesState pricing={pricing} />
-      ) : (
-      <>
-      <div className={`grid gap-4 ${available.length > 1 ? 'md:grid-cols-2' : 'mx-auto max-w-md'}`}>
-        {available.map((tier) => {
-          const isSelected = tier.kind === selectedTier.kind;
-          const isDoor = tier.channel === 'door';
-          return (
-            <button
-              key={tier.id}
-              type="button"
-              onClick={() => setSelectedKind(tier.kind)}
-              className={`flex flex-col rounded-3xl border p-7 text-left transition-colors ${
-                isSelected ? 'border-[#d4af37] bg-white/[0.05]' : 'border-white/10 hover:border-white/30'
-              }`}
-            >
-              <div className="flex w-full items-center justify-between gap-3">
-                <span className="text-[12px] font-medium uppercase tracking-[0.15em] text-gray-400">
-                  {tier.kind === 'vip' ? 'VIP Lounge' : isDoor ? 'Helyszíni jegy' : 'Belépő'}
-                </span>
-                <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                    isSelected ? 'border-[#d4af37] bg-[#d4af37] text-black' : 'border-white/30'
-                  }`}
-                >
-                  {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
-                </span>
+      </section>
+    );
+  }
+
+  return (
+    <section id="tickets" ref={top} className="mx-auto max-w-2xl px-5">
+      <Progress step={step} onJump={(s) => s < step && goTo(s)} />
+
+      <div key={step} className="page-in mt-8 min-h-[50vh]">
+        {/* ---------- 1. Jegy ---------- */}
+        {step === 0 && (
+          <>
+            <StepTitle title="Milyen jegyet kérsz?" />
+            <div className="grid gap-3">
+              {available.map((tier) => {
+                const on = tier.kind === selectedTier.kind;
+                return (
+                  <button
+                    key={tier.id}
+                    type="button"
+                    onClick={() => setSelectedKind(tier.kind)}
+                    className={`rounded-3xl border p-6 text-left transition-[border-color,transform] active:scale-[0.99] ${
+                      on ? 'border-[#d4af37] bg-white/[0.05]' : 'border-white/10'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-[12px] font-medium uppercase tracking-[0.15em] text-gray-400">
+                          {tier.kind === 'vip' ? 'VIP Lounge' : tier.channel === 'door' ? 'Helyszíni jegy' : 'Belépő'}
+                        </div>
+                        <div className="mt-2 text-xl font-semibold text-white">{tier.name}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-semibold tabular-nums text-white">{huf(tier.price_huf)}</div>
+                        <div className="text-[12px] text-gray-500">/ fő</div>
+                      </div>
+                    </div>
+                    {tier.kind === 'standard' && pricing.next && (
+                      <div className="mt-2 text-[13px] text-[#d4af37]">
+                        Következő ár: {huf(pricing.next.price_huf)} ({dayHu(pricing.next.sales_from)})
+                      </div>
+                    )}
+                    {tier.kind === 'vip' && tier.remaining != null && tier.remaining <= 10 && (
+                      <div className="mt-2 text-[13px] text-[#d4af37]">Már csak {tier.remaining} VIP hely</div>
+                    )}
+                    {on && (
+                      <ul className="mt-4 space-y-2 text-[14px] text-gray-300">
+                        {TICKET_PERKS[tier.kind].map((perk) => (
+                          <li key={perk} className="flex gap-2.5">
+                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#d4af37]" />
+                            {perk}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 flex items-center justify-between rounded-3xl border border-white/10 p-5">
+              <div>
+                <div className="text-[15px] font-medium text-white">Hány jegy?</div>
+                <div className="text-[13px] text-gray-500">Egy rendelésben legfeljebb 10</div>
               </div>
-              <h3 className="mt-4 text-2xl font-semibold text-white">{tier.name}</h3>
-              <div className="mt-2 text-3xl font-semibold text-white">{huf(tier.price_huf)}</div>
-              <div className="mt-1 text-[13px] text-gray-500">/ fő, bruttó</div>
-              {tier.kind === 'standard' && pricing.next && (
-                <div className="mt-3 text-[13px] text-[#d4af37]">
-                  Következő ár: {huf(pricing.next.price_huf)} ({dayHu(pricing.next.sales_from)})
-                </div>
+              <div className="flex items-center gap-4">
+                <RoundButton label="Kevesebb jegy" disabled={ticketCount <= 1} onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}>
+                  <Minus className="h-4 w-4" />
+                </RoundButton>
+                <span className="w-6 text-center text-xl font-semibold tabular-nums text-white">{ticketCount}</span>
+                <RoundButton label="Több jegy" disabled={ticketCount >= 10} onClick={() => setTicketCount(Math.min(10, ticketCount + 1))}>
+                  <Plus className="h-4 w-4" />
+                </RoundButton>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ---------- 2. Nevek ---------- */}
+        {step === 1 && (
+          <>
+            <StepTitle
+              title={ticketCount > 1 ? 'Kiknek szólnak a jegyek?' : 'Kinek szól a jegy?'}
+              sub="A jegy névre szóló, mint egy beszállókártya: ez a név kerül rá, ezt látja a beléptető."
+            />
+            <div className="grid gap-3">
+              {attendees.map((name, i) => (
+                <label key={i} className="block">
+                  <span className="mb-1.5 block text-[13px] text-gray-400">{i + 1}. jegy</span>
+                  <input
+                    className="field"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setAttendee(i, e.target.value)}
+                    placeholder={i === 0 ? 'A te neved' : 'Résztvevő neve'}
+                    autoComplete={i === 0 ? 'name' : 'off'}
+                    enterKeyHint={i === ticketCount - 1 ? 'next' : 'next'}
+                  />
+                </label>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ---------- 3. Adatok ---------- */}
+        {step === 2 && (
+          <>
+            <StepTitle title="Hová küldjük?" sub="A jegyeket és a számlát erre az e-mail címre küldjük." />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="E-mail *" className="sm:col-span-2">
+                <input className="field" type="email" name="email" value={formData.email} onChange={onField} autoComplete="email" inputMode="email" />
+              </Field>
+              <Field label="Telefonszám" className="sm:col-span-2">
+                <input className="field" type="tel" name="phone" value={formData.phone} onChange={onField} autoComplete="tel" />
+              </Field>
+            </div>
+
+            <div className="mt-10 flex items-center justify-between">
+              <span className="text-[17px] font-semibold text-white">Számlázás</span>
+              <label className="flex cursor-pointer items-center gap-2 text-[13px] text-gray-400">
+                <input type="checkbox" checked={isCompany} onChange={(e) => setIsCompany(e.target.checked)} className="accent-[#d4af37]" />
+                Cégként vásárolok
+              </label>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              {isCompany ? (
+                <>
+                  <Field label="Cégnév *" className="sm:col-span-2">
+                    <input className="field" type="text" name="companyName" value={formData.companyName} onChange={onField} autoComplete="organization" />
+                  </Field>
+                  <Field label="Adószám *">
+                    <input className="field" type="text" name="taxNumber" value={formData.taxNumber} onChange={onField} placeholder="12345678-2-42" />
+                  </Field>
+                  <Field label="Kapcsolattartó neve *" className="sm:col-span-3">
+                    <input className="field" type="text" name="fullName" value={buyerName} onChange={onField} autoComplete="name" />
+                  </Field>
+                </>
+              ) : (
+                <Field label="Számlázási név *" className="sm:col-span-3">
+                  <input className="field" type="text" name="fullName" value={buyerName} onChange={onField} autoComplete="name" />
+                </Field>
               )}
-              {tier.kind === 'vip' && tier.remaining != null && tier.remaining <= 10 && (
-                <div className="mt-3 text-[13px] text-[#d4af37]">Már csak {tier.remaining} VIP hely</div>
-              )}
-              <ul className="mt-6 space-y-2.5 text-[14px] leading-snug text-gray-300">
-                {TICKET_PERKS[tier.kind].map((perk) => (
-                  <li key={perk} className="flex gap-2.5">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#d4af37]" />
-                    <span>{perk}</span>
-                  </li>
+              <Field label="Irányítószám *">
+                <input className="field" type="text" name="zip" value={formData.zip} onChange={onField} autoComplete="postal-code" inputMode="numeric" />
+              </Field>
+              <Field label="Város *" className="sm:col-span-2">
+                <input className="field" type="text" name="city" value={formData.city} onChange={onField} autoComplete="address-level2" />
+              </Field>
+              <Field label="Utca, házszám *" className="sm:col-span-3">
+                <input className="field" type="text" name="address" value={formData.address} onChange={onField} autoComplete="street-address" />
+              </Field>
+            </div>
+          </>
+        )}
+
+        {/* ---------- 4. Fizetés ---------- */}
+        {step === 3 && (
+          <>
+            <StepTitle title="Minden stimmel?" />
+            <dl className="divide-y divide-white/[0.08] rounded-3xl border border-white/10 px-5">
+              <SummaryRow label="Jegy" onEdit={() => goTo(0)}>
+                {ticketCount} × {selectedTier.name} · {huf(selectedTier.price_huf)}
+              </SummaryRow>
+              <SummaryRow label={ticketCount > 1 ? 'Résztvevők' : 'Résztvevő'} onEdit={() => goTo(1)}>
+                {attendees.map((n, i) => (
+                  <div key={i}>{n}</div>
                 ))}
-              </ul>
-            </button>
-          );
-        })}
+              </SummaryRow>
+              <SummaryRow label="E-mail" onEdit={() => goTo(2)}>
+                {formData.email}
+              </SummaryRow>
+              <SummaryRow label="Számla" onEdit={() => goTo(2)}>
+                <div>{isCompany ? `${formData.companyName} (${formData.taxNumber})` : buyerName}</div>
+                <div className="text-gray-400">
+                  {formData.zip} {formData.city}, {formData.address}
+                </div>
+              </SummaryRow>
+            </dl>
+
+            <label className="mt-6 flex cursor-pointer items-start gap-3 text-[14px] leading-snug text-gray-300">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[#d4af37]"
+              />
+              <span>
+                Elfogadom az{' '}
+                <a href="/aszf" target="_blank" rel="noreferrer" className="text-[#d4af37] underline">
+                  ÁSZF-et
+                </a>
+                , és megismertem az{' '}
+                <a href="/adatkezeles" target="_blank" rel="noreferrer" className="text-[#d4af37] underline">
+                  adatkezelési tájékoztatót
+                </a>
+                . Tudomásul veszem, hogy dátumhoz kötött rendezvényjegy esetén nincs elállási jog.
+              </span>
+            </label>
+
+            <div className="mt-6">
+              <Turnstile ref={turnstile} onToken={setHumanToken} />
+            </div>
+            <p className="mt-4 text-center text-[13px] text-gray-500">
+              Az ár tartalmazza az áfát. A fizetésre 3 perced van. A kártyaadatokat a Barion Payment Zrt. kezeli, azokat mi nem látjuk és nem
+              tároljuk.
+            </p>
+          </>
+        )}
       </div>
 
-      {/* Checkout */}
-      <form onSubmit={handleSubmit} className="mx-auto mt-20 max-w-2xl">
-        <h2 className="text-3xl font-semibold text-white">Adatok és számlázás</h2>
-        <p className="mt-2 text-[15px] text-gray-400">A fizetés a Barion biztonságos oldalán történik. A jegyet és a számlát e-mailben kapod.</p>
-
+      {/* ---------- sticky action bar ---------- */}
+      <div className="sticky bottom-[var(--tabbar)] z-30 -mx-5 mt-8 border-t border-white/[0.08] bg-[#05030a]/90 px-5 pb-4 pt-3 backdrop-blur-xl">
         {errorMsg && (
-          <div className="mt-6 flex items-center gap-3 rounded-xl border border-red-500/40 bg-red-950/40 p-4 text-[14px] text-red-200">
-            <AlertCircle className="h-4 w-4 shrink-0" />
+          <div role="alert" className="mb-3 flex items-start gap-2.5 rounded-xl border border-red-500/40 bg-red-950/50 p-3 text-[13px] text-red-200">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
-
-        <div className="mt-8 flex items-center justify-between border-y border-white/[0.08] py-5">
-          <div>
-            <div className="text-[15px] font-medium text-white">{selectedTier.name}</div>
-            <div className="text-[13px] text-gray-500">{huf(selectedTier.price_huf)} / fő</div>
-          </div>
-          <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {step > 0 && (
             <button
               type="button"
-              aria-label="Kevesebb jegy"
-              onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}
-              className="h-9 w-9 rounded-full border border-white/20 text-lg text-white hover:border-white/50"
+              onClick={() => goTo(step - 1)}
+              aria-label="Vissza"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/15 text-white active:scale-95"
             >
-              −
+              <ChevronLeft className="h-5 w-5" />
             </button>
-            <span className="w-6 text-center text-lg font-semibold tabular-nums text-white">{ticketCount}</span>
-            <button
-              type="button"
-              aria-label="Több jegy"
-              onClick={() => setTicketCount(Math.min(10, ticketCount + 1))}
-              className="h-9 w-9 rounded-full border border-white/20 text-lg text-white hover:border-white/50"
-            >
-              +
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-2 block text-[13px] text-gray-400">Teljes név *</span>
-            <input className="field" type="text" name="fullName" required value={formData.fullName} onChange={handleInputChange} autoComplete="name" />
-          </label>
-          <label className="block">
-            <span className="mb-2 block text-[13px] text-gray-400">E-mail *</span>
-            <input className="field" type="email" name="email" required value={formData.email} onChange={handleInputChange} autoComplete="email" />
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-2 block text-[13px] text-gray-400">Telefonszám</span>
-            <input className="field" type="tel" name="phone" value={formData.phone} onChange={handleInputChange} autoComplete="tel" />
-          </label>
-        </div>
-
-        {/* Attendees – one name per ticket, printed on the ticket like a boarding pass */}
-        <div className="mt-10">
-          <div className="text-[15px] font-medium text-white">{ticketCount > 1 ? 'Résztvevők' : 'Résztvevő'}</div>
-          <p className="mt-1 text-[13px] text-gray-500">
-            A jegy névre szóló – ez a név kerül a jegyre és a Tárcába, ezt látja a beléptető.
-          </p>
-          <div className="mt-4 grid gap-3">
-            {attendees.map((name, i) => (
-              <label key={i} className="flex items-center gap-3">
-                <span className="w-16 shrink-0 text-[13px] tabular-nums text-gray-400">{i + 1}. jegy</span>
-                <input
-                  className="field"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setAttendee(i, e.target.value)}
-                  placeholder={i === 0 ? 'A te neved' : 'Résztvevő neve'}
-                  autoComplete={i === 0 ? 'name' : 'off'}
-                  aria-label={`${i + 1}. jegy – résztvevő neve`}
-                />
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-8 flex items-center justify-between">
-          <span className="text-[15px] font-medium text-white">Számlázási cím</span>
-          <label className="flex cursor-pointer items-center gap-2 text-[13px] text-gray-400">
-            <input type="checkbox" checked={isCompany} onChange={(e) => setIsCompany(e.target.checked)} className="accent-[#d4af37]" />
-            Cégként vásárolok
-          </label>
-        </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <label className="block">
-            <span className="mb-2 block text-[13px] text-gray-400">Irányítószám *</span>
-            <input className="field" type="text" name="zip" required value={formData.zip} onChange={handleInputChange} autoComplete="postal-code" inputMode="numeric" />
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-2 block text-[13px] text-gray-400">Város *</span>
-            <input className="field" type="text" name="city" required value={formData.city} onChange={handleInputChange} autoComplete="address-level2" />
-          </label>
-          <label className="block sm:col-span-3">
-            <span className="mb-2 block text-[13px] text-gray-400">Utca, házszám *</span>
-            <input className="field" type="text" name="address" required value={formData.address} onChange={handleInputChange} autoComplete="street-address" />
-          </label>
-          {isCompany && (
-            <>
-              <label className="block sm:col-span-2">
-                <span className="mb-2 block text-[13px] text-gray-400">Cégnév *</span>
-                <input className="field" type="text" name="companyName" required value={formData.companyName} onChange={handleInputChange} autoComplete="organization" />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-[13px] text-gray-400">Adószám *</span>
-                <input className="field" type="text" name="taxNumber" required value={formData.taxNumber} onChange={handleInputChange} placeholder="12345678-2-42" />
-              </label>
-            </>
           )}
-        </div>
-
-        <label className="mt-8 flex cursor-pointer items-start gap-3 text-[14px] leading-snug text-gray-300">
-          <input
-            type="checkbox"
-            required
-            checked={acceptTerms}
-            onChange={(e) => setAcceptTerms(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[#d4af37]"
-          />
-          <span>
-            Elfogadom az{' '}
-            <a href="/aszf" target="_blank" rel="noreferrer" className="text-[#d4af37] underline">ÁSZF-et</a>, és megismertem az{' '}
-            <a href="/adatkezeles" target="_blank" rel="noreferrer" className="text-[#d4af37] underline">adatkezelési tájékoztatót</a>.
-            Tudomásul veszem, hogy dátumhoz kötött rendezvényjegy esetén nincs elállási jog.
-          </span>
-        </label>
-
-        <div className="mt-6">
-          <Turnstile ref={turnstile} onToken={setHumanToken} />
-        </div>
-
-        <div className="mt-10 flex flex-col gap-6 border-t border-white/[0.08] pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-[13px] text-gray-400">Összesen</div>
-            <div className="text-3xl font-semibold tabular-nums text-white">{huf(totalPrice)}</div>
-            <div className="text-[13px] text-gray-500">Az ár tartalmazza az áfát. A fizetésre 3 perced van.</div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[12px] text-gray-500">
+              {ticketCount} × {selectedTier.name}
+            </div>
+            <div className="text-xl font-semibold tabular-nums text-white">{huf(totalPrice)}</div>
           </div>
-          <button type="submit" disabled={submitting} className="btn-primary w-full px-10 py-4 text-[15px] disabled:opacity-50 sm:w-auto">
+          <button type="button" onClick={next} disabled={submitting} className="btn-primary h-12 shrink-0 px-6 text-[15px] disabled:opacity-50">
             {submitting ? (
               <>
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
-                Feldolgozás…
+                Fizetés…
               </>
+            ) : step < 3 ? (
+              'Tovább'
             ) : (
               <>
                 <Lock className="h-4 w-4" />
-                Tovább a fizetéshez
+                Fizetés
               </>
             )}
           </button>
         </div>
-        <BarionNote />
-      </form>
-      </>
-      )}
+        {/* Barion requires its logo next to the pay button */}
+        {step === 3 && <BarionNote />}
+      </div>
     </section>
+  );
+}
+
+/* ------------------------------ parts ------------------------------ */
+
+function Progress({ step, onJump }) {
+  return (
+    <ol className="grid grid-cols-4 gap-2" aria-label="Vásárlás lépései">
+      {STEPS.map((label, i) => (
+        <li key={label}>
+          <button
+            type="button"
+            onClick={() => onJump(i)}
+            disabled={i >= step}
+            aria-current={i === step ? 'step' : undefined}
+            className="w-full text-left disabled:cursor-default"
+          >
+            <span className={`block h-1 rounded-full transition-colors ${i <= step ? 'bg-[#d4af37]' : 'bg-white/10'}`} />
+            <span className={`mt-2 block text-[12px] font-medium ${i === step ? 'text-white' : i < step ? 'text-[#d4af37]' : 'text-gray-600'}`}>
+              {i + 1}. {label}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function StepTitle({ title, sub }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-[1.75rem] font-semibold leading-tight text-white">{title}</h2>
+      {sub && <p className="mt-2 text-[14px] leading-relaxed text-gray-400">{sub}</p>}
+    </div>
+  );
+}
+
+function Field({ label, className = '', children }) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="mb-1.5 block text-[13px] text-gray-400">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function RoundButton({ label, disabled, onClick, children }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white transition-transform active:scale-90 disabled:opacity-30"
+    >
+      {children}
+    </button>
+  );
+}
+
+function SummaryRow({ label, onEdit, children }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-4">
+      <div className="min-w-0">
+        <dt className="text-[12px] font-medium uppercase tracking-[0.15em] text-gray-500">{label}</dt>
+        <dd className="mt-1 break-words text-[15px] text-white">{children}</dd>
+      </div>
+      <button type="button" onClick={onEdit} className="shrink-0 text-[13px] font-medium text-[#d4af37]">
+        Módosítás
+      </button>
+    </div>
   );
 }
 
@@ -371,19 +486,14 @@ const BARION_LOGO = '/barion/barion-smart-banner-dark.svg';
 
 function BarionNote() {
   return (
-    <div className="mt-8 flex flex-col items-center gap-3 text-center text-[13px] text-gray-500">
-      {BARION_LOGO ? (
-        <img
-          src={BARION_LOGO}
-          alt="Fizetés Barionnal: Mastercard, Visa, Diners Club, Discover, Apple Pay, Google Pay"
-          width="756"
-          height="108"
-          className="h-auto w-full max-w-[420px]"
-        />
-      ) : (
-        <span className="font-medium text-gray-400">Biztonságos fizetés: Barion</span>
-      )}
-      <span>A kártyaadatokat a Barion Payment Zrt. kezeli, azokat mi nem látjuk és nem tároljuk.</span>
+    <div className="mt-3 flex justify-center">
+      <img
+        src={BARION_LOGO}
+        alt="Fizetés Barionnal: Mastercard, Visa, Diners Club, Discover, Apple Pay, Google Pay"
+        width="756"
+        height="108"
+        className="h-auto w-full max-w-[320px]"
+      />
     </div>
   );
 }
