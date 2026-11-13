@@ -25,7 +25,7 @@ begin
      set online_capacity = 550,   -- normál online jegyek közös kerete
          capacity        = 590,   -- tájékoztató: 550 + 40 VIP (a helyszíni jegy korlátlan)
          max_per_order   = 10,
-         hold_minutes    = 15
+         hold_minutes    = 4      -- foglalás 4 perc; a Barion-ablak 3 perc
    where id = v_event;
 
   insert into ticket_tiers (event_id, name, kind, channel, price_huf, quantity, sort_order, sales_from, sales_until, perks) values

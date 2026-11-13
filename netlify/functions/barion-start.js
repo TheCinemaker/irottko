@@ -14,6 +14,35 @@ const KNOWN = {
   EVENT_NOT_FOUND: [500, 'Az esemény nincs beállítva.'],
 };
 
+// Abuse limits: a reservation holds tickets without payment, so a script could
+// keep everything "sold out". Limits on unpaid, still-held orders:
+const MAX_PENDING_PER_EMAIL = 2;
+const MAX_PENDING_PER_IP = 4; // not applied during door sales (shared hotel Wi-Fi)
+
+const clientIp = (event) =>
+  event.headers?.['x-nf-client-connection-ip'] || (event.headers?.['x-forwarded-for'] || '').split(',')[0].trim() || null;
+
+/** Returns an error message if this buyer already holds too many unpaid reservations. */
+async function tooManyPending(email, ip) {
+  const now = new Date().toISOString();
+  const pending = () => db().from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending').gt('expires_at', now);
+
+  const { count: byEmail } = await pending().eq('email', email);
+  if (byEmail >= MAX_PENDING_PER_EMAIL) {
+    return 'Ezzel az e-mail címmel már folyamatban van egy fizetés. Fejezd be, vagy próbáld újra pár perc múlva.';
+  }
+
+  if (ip) {
+    const { data: door } = await db().from('tier_status').select('id').eq('channel', 'door').eq('active', true).limit(1);
+    if (!door?.length) {
+      const { count: byIp, error } = await pending().eq('client_ip', ip);
+      if (error) console.error('IP limit skipped (run 006_client_ip.sql):', error.message);
+      else if (byIp >= MAX_PENDING_PER_IP) return 'Erről a hálózatról túl sok fizetés van folyamatban. Próbáld újra pár perc múlva.';
+    }
+  }
+  return null;
+}
+
 const clean = (v, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
 export const handler = async (event) => {
@@ -50,6 +79,14 @@ export const handler = async (event) => {
     return json(400, { error: 'A vásárláshoz el kell fogadnod az ÁSZF-et és az adatkezelési tájékoztatót.' });
   }
 
+  const ip = clientIp(event);
+  try {
+    const limited = await tooManyPending(b.email, ip);
+    if (limited) return json(429, { error: limited });
+  } catch (e) {
+    console.error('pending check failed (continuing):', e.message);
+  }
+
   let orderId;
   try {
     // 1) Reservation with row locks – no overselling.
@@ -77,6 +114,10 @@ export const handler = async (event) => {
     // Proof of accepting the terms (005_terms.sql). Never blocks the purchase.
     const { error: termsErr } = await db().from('orders').update({ terms_accepted_at: new Date().toISOString() }).eq('id', orderId);
     if (termsErr) console.error('terms_accepted_at not saved (run 005_terms.sql):', termsErr.message);
+    if (ip) {
+      const { error: ipErr } = await db().from('orders').update({ client_ip: ip }).eq('id', orderId);
+      if (ipErr) console.error('client_ip not saved (run 006_client_ip.sql):', ipErr.message);
+    }
 
     const { data: evt } = await db().from('events').select('hold_minutes').eq('slug', SLUG()).single();
     const { tickets } = await loadOrder(orderId);
@@ -94,7 +135,9 @@ export const handler = async (event) => {
       })),
       redirectUrl: `${appUrl()}/success`,
       callbackUrl: `${appUrl()}/.netlify/functions/barion-callback`,
-      windowMinutes: evt?.hold_minutes || 15,
+      // Barion closes 1 minute before our hold ends, so a payment can never
+      // succeed after the tickets were released to someone else.
+      windowMinutes: Math.max(1, (evt?.hold_minutes || 4) - 1),
     });
 
     if (pay.total !== res.total_huf) throw new Error(`Total mismatch ${pay.total} vs ${res.total_huf}`);

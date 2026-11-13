@@ -138,6 +138,10 @@ export function PrivacyPage() {
           <strong>Beléptetés:</strong> a jegy kódja, a belépés időpontja és a beolvasás eredménye. Cél: hogy egy jegy csak egyszer
           léphessen be, és a rendezvény biztonsága. Jogalap: szerződés teljesítése és az adatkezelő jogos érdeke (GDPR 6. cikk (1) b) és f)).
         </li>
+        <li>
+          <strong>Visszaélések megelőzése:</strong> a foglalást indító eszköz IP-címe. Cél: hogy egy forrásból ne lehessen tömegesen,
+          fizetés nélkül lefoglalni a jegyeket. Jogalap: az adatkezelő jogos érdeke (GDPR 6. cikk (1) f)).
+        </li>
       </ul>
       <p>Bankkártyaadatot nem kezelünk: azt kizárólag a Barion Payment Zrt. kapja meg, a saját adatkezelési tájékoztatója szerint.</p>
 

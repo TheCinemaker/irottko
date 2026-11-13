@@ -242,7 +242,7 @@ export default function TicketSection() {
           <div>
             <div className="text-[13px] text-gray-400">Összesen</div>
             <div className="text-3xl font-semibold tabular-nums text-white">{huf(totalPrice)}</div>
-            <div className="text-[13px] text-gray-500">Az ár tartalmazza az áfát.</div>
+            <div className="text-[13px] text-gray-500">Az ár tartalmazza az áfát. A fizetésre 3 perced van.</div>
           </div>
           <button type="submit" disabled={submitting} className="btn-primary w-full px-10 py-4 text-[15px] disabled:opacity-50 sm:w-auto">
             {submitting ? (
