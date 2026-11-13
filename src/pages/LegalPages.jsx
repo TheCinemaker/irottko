@@ -18,7 +18,7 @@ function LegalLayout({ kicker, title, children }) {
       <article className="mx-auto max-w-3xl px-5 pb-28 text-[15px] leading-relaxed text-gray-300 [&_h2]:mt-12 [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-white [&_li]:mt-1.5 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5 [&_a]:text-[#d4af37] [&_a]:underline">
         {LEGAL_DRAFT && (
           <div className="mb-10 rounded-xl border border-amber-400/40 bg-amber-950/30 p-4 text-[14px] text-amber-200">
-            Tervezet – jogi ellenőrzés alatt. A szögletes zárójeles adatok kitöltésre várnak.
+            Tervezet – jogi ellenőrzés alatt. A végleges szöveg a rendezvény előtt kerül közzétételre.
           </div>
         )}
         {children}
@@ -29,10 +29,10 @@ function LegalLayout({ kicker, title, children }) {
 
 const Seller = () => (
   <ul>
-    <li>Név: {SELLER.name}</li>
+    <li>Név: {SELLER.name} ({SELLER.shortName})</li>
     <li>Székhely: {SELLER.seat}</li>
     <li>Cégjegyzékszám: {SELLER.regNo} ({SELLER.registry})</li>
-    <li>Adószám: {SELLER.taxNo}</li>
+    <li>Adószám: {SELLER.taxNo} · NTAK: {SELLER.ntak}</li>
     <li>E-mail: {SELLER.email} · Telefon: {SELLER.phone}</li>
   </ul>
 );
@@ -91,7 +91,7 @@ export function TermsPage() {
       <p>
         Ha a rendezvény az eladónak felróható okból elmarad, az eladó a jegy árát a fizetéskor használt módon visszatéríti, és erről
         e-mailben tájékoztatja a Vásárlót. Időpont-módosítás esetén a jegy az új időpontra érvényes; aki az új időpontban nem tud részt
-        venni, [határidőn] belül kérheti a jegyár visszatérítését. A fellépők személyének változása nem ad alapot visszatérítésre.
+        venni, az új időpont közzétételétől számított 14 napon belül kérheti a jegyár visszatérítését. A fellépők személyének változása nem ad alapot visszatérítésre.
       </p>
 
       <h2>8. Panaszkezelés</h2>
@@ -189,14 +189,16 @@ export function ImprintPage() {
     <LegalLayout kicker="Jogi információk" title="Impresszum">
       <h2>Az eladó és a weboldal üzemeltetője</h2>
       <Seller />
-      <p>Képviselő: {SELLER.representative}</p>
+      <p>
+        Weboldal: <a href={SELLER.web} target="_blank" rel="noreferrer">{SELLER.web.replace('https://', '')}</a>
+      </p>
 
       <h2>A jegyértékesítő platform fejlesztője és üzemeltetője</h2>
       <ul>
-        <li>{OPERATOR.name}</li>
-        <li>Székhely: {OPERATOR.seat}</li>
+        <li>{OPERATOR.name}, {OPERATOR.form}</li>
+        <li>Cím: {OPERATOR.seat}</li>
         <li>Adószám: {OPERATOR.taxNo}</li>
-        <li>E-mail: {OPERATOR.email}</li>
+        <li>E-mail: {OPERATOR.email} · Telefon: {OPERATOR.phone}</li>
       </ul>
 
       <h2>Tárhelyszolgáltató</h2>

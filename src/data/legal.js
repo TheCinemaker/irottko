@@ -1,40 +1,45 @@
 // Company and legal data used by /aszf, /adatkezeles and /impresszum.
-// Fill in the [ ] fields from the hotel's company documents, have a lawyer review
-// the three pages, then set LEGAL_DRAFT = false (removes the "draft" banner).
+// Have a lawyer review the three pages, then set LEGAL_DRAFT = false
+// (removes the "draft" banner).
 export const LEGAL_DRAFT = true;
 export const LEGAL_UPDATED = '2026. november 13.';
 
 // Seller and data controller: the hotel's operating company.
+// Source: hotel imprint + Nemzeti Cégtár (provided by the user, 2026-11-13).
 export const SELLER = {
-  name: '[Hotel üzemeltető cég neve]',
-  seat: '[Székhely: irányítószám, település, utca, házszám]',
-  regNo: '[Cégjegyzékszám]',
-  registry: '[Nyilvántartó cégbíróság]',
-  taxNo: '[Adószám]',
-  email: '[ügyfélszolgálati e-mail]',
-  phone: '[telefonszám]',
-  representative: '[Képviselő neve]',
+  name: 'IROTTKŐ HOTEL Szálláshely Értékesítő Korlátolt Felelősségű Társaság',
+  shortName: 'IROTTKŐ HOTEL Kft.',
+  seat: '9730 Kőszeg, Fő tér 4.',
+  regNo: '18-09-102193',
+  registry: 'Szombathelyi Törvényszék Cégbírósága',
+  taxNo: '11312037-2-18',
+  ntak: 'SZ19000069',
+  email: 'info@irottko.hu',
+  phone: '+36 94 360 373',
+  web: 'https://www.irottko.hu',
 };
 
 // Platform operator / developer (data processor).
 export const OPERATOR = {
-  name: 'SA Software and Network Solutions',
-  seat: '[Székhely]',
-  taxNo: '[Adószám]',
-  email: '[e-mail]',
+  name: 'Avar Szilveszter (SA Software and Network Solutions)',
+  form: 'adószámos magánszemély',
+  seat: '9730 Kőszeg, Mélyút utca 10.',
+  taxNo: '91848521-1-38',
+  email: 'avar.szilveszter@gmail.com',
+  phone: '+36 70 636 4745',
 };
 
 // Hosting provider (required in the imprint by Ektv. 4. §).
-// VERIFY the address on netlify.com before go-live (written from memory).
+// Source: netlify.com/privacy and netlify.com/legal/terms-of-use (checked 2026-11-13).
 export const HOSTING = {
   name: 'Netlify, Inc.',
-  address: '512 2nd Street, Suite 200, San Francisco, CA 94107, USA',
+  address: '101 2nd Street, San Francisco, CA 94105, USA',
   web: 'https://www.netlify.com',
   email: 'support@netlify.com',
 };
 
-// Where order data is stored (Supabase project region – check in the Supabase dashboard).
-export const DB_REGION = '[Supabase projekt régiója, pl. EU (Frankfurt)]';
+// Where order data is stored (Supabase project region).
+export const DB_REGION = 'EU, Írország';
 
 // How long ticket / order data is kept after the event (invoices: 8 years, at the seller).
 export const RETENTION_DAYS_AFTER_EVENT = 90;
