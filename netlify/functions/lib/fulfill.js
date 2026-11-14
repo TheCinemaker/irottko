@@ -131,16 +131,37 @@ export async function fulfillPaid(orderId, { invoice = true } = {}) {
  * Ask Barion for the real state of a payment and act on it.
  * Returns { orderId, status } where status is the order status.
  */
+// The payment must really be this order's: Barion's PaymentRequestId is our
+// order id, and the amount and currency must match what we charged. (The
+// payment is read with our own POSKey, so it belongs to our shop.) Returns a
+// reason string, or null when everything matches.
+export function paymentMismatch(order, state) {
+  if (state.paymentRequestId !== order.id) return `PaymentRequestId ${state.paymentRequestId} ≠ ${order.id}`;
+  if (!PAID.has(state.status)) return null; // amount only matters for a paid one
+  if (state.currency !== 'HUF') return `Currency ${state.currency} ≠ HUF`;
+  if (Number(state.total) !== Number(order.total_huf)) return `Total ${state.total} ≠ ${order.total_huf}`;
+  return null;
+}
+
 export async function syncPayment(paymentId) {
   const { data: order } = await db()
     .from('orders')
-    .select('id, status')
+    .select('id, status, total_huf')
     .eq('payment_provider', 'barion')
     .eq('payment_ref', paymentId)
     .maybeSingle();
   if (!order) return { orderId: null, status: 'unknown' };
 
   const state = await getPaymentState(paymentId);
+
+  // One check for every path: callback, success page, 5-minute retry.
+  const mismatch = paymentMismatch(order, state);
+  if (mismatch) {
+    console.error(`PAYMENT MISMATCH order ${order.id} payment ${paymentId}: ${mismatch}`);
+    const { error } = await db().from('orders').update({ payment_error: mismatch }).eq('id', order.id);
+    if (error) console.error('payment_error not saved (run 009_payment_check.sql):', error.message);
+    return { orderId: order.id, status: 'payment_check' };
+  }
 
   if (PAID.has(state.status)) {
     if (order.status !== 'paid') {

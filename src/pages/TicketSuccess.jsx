@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import PageShell from '../components/PageShell';
 import { EVENT_DETAILS } from '../data/eventData';
 import { saveMyTickets } from '../lib/myTickets';
+import { SELLER } from '../data/legal';
 
 /*
   Barion redirects here with ?paymentId=…  The page asks the server for the
@@ -39,7 +40,7 @@ export default function TicketSuccess() {
           confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#d4af37', '#f7e7a9', '#ffffff'] });
           return;
         }
-        if (['cancelled', 'expired', 'unknown'].includes(data.status)) return setState(data);
+        if (['cancelled', 'expired', 'unknown', 'payment_check'].includes(data.status)) return setState(data);
         setState({ status: 'pending' });
       } catch {
         if (stop) return;
@@ -118,6 +119,10 @@ const MESSAGES = {
   cancelled: ['A fizetés nem sikerült.', 'A kártyádat nem terheltük meg. Próbáld újra, a foglalásod felszabadult.'],
   expired: ['A fizetési idő lejárt.', 'A kártyádat nem terheltük meg. Indíts új vásárlást.'],
   unknown: ['Ezt a rendelést nem találjuk.', null],
+  payment_check: [
+    'A fizetést ellenőriznünk kell.',
+    'A fizetésed megérkezett, de az adatai eltérnek a rendeléstől, ezért kézzel ellenőrizzük. Ha a bankod terhelt, nem veszik el: e-mailben jelentkezünk. Kérdés esetén írj a ' + SELLER.email + ' címre.',
+  ],
   none: ['Nincs megjeleníthető rendelés.', null],
 };
 

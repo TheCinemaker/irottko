@@ -55,6 +55,13 @@ export const handler = async (event) => {
       ),
       all('tickets', 'id, order_id, tier_id, price_huf, status, code, checked_in_at', byEvent),
     ]);
+    // Payments that did not match their order (009_payment_check.sql) – a
+    // separate query, so the page still works before the column exists.
+    const { data: payErr } = await db()
+      .from('orders')
+      .select('id, full_name, email, status, total_huf, created_at, payment_ref, payment_error')
+      .eq('event_id', ev.id)
+      .not('payment_error', 'is', null);
     const ticketIds = new Set(tickets.map((t) => t.id));
     const scans = (await all('check_ins', '*', (q) => q, 'scanned_at')).filter(
       (s) => !s.ticket_id || ticketIds.has(s.ticket_id)
@@ -221,6 +228,16 @@ export const handler = async (event) => {
       orderStatus,
       orders: orderRows,
       problems,
+      paymentIssues: (payErr || []).map((o) => ({
+        id: o.id,
+        name: o.full_name,
+        email: o.email,
+        status: o.status,
+        total: o.total_huf,
+        at: o.created_at,
+        paymentId: o.payment_ref,
+        error: o.payment_error,
+      })),
       scanResults: resultCount,
       scans: scanRows,
       duplicates: Object.values(dupByTicket).sort((a, b) => b.attempts - a.attempts),

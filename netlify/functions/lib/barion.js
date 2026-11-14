@@ -99,7 +99,7 @@ export async function startPayment({ orderId, email, items, redirectUrl, callbac
 /**
  * Current state of a payment. The callback carries only the PaymentId –
  * the real status always comes from here.
- * Returns { status, paymentRequestId, total, raw }.
+ * Returns { status, paymentRequestId, total, currency, raw }.
  * status: Prepared | Started | InProgress | Waiting | Reserved | Authorized |
  *         Canceled | Succeeded | Failed | PartiallySucceeded | Expired
  */
@@ -107,7 +107,7 @@ export async function getPaymentState(paymentId) {
   const json = await call('GET', '/v2/Payment/GetPaymentState', {
     query: { POSKey: posKey(), PaymentId: paymentId },
   });
-  return { status: json.Status, paymentRequestId: json.PaymentRequestId, total: json.Total, raw: json };
+  return { status: json.Status, paymentRequestId: json.PaymentRequestId, total: json.Total, currency: json.Currency, raw: json };
 }
 
 export const PAID = new Set(['Succeeded']);

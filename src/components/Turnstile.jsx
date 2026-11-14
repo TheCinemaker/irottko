@@ -43,7 +43,7 @@ const Turnstile = forwardRef(function Turnstile({ onToken }, ref) {
   useEffect(() => {
     const key = siteKey();
     if (!key) {
-      cb.current('no-key'); // not configured: the server skips the check too
+      cb.current('no-key'); // not configured: the server refuses the reservation (fail closed)
       return;
     }
     let alive = true;

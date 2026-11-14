@@ -54,7 +54,14 @@ export default function FramePour({ clip, intro = null }) {
     let count = 0;
     const imgs = new Array(clip.count);
     images.current = imgs;
-    for (let i = 0; i < clip.count; i++) {
+    // Coarse-to-fine order (every 16th frame, then 8th, 4th, 2nd, the rest):
+    // the scrub works across the whole clip after a few frames, and
+    // nearestLoaded() fills the gaps until the rest arrive.
+    const order = [];
+    const seen = new Set();
+    for (let step = 16; step >= 1; step /= 2)
+      for (let i = 0; i < clip.count; i += step) if (!seen.has(i)) seen.add(i), order.push(i);
+    for (const i of order) {
       const img = new Image();
       img.decoding = 'async';
       img.onload = () => {

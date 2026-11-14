@@ -53,14 +53,25 @@ function appleCertificates() {
   return appleCerts;
 }
 
-const dateHu = EVENT_DETAILS.dateString.replace(/\s*\(.*\)/, ''); // "2027. január 15."
+// Boarding-pass look (the site's "one flight" concept): Kőszeg → Írottkő.
+// The airport-style codes are decorative, not real IATA codes.
+const ROUTE = {
+  from: { code: 'KSZ', name: 'KŐSZEG' },
+  to: { code: 'ÍRK', name: 'HOTEL ÍROTTKŐ' },
+};
+const FLIGHT_NO = 'ÍR 0115'; // the date, 15 Jan
+const dateShort = (() => {
+  const d = new Date(EVENT_DETAILS.isoDate);
+  return d.toLocaleDateString('hu-HU', { timeZone: 'Europe/Budapest', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\s/g, '');
+})(); // "2027.01.15."
 
-/** ticket: { code, tier_name, holder_name, order_id } → Buffer (.pkpass) */
+/** ticket: { code, tier_name, tier_kind, holder_name, order_id } → Buffer (.pkpass) */
 export async function applePass(ticket) {
+  const vip = ticket.tier_kind === 'vip';
   const assets = {};
-  for (const f of ['icon.png', 'icon@2x.png', 'icon@3x.png', 'logo.png', 'logo@2x.png', 'logo@3x.png']) {
-    assets[f] = file(`wallet-assets/${f}`);
-  }
+  for (const f of ['icon.png', 'icon@2x.png', 'icon@3x.png']) assets[f] = file(`wallet-assets/${f}`);
+  // Gold "Í" in a ring; on the gold VIP card a dark one, or it would vanish.
+  for (const n of ['', '@2x', '@3x']) assets[`logo${n}.png`] = file(`wallet-assets/${vip ? 'logo-vip' : 'logo'}${n}.png`);
 
   const pass = new PKPass(assets, appleCertificates(), {
     formatVersion: 1,
@@ -68,32 +79,41 @@ export async function applePass(ticket) {
     teamIdentifier: APPLE_TEAM_ID(),
     serialNumber: `irottko-${ticket.code}`,
     organizationName: EVENT_DETAILS.title,
-    description: `Belépőjegy – ${EVENT_DETAILS.title}`,
-    logoText: EVENT_DETAILS.title,
+    description: `Beszállókártya (belépőjegy) – ${EVENT_DETAILS.title}`,
+    logoText: 'One Night',
     // VIP: gold card, dark text – recognisable at the door from a distance.
-    ...(ticket.tier_kind === 'vip'
+    ...(vip
       ? { backgroundColor: 'rgb(212, 175, 55)', foregroundColor: 'rgb(5, 3, 10)', labelColor: 'rgb(70, 52, 8)' }
       : { backgroundColor: 'rgb(5, 3, 10)', foregroundColor: 'rgb(255, 255, 255)', labelColor: 'rgb(212, 175, 55)' }),
     sharingProhibited: true,
     groupingIdentifier: 'one-night-irottko',
   });
 
-  pass.type = 'eventTicket';
+  pass.type = 'boardingPass';
+  pass.transitType = 'PKTransitTypeAir';
   pass.setRelevantDate(EVENT_START);
   pass.setExpirationDate(EVENT_END);
 
-  pass.headerFields.push({ key: 'tier', label: 'OSZTÁLY', value: ticket.tier_kind === 'vip' ? 'BUSINESS · VIP' : ticket.tier_name });
-  pass.primaryFields.push({ key: 'event', label: 'JÁRAT', value: 'One Night at Írottkő' });
-  pass.secondaryFields.push(
-    { key: 'date', label: 'DÁTUM', value: dateHu },
-    { key: 'doors', label: 'GATE OPEN', value: EVENT_DETAILS.doorsOpen }
+  pass.headerFields.push(
+    { key: 'date', label: 'DÁTUM', value: dateShort },
+    { key: 'flight', label: 'JÁRAT', value: FLIGHT_NO }
+  );
+  pass.primaryFields.push(
+    { key: 'from', label: ROUTE.from.name, value: ROUTE.from.code },
+    { key: 'to', label: ROUTE.to.name, value: ROUTE.to.code }
   );
   pass.auxiliaryFields.push(
-    { key: 'venue', label: 'TERMINÁL', value: EVENT_DETAILS.venue },
-    { key: 'holder', label: 'UTAS', value: ticket.holder_name || '' }
+    { key: 'terminal', label: 'TERMINÁL', value: 'FŐ TÉR 4.' },
+    { key: 'class', label: 'OSZTÁLY', value: vip ? 'BUSINESS' : 'ECONOMY' },
+    { key: 'boarding', label: 'BOARDING', value: EVENT_DETAILS.doorsOpen }
+  );
+  pass.secondaryFields.push(
+    { key: 'holder', label: 'UTAS', value: (ticket.holder_name || '').toUpperCase() },
+    { key: 'tier', label: 'JEGY', value: vip ? 'VIP' : ticket.tier_name || '', textAlignment: 'PKTextAlignmentRight' }
   );
   pass.backFields.push(
     { key: 'code', label: 'Jegykód', value: ticket.code },
+    { key: 'venue', label: 'Terminál', value: EVENT_DETAILS.venue },
     { key: 'address', label: 'Cím', value: EVENT_DETAILS.address },
     { key: 'order', label: 'Rendelésszám', value: ticket.order_id },
     { key: 'terms', label: 'Tudnivalók', value: 'A jegy névre szóló, nem átruházható, és egy fő egyszeri belépésére jogosít. A belépéskor mutasd fel a QR-kódot – az első beolvasás után a kód felhasznált, második belépésnél a rendszer már nem enged be. Korhatár: 18+.' }

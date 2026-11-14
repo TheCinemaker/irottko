@@ -232,7 +232,7 @@ function Dashboard({ d }) {
             }`}
           >
             {label}
-            {k === 'orders' && d.problems.some((o) => !o.emailSent) && <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-red-500" />}
+            {k === 'orders' && (d.problems.some((o) => !o.emailSent) || d.paymentIssues?.length > 0) && <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-red-500" />}
             {k === 'door' && d.duplicates.length > 0 && <span className="ml-1.5 text-xs text-red-400">{d.duplicates.length}</span>}
           </button>
         ))}
@@ -404,6 +404,19 @@ function Orders({ d }) {
 
   return (
     <div className="space-y-4">
+      {d.paymentIssues?.length > 0 && (
+        <Alert red>
+          <strong>Fizetés-eltérés – kézi ellenőrzés kell!</strong> A Barion szerinti fizetés nem egyezik a rendeléssel, ezért a rendszer nem
+          adott ki jegyet:
+          <ul className="mt-2 list-disc pl-5">
+            {d.paymentIssues.map((o) => (
+              <li key={o.id}>
+                {o.name} ({o.email}) · {huf(o.total)} · {dt(o.at)} · Barion: <span className="font-mono">{o.paymentId}</span> · {o.error}
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      )}
       {noEmail.length > 0 && (
         <Alert red>
           {noEmail.length} fizetett rendelésnél nem ment ki a jegy e-mail: {noEmail.map((o) => o.name).join(', ')}. A rendszer 5 percenként
