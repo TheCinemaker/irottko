@@ -29,7 +29,7 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <Link to="/jegyek" className="hidden rounded-full bg-[#d4af37] px-4 py-1.5 text-[13px] font-semibold text-black transition-colors hover:bg-[#e3c45c] md:inline-flex">
+        <Link to="/jegyek" className="hidden rounded-[4px] bg-[#d4af37] px-4 py-1.5 text-[13px] font-semibold text-black transition-colors hover:bg-[#e3c45c] md:inline-flex">
           Check-in
         </Link>
       </div>

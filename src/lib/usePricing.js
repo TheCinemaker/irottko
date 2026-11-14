@@ -67,6 +67,12 @@ export const dayHu = (iso) =>
   new Intl.DateTimeFormat('hu-HU', { month: 'long', day: 'numeric', timeZone: 'Europe/Budapest' }).format(new Date(iso));
 
 /** Button label: "Jegyek 6 990 Ft-tól" while on sale, otherwise just "Jegyek". */
+/** Lowest current ticket price (standard or VIP), or null. */
+export const fromPrice = (p) => {
+  const prices = [p?.standard, p?.vip].filter(Boolean).map((t) => t.price_huf);
+  return prices.length ? Math.min(...prices) : null;
+};
+
 export const fromLabel = (p) => {
   const prices = [p.standard, p.vip].filter(Boolean).map((t) => t.price_huf);
   return prices.length ? `Beszállókártya ${huf(Math.min(...prices))}-tól` : 'Beszállókártyák';

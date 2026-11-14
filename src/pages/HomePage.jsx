@@ -5,8 +5,9 @@ import PageShell from '../components/PageShell';
 import HeroSection from '../components/HeroSection';
 import BarTiles from '../components/BarTiles';
 import LineupBoard from '../components/LineupBoard';
-import { usePricing, fromLabel } from '../lib/usePricing';
+import { usePricing } from '../lib/usePricing';
 import { INFO, KITCHEN } from '../data/eventData';
+import TicketButton from '../components/TicketButton';
 
 export default function HomePage() {
   const pricing = usePricing();
@@ -49,9 +50,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-4xl px-5 py-16 text-center sm:py-28">
         <h2 className="display text-[2rem] sm:text-6xl">Csak egy járat indul!</h2>
         <p className="mx-auto mt-3 max-w-sm text-[15px] text-gray-400">Nincs pótjárat, nincs második gép. Aki lemarad, a földön marad.</p>
-        <Link to="/jegyek" className="btn-primary mt-6">
-          {fromLabel(pricing)}
-        </Link>
+        <TicketButton pricing={pricing} className="mx-auto mt-6" />
       </section>
     </PageShell>
   );

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
-import { usePricing, fromLabel } from '../lib/usePricing';
+import { usePricing } from '../lib/usePricing';
+import TicketButton from './TicketButton';
 import { EVENT_DETAILS } from '../data/eventData';
 
 /*
@@ -37,7 +36,7 @@ export default function HeroSection() {
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-[#05030a] via-[#05030a]/55 to-[#05030a]/30" />
 
-      <div className="relative mx-auto w-full max-w-6xl px-5 pb-16 text-center sm:pb-24">
+      <div className="relative mx-auto w-full max-w-6xl px-5 pb-[calc(var(--tabbar,0px)+10svh)] text-center sm:pb-[16vh]">
         <div className="kicker">2027. január 15. · Kőszeg</div>
         <h1 className="display mt-5 text-[2.9rem] sm:text-8xl">
           One Night
@@ -46,12 +45,7 @@ export default function HeroSection() {
         <p className="mx-auto mt-5 max-w-md text-lg text-gray-300 sm:text-xl">Csak egy járat indul! Négy fellépő, három bár a fedélzeten.</p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link to="/jegyek" className="btn-primary w-full max-w-xs sm:w-auto">
-            {fromLabel(pricing)}
-          </Link>
-          <Link to="/lineup" className="link-more">
-            Menetrend <ChevronRight className="h-4 w-4" />
-          </Link>
+          <TicketButton pricing={pricing} />
         </div>
 
         {days > 0 && (
