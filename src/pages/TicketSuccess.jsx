@@ -8,7 +8,7 @@ import { saveMyTickets } from '../lib/myTickets';
 import { SELLER } from '../data/legal';
 
 /*
-  Barion redirects here with ?paymentId=…  The page asks the server for the
+  Barion redirects here with ?o=<order>&t=<token> (lib/orderAccess.js)  The page asks the server for the
   real state (which also triggers ticket issuing if the callback is late) and
   polls while the bank is still processing.
 */
@@ -19,11 +19,14 @@ const qrSrc = (code) => `/.netlify/functions/ticket-qr?c=${encodeURIComponent(co
 
 export default function TicketSuccess() {
   const [params] = useSearchParams();
-  const paymentId = params.get('paymentId');
-  const [state, setState] = useState(paymentId ? { status: 'loading' } : { status: 'none' });
+  // o = order id, t = its access token (the Barion paymentId in the URL grants nothing)
+  const orderId = params.get('o');
+  // first 22 URL-safe chars: robust even if a payment page appends ?paymentId=… naively
+  const token = ((params.get('t') || '').match(/^[A-Za-z0-9_-]{22}/) || [''])[0];
+  const [state, setState] = useState(orderId && token ? { status: 'loading' } : { status: 'none' });
 
   useEffect(() => {
-    if (!paymentId) return;
+    if (!orderId || !token) return;
     let stop = false;
     let polls = 0;
     let timer;
@@ -31,7 +34,7 @@ export default function TicketSuccess() {
     const tick = async () => {
       polls += 1;
       try {
-        const res = await fetch(`/.netlify/functions/order-status?paymentId=${encodeURIComponent(paymentId)}`);
+        const res = await fetch(`/.netlify/functions/order-status?o=${encodeURIComponent(orderId)}&t=${encodeURIComponent(token)}`);
         const data = await res.json();
         if (stop) return;
         if (data.status === 'paid') {
@@ -40,7 +43,7 @@ export default function TicketSuccess() {
           confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#d4af37', '#f7e7a9', '#ffffff'] });
           return;
         }
-        if (['cancelled', 'expired', 'unknown', 'payment_check'].includes(data.status)) return setState(data);
+        if (['cancelled', 'expired', 'unknown', 'payment_check', 'forbidden'].includes(data.status)) return setState(data);
         setState({ status: 'pending' });
       } catch {
         if (stop) return;
@@ -55,7 +58,7 @@ export default function TicketSuccess() {
       stop = true;
       clearTimeout(timer);
     };
-  }, [paymentId]);
+  }, [orderId, token]);
 
   return (
     <PageShell>
@@ -119,6 +122,7 @@ const MESSAGES = {
   cancelled: ['A fizetés nem sikerült.', 'A kártyádat nem terheltük meg. Próbáld újra, a foglalásod felszabadult.'],
   expired: ['A fizetési idő lejárt.', 'A kártyádat nem terheltük meg. Indíts új vásárlást.'],
   unknown: ['Ezt a rendelést nem találjuk.', null],
+  forbidden: ['Ez a link nem érvényes.', 'Nyisd meg a jegyeidet a visszaigazoló e-mailben kapott gombbal.'],
   payment_check: [
     'A fizetést ellenőriznünk kell.',
     'A fizetésed megérkezett, de az adatai eltérnek a rendeléstől, ezért kézzel ellenőrizzük. Ha a bankod terhelt, nem veszik el: e-mailben jelentkezünk. Kérdés esetén írj a ' + SELLER.email + ' címre.',
@@ -129,7 +133,7 @@ const MESSAGES = {
 function Status({ status }) {
   const [title, text] = MESSAGES[status] || MESSAGES.unknown;
   const busy = status === 'loading' || status === 'pending';
-  const failed = status === 'cancelled' || status === 'expired' || status === 'unknown' || status === 'none';
+  const failed = ['cancelled', 'expired', 'unknown', 'none', 'forbidden'].includes(status);
   return (
     <div className="text-center">
       {busy ? (

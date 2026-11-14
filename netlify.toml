@@ -24,6 +24,30 @@
   port = 8888
   framework = "#custom"
 
+# Security headers. frame-ancestors/X-Frame-Options: the site (checkout,
+# scanner, admin) can't be framed by another site (clickjacking). Camera only
+# for our own pages (the door scanner).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=(), payment=()"
+
+# Admin and scanner: never cached, never indexed.
+[[headers]]
+  for = "/admin"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"
+[[headers]]
+  for = "/scan"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"
+
 # SPA: every route (/jegyek, /success, /barok/bor …) serves index.html.
 [[redirects]]
   from = "/*"

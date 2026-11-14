@@ -11,6 +11,7 @@ import QRCode from 'qrcode';
 import { EVENT_DETAILS } from '../../../src/data/eventData.js';
 import { appUrl } from './db.js';
 import { ticketsPdf } from './ticketPdf.js';
+import { orderLink } from './orderAccess.js';
 
 const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -95,7 +96,7 @@ function html(order, tickets) {
       ${cards}
 
       ${order.payment_ref ? `<tr><td align="center" style="padding:4px 8px 24px">
-        <a href="${appUrl()}/success?paymentId=${encodeURIComponent(order.payment_ref)}" style="display:inline-block;padding:14px 26px;border-radius:999px;background:#d4af37;color:#05030a;font:600 15px/1 ${FONT};text-decoration:none">Beszállókártyák megnyitása az appban</a>
+        <a href="${orderLink(appUrl(), order.id)}" style="display:inline-block;padding:14px 26px;border-radius:999px;background:#d4af37;color:#05030a;font:600 15px/1 ${FONT};text-decoration:none">Beszállókártyák megnyitása az appban</a>
         <div style="margin-top:10px;font:400 12px/1.5 ${FONT};color:#86868b">Nyisd meg a telefonodon: a jegyek a Jegyek fülön is ott lesznek.</div>
       </td></tr>` : ''}
 

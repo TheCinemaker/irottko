@@ -5,6 +5,7 @@ import { db, appUrl, json } from './lib/db.js';
 import { startPayment } from './lib/barion.js';
 import { loadOrder, lines } from './lib/fulfill.js';
 import { verifyTurnstile } from './lib/turnstile.js';
+import { orderLink } from './lib/orderAccess.js';
 
 const SLUG = () => process.env.EVENT_SLUG || process.env.VITE_EVENT_SLUG || 'one-night-irottko';
 
@@ -154,7 +155,7 @@ export const handler = async (event) => {
         unitPrice: l.unitPrice,
         sku: l.tier,
       })),
-      redirectUrl: `${appUrl()}/success`,
+      redirectUrl: orderLink(appUrl(), orderId), // Barion appends &paymentId=…; access is the token
       callbackUrl: `${appUrl()}/.netlify/functions/barion-callback`,
       // Barion closes 1 minute before our hold ends, so a payment can never
       // succeed after the tickets were released to someone else.

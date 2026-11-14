@@ -1,20 +1,29 @@
-// GET /.netlify/functions/order-status?paymentId=…
-// Used by the /success page after Barion redirects back. Also syncs the
-// payment, so tickets go out even if the callback is late or lost.
-// Only someone holding the paymentId (the buyer's redirect URL) can read this.
-import { json } from './lib/db.js';
+// GET /.netlify/functions/order-status?o=<orderId>&t=<token>
+// Used by the /success page (after the Barion redirect, or from the e-mail
+// link). Also syncs the payment, so tickets go out even if the callback is late
+// or lost. Access needs the order's HMAC token (lib/orderAccess.js) – the Barion
+// PaymentId alone is guessable and grants nothing.
+import { db, json } from './lib/db.js';
 import { syncPayment, loadOrder } from './lib/fulfill.js';
+import { validOrderToken } from './lib/orderAccess.js';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const handler = async (event) => {
-  const paymentId = event.queryStringParameters?.paymentId;
-  if (!paymentId || !/^[0-9a-fA-F-]{32,36}$/.test(paymentId)) return json(400, { error: 'missing paymentId' });
+  const q = event.queryStringParameters || {};
+  const orderId = String(q.o || '');
+  if (!UUID.test(orderId) || !validOrderToken(orderId, String(q.t || ''))) return json(403, { status: 'forbidden' });
 
   try {
-    const r = await syncPayment(paymentId);
-    if (!r.orderId) return json(404, { status: 'unknown' });
-    if (r.status !== 'paid') return json(200, { status: r.status });
+    const { data: o, error } = await db().from('orders').select('id, status, payment_ref').eq('id', orderId).maybeSingle();
+    if (error) throw error;
+    if (!o) return json(404, { status: 'unknown' });
 
-    const { order, tickets } = await loadOrder(r.orderId);
+    let status = o.status;
+    if (o.payment_ref && o.status !== 'paid') status = (await syncPayment(o.payment_ref)).status;
+    if (status !== 'paid') return json(200, { status });
+
+    const { order, tickets } = await loadOrder(orderId);
     return json(200, {
       status: 'paid',
       order: {
