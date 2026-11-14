@@ -15,7 +15,7 @@ export const DJS = [
   { id: "saffron", name: "SAFFRON", time: "19:00 – 22:00" },
   { id: "dj-barany", name: "DJ Bárány Attila", time: "22:00 – 23:30", headliner: true },
   { id: "frombob", name: "fromBOB", time: "23:30 – 01:00" },
-  { id: "tisztafaxxa", name: "TISZTAFAXXA Classics", time: "01:00-tól" },
+  { id: "tisztafaxxa", name: "TISZTAFAXXA", time: "01:00-tól" },
 ];
 
 // Bars and their operators (from the organiser, 2026-11-13).
@@ -76,7 +76,7 @@ export const INFO = [
   { label: "DJ-pult", value: "Első emelet, karzat" },
   {
     label: "Dress code",
-    value: "Hozd a 90-es, 2000-es évek hangulatát! Kockás ing, farmer, terepnadrág – minél „akkoribb\", annál jobb.",
+    value: "Hozd a 90-es, 2000-es évek hangulatát! Kockás ing, farmer, terepnadrág – minél „akkoribb”, annál jobb.",
   },
   { label: "Beszállás", value: "Névre szóló beszállókártyával, 18 éven felülieknek. Fényképes igazolványt hozz magaddal." },
 ];

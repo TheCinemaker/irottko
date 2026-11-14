@@ -30,7 +30,7 @@ function Pass({ t, onOpen }) {
     <button
       type="button"
       onClick={onOpen}
-      className={`w-full overflow-hidden rounded-3xl text-left transition-transform active:scale-[0.98] ${
+      className={`w-full overflow-hidden rounded-[6px] text-left transition-transform active:scale-[0.98] ${
         t.vip ? 'bg-[#d4af37] text-[#05030a]' : 'border border-white/10 bg-white/[0.05] text-white'
       }`}
     >
@@ -53,7 +53,7 @@ function Pass({ t, onOpen }) {
         <span className="-mr-5 h-6 w-6 rounded-full bg-[#05030a]" />
       </div>
       <div className="flex items-center gap-5 p-6 pt-4">
-        <div className="shrink-0 rounded-xl bg-white p-2">
+        <div className="shrink-0 rounded-[4px] bg-white p-2">
           {qr ? <img src={qr} alt={`QR-kód: ${t.code}`} className="h-24 w-24" /> : <div className="h-24 w-24" />}
         </div>
         <div className="min-w-0">

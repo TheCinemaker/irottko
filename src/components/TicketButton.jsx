@@ -3,7 +3,7 @@ import { fromPrice, huf } from '../lib/usePricing';
 
 /*
   The main call to action, shaped like a small boarding pass: the gold part
-  is the button, and after a perforation a lighter stub carries the price.
+  is the button, and after a perforation a lighter stub carries the price ("6 990 Ft" / "-tól").
   Glass look: translucent gold + backdrop blur, so the photo shows through.
   Without a price (pricing not loaded / sales closed) it is a plain gold tab.
 */
@@ -20,8 +20,8 @@ export default function TicketButton({ pricing, label = 'Beszállókártya', to 
       </span>
       {price != null && (
         <span className="flex w-[6.5rem] shrink-0 flex-col items-center justify-center border-l-2 border-dashed border-[#05030a]/35 bg-gradient-to-b from-[#fff1c4]/80 to-[#ead18a]/60">
-          <span className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-70">ár-tól</span>
           <span className="text-[15px] font-bold leading-tight">{huf(price)}</span>
+          <span className="text-[11px] font-semibold leading-none opacity-70">-tól</span>
         </span>
       )}
     </Link>

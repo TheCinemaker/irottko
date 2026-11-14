@@ -46,7 +46,7 @@ body {
     @apply rounded-3xl border border-white/10 bg-white/[0.035];
   }
   .field {
-    @apply w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[16px] text-white placeholder-gray-500 transition-colors focus:border-[#d4af37] focus:outline-none;
+    @apply w-full rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-[16px] text-white placeholder-gray-500 transition-colors focus:border-[#d4af37] focus:outline-none;
   }
 }
 
@@ -151,4 +151,6 @@ a, button { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 767px) {
   html.kb-open { --tabbar: 0px; }
   html.kb-open .hide-on-keyboard { display: none !important; }
+  .show-on-keyboard { display: none; }
+  html.kb-open .show-on-keyboard { display: block; }
 }

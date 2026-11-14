@@ -37,7 +37,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-t from-[#05030a] via-[#05030a]/55 to-[#05030a]/30" />
 
       <div className="relative mx-auto w-full max-w-6xl px-5 pb-[calc(var(--tabbar,0px)+10svh)] text-center sm:pb-[16vh]">
-        <div className="kicker">2027. január 15. · Kőszeg</div>
+        <div className="kicker text-[13px] font-bold text-[#f3d77a] underline decoration-[#d4af37] decoration-2 underline-offset-[8px] [text-shadow:0_1px_8px_rgba(0,0,0,0.8)]">2027. január 15. · Kőszeg</div>
         <h1 className="display mt-5 text-[2.9rem] sm:text-8xl">
           One Night
           <span className="block pt-[0.06em] text-[#d4af37]">at Írottkő</span>
@@ -49,11 +49,41 @@ export default function HeroSection() {
         </div>
 
         {days > 0 && (
-          <div className="mt-10 text-[13px] text-gray-400">
-            Gate open {EVENT_DETAILS.doorsOpen} · indulásig <span className="text-white">{days} nap</span>
+          <div className="mx-auto mt-4 flex w-full max-w-xs items-stretch overflow-hidden rounded-[4px] border border-white/15 bg-[#05030a]/70 backdrop-blur-md sm:w-[22rem] sm:max-w-none">
+            <BoardCell label="Gate open" value={EVENT_DETAILS.doorsOpen} />
+            <span className="w-px border-l border-dashed border-white/15" />
+            <BoardCell label="Indulásig" value={String(days)} unit="nap" delay={4} />
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+/* A cell of the mini departures board: label + split-flap tiles (same look as
+   the line-up board, smaller). Tiles flip in one after another on load. */
+function BoardCell({ label, value, unit, delay = 0 }) {
+  return (
+    <div className="flex flex-1 flex-col items-center gap-2 px-3 py-2.5">
+      <span className="text-[13px] font-bold uppercase tracking-[0.18em] text-white">{label}</span>
+      <span className="flex items-center gap-[3px]" aria-label={`${value}${unit ? ` ${unit}` : ''}`}>
+        {[...value].map((ch, i) =>
+          ch === ':' ? (
+            <span key={i} className="px-[1px] text-[14px] font-bold text-[#d4af37]" aria-hidden="true">:</span>
+          ) : (
+            <span
+              key={i}
+              aria-hidden="true"
+              className="flap flap-in relative inline-flex h-[26px] w-[18px] items-center justify-center rounded-[3px] bg-[#16121f] font-mono text-[15px] font-bold text-[#f3d77a]"
+              style={{ animationDelay: `${(delay + i) * 90}ms` }}
+            >
+              {ch}
+              <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-black/35" />
+            </span>
+          )
+        )}
+        {unit && <span className="ml-1.5 text-[12px] font-semibold uppercase tracking-[0.15em] text-gray-300" aria-hidden="true">{unit}</span>}
+      </span>
+    </div>
   );
 }

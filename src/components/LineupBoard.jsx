@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, DoorOpen, PlaneTakeoff, Plane, PlaneLanding } from 'lucide-react';
 import { DJS } from '../data/eventData';
 
 /*
@@ -9,7 +9,14 @@ import { DJS } from '../data/eventData';
   board scrolls into view. Status tags are mood only (no claims about the
   artists).
 */
-const STATUS = ['Boarding', 'Take-off', 'In flight', 'Landing'];
+export const STATUS = ['Boarding', 'Take-off', 'In flight', 'Landing'];
+// A small, static icon per phase (no blinking – the user's call).
+export const PHASE = [
+  { Icon: DoorOpen, anim: 'phase-board' },
+  { Icon: PlaneTakeoff, anim: 'phase-takeoff' },
+  { Icon: Plane, anim: 'phase-cruise' },
+  { Icon: PlaneLanding, anim: 'phase-land' },
+];
 
 function useInView(ref) {
   const [seen, setSeen] = useState(false);
@@ -24,16 +31,36 @@ function useInView(ref) {
   return seen;
 }
 
-function Flap({ chars, on, delay }) {
+/* The gold highlight walks down the board one row at a time and starts again
+   – like a departures screen paging through flights. Begins once the tiles have
+   flipped in. Reduced motion: no walk, only the headliner stays gold (-1). */
+function useWalk(on, count, ms = 4000) { // ≈2.5 s lit + 1.5 s fade
+  const [active, setActive] = useState(-1);
+  useEffect(() => {
+    if (!on || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    let id;
+    const start = setTimeout(() => {
+      setActive(0);
+      id = setInterval(() => setActive((a) => (a + 1) % count), ms);
+    }, 1400);
+    return () => {
+      clearTimeout(start);
+      clearInterval(id);
+    };
+  }, [on, count, ms]);
+  return active;
+}
+
+export function Flap({ chars, on, delay, small = false }) {
   return (
     <span className="inline-flex gap-[3px]" aria-hidden="true">
       {[...chars].map((ch, i) =>
         ch === ':' ? (
-          <span key={i} className="self-center px-[1px] text-[18px] font-bold text-[#d4af37]">:</span>
+          <span key={i} className={`self-center px-[1px] ${small ? 'text-[16px]' : 'text-[22px]'} font-bold text-[#d4af37]`}>:</span>
         ) : (
           <span
             key={i}
-            className={`flap relative inline-flex h-[34px] w-[24px] items-center justify-center rounded-[5px] bg-[#16121f] font-mono text-[20px] font-bold text-[#f3d77a] ${on ? 'flap-in' : 'opacity-0'}`}
+            className={`flap relative inline-flex ${small ? 'h-[30px] w-[20px] text-[17px]' : 'h-[38px] w-[26px] text-[24px]'} items-center justify-center rounded-[5px] bg-[#16121f] font-mono font-bold text-[#f3d77a] ${on ? 'flap-in' : 'opacity-0'}`}
             style={{ animationDelay: `${delay + i * 70}ms` }}
           >
             {ch}
@@ -48,6 +75,7 @@ function Flap({ chars, on, delay }) {
 export default function LineupBoard() {
   const board = useRef(null);
   const on = useInView(board);
+  const active = useWalk(on, DJS.length);
 
   return (
     <section className="mx-auto max-w-3xl px-5 pt-16 sm:pt-28">
@@ -61,38 +89,32 @@ export default function LineupBoard() {
 
       <div ref={board} className="mt-7 overflow-hidden rounded-3xl border border-white/10 bg-[#0b0812]">
         <div className="flex items-center gap-4 border-b border-white/[0.07] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">
-          <span className="w-[114px] shrink-0">Idő</span>
+          <span className="w-[124px] shrink-0">Idő</span>
           <span>Fellépő</span>
         </div>
         <ol>
           {DJS.map((dj, i) => {
             const start = dj.time.slice(0, 5);
+            const lit = active === -1 ? dj.headliner : active === i; // the gold "now" row
+            const fade = 'transition-[opacity,color] duration-[1500ms] ease-in-out';
             return (
-              <li
-                key={dj.id}
-                className={`relative flex items-center gap-4 border-b border-white/[0.06] px-5 py-4 last:border-b-0 ${
-                  dj.headliner ? 'bg-[linear-gradient(90deg,rgba(212,175,55,0.16),rgba(212,175,55,0.02))]' : ''
-                }`}
-              >
-                {dj.headliner && <span className="absolute inset-y-0 left-0 w-[3px] bg-[#d4af37]" />}
+              <li key={dj.id} className="relative flex items-center gap-4 border-b border-white/[0.06] px-5 py-4 last:border-b-0">
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(212,175,55,0.18),rgba(212,175,55,0.02))] ${fade} ${lit ? 'opacity-100' : 'opacity-0'}`}
+                />
+                <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-[3px] bg-[#d4af37] ${fade} ${lit ? 'opacity-100' : 'opacity-0'}`} />
                 <span className="sr-only">{dj.time}</span>
-                <span className="w-[114px] shrink-0">
+                <span className="relative w-[124px] shrink-0">
                   <Flap chars={start} on={on} delay={i * 260} />
                 </span>
-                <div className="min-w-0 flex-1">
-                  <div className={`artist break-words ${dj.headliner ? 'text-[1.4rem] text-[#d4af37]' : 'text-[1.15rem]'}`}>{dj.name}</div>
+                <div className="relative min-w-0 flex-1">
+                  <div className={`artist break-words ${fade} ${dj.headliner ? 'text-[1.2rem]' : 'text-[1.15rem]'} ${lit || dj.headliner ? 'text-[#d4af37]' : 'text-white'}`}>
+                    {dj.name}
+                  </div>
                   <div className="mt-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
-                    {dj.headliner ? (
-                      <>
-                        <span className="relative flex h-2 w-2">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d4af37] opacity-70" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-[#d4af37]" />
-                        </span>
-                        <span className="text-[#d4af37]">{STATUS[i]}</span>
-                      </>
-                    ) : (
-                      <span className="text-gray-500">{STATUS[i]}</span>
-                    )}
+                    <span className={`${fade} ${lit ? 'text-[#d4af37]' : 'text-gray-500'}`}>{STATUS[i]}</span>
+                    <PhaseIcon i={i} gold={lit} />
                   </div>
                 </div>
               </li>
@@ -105,5 +127,15 @@ export default function LineupBoard() {
         Teljes menetrend <ChevronRight className="h-4 w-4" />
       </Link>
     </section>
+  );
+}
+
+function PhaseIcon({ i, gold }) {
+  if (!PHASE[i]) return null;
+  const { Icon } = PHASE[i];
+  return (
+    <span className="ml-1 inline-flex h-5 w-7 items-center justify-center overflow-hidden" aria-hidden="true">
+      <Icon className={`h-4 w-4 transition-colors duration-[1500ms] ${gold ? 'text-[#d4af37]' : 'text-gray-400'}`} strokeWidth={2} />
+    </span>
   );
 }

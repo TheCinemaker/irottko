@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Lock, AlertCircle, ChevronLeft, Minus, Plus } from 'lucide-react';
+import { Check, Lock, AlertCircle, ChevronLeft, Minus, Plus, Plane, Armchair, Crown, Users } from 'lucide-react';
 import Turnstile from './Turnstile';
 import { TICKET_PERKS } from '../data/eventData';
 import { usePricing, huf, dayHu } from '../lib/usePricing';
@@ -148,20 +148,21 @@ export default function TicketSection() {
                     key={tier.id}
                     type="button"
                     onClick={() => setSelectedKind(tier.kind)}
-                    className={`rounded-3xl border p-6 text-left transition-[border-color,transform] active:scale-[0.99] ${
-                      on ? 'border-[#d4af37] bg-white/[0.05]' : 'border-white/10'
+                    aria-pressed={on}
+                    className={`flex overflow-hidden rounded-[6px] border text-left transition-[border-color,transform] active:scale-[0.99] ${
+                      on ? 'border-[#d4af37] bg-[linear-gradient(135deg,rgba(212,175,55,0.14),rgba(212,175,55,0.02)_60%)]' : 'border-white/10 bg-[#0b0812]'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-[12px] font-medium uppercase tracking-[0.15em] text-gray-400">
+                   <div className="min-w-0 flex-1 p-5">
+                    <div className="flex items-center gap-3">
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] ${on ? 'bg-[#d4af37] text-[#05030a]' : 'border border-[#d4af37]/40 text-[#d4af37]'}`} aria-hidden="true">
+                        {tier.kind === 'vip' ? <Crown className="h-5 w-5" strokeWidth={2.25} /> : <Armchair className="h-5 w-5" strokeWidth={2.25} />}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#d4af37]">
                           {tier.kind === 'vip' ? 'Business · VIP Lounge' : tier.channel === 'door' ? 'Gate-nél váltott jegy' : 'Economy'}
                         </div>
-                        <div className="mt-2 text-xl font-semibold text-white">{tier.name}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-semibold tabular-nums text-white">{huf(tier.price_huf)}</div>
-                        <div className="text-[12px] text-gray-500">/ fő</div>
+                        <div className="mt-0.5 text-xl font-semibold text-white">{tier.name}</div>
                       </div>
                     </div>
                     {tier.kind === 'standard' && pricing.next && (
@@ -182,15 +183,26 @@ export default function TicketSection() {
                         ))}
                       </ul>
                     )}
+                   </div>
+                   {/* price stub after a perforation – like the hero's boarding-pass button */}
+                   <div className={`flex w-[6.5rem] shrink-0 flex-col items-center justify-start border-l-2 border-dashed px-2 pt-6 text-center ${on ? 'border-[#d4af37]/40 bg-[#d4af37]/10' : 'border-white/10'}`}>
+                     <div className="text-[17px] font-bold leading-tight tabular-nums text-white">{huf(tier.price_huf)}</div>
+                     <div className="text-[11px] text-gray-400">/ fő</div>
+                   </div>
                   </button>
                 );
               })}
             </div>
 
-            <div className="mt-6 flex items-center justify-between rounded-3xl border border-white/10 p-5">
-              <div>
-                <div className="text-[15px] font-medium text-white">Hány utas?</div>
-                <div className="text-[13px] text-gray-500">Egy foglalásban legfeljebb 10</div>
+            <div className="mt-6 flex items-center justify-between gap-3 rounded-[6px] border border-white/10 bg-[#0b0812] p-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border border-[#d4af37]/40 text-[#d4af37]" aria-hidden="true">
+                  <Users className="h-5 w-5" strokeWidth={2.25} />
+                </span>
+                <div>
+                  <div className="text-[15px] font-semibold text-white">Hány utas?</div>
+                  <div className="text-[12px] text-gray-500">Egy foglalásban legfeljebb 10</div>
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <RoundButton label="Kevesebb jegy" disabled={ticketCount <= 1} onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}>
@@ -286,7 +298,7 @@ export default function TicketSection() {
         {step === 3 && (
           <>
             <StepTitle title="Utolsó ellenőrzés." />
-            <dl className="divide-y divide-white/[0.08] rounded-3xl border border-white/10 px-5">
+            <dl className="divide-y divide-white/[0.08] overflow-hidden rounded-[6px] border border-white/10 bg-[#0b0812] px-5">
               <SummaryRow label="Járat" onEdit={() => goTo(0)}>
                 {ticketCount} × {selectedTier.name} · {huf(selectedTier.price_huf)}
               </SummaryRow>
@@ -335,12 +347,27 @@ export default function TicketSection() {
             </p>
           </>
         )}
+
+        {/* Keyboard up (phones): the sticky bar and tab bar hide so the field
+            stays visible – this in-form button takes over right under the
+            fields. Shown only while typing (html.kb-open, see index.css). */}
+        <div className="show-on-keyboard mt-5">
+          {errorMsg && (
+            <div role="alert" className="mb-3 flex items-start gap-2 text-[13px] text-red-300">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+          <button type="submit" disabled={submitting} className="btn-primary h-12 w-full text-[15px] disabled:opacity-50">
+            {step < 3 ? 'Tovább' : 'Fizetés'}
+          </button>
+        </div>
       </form>
 
       {/* ---------- sticky action bar ---------- */}
       <div className="hide-on-keyboard sticky bottom-[var(--tabbar)] z-30 -mx-5 mt-8 border-t border-white/[0.08] bg-[#05030a]/90 px-5 pb-4 pt-3 backdrop-blur-xl">
         {errorMsg && (
-          <div role="alert" className="mb-3 flex items-start gap-2.5 rounded-xl border border-red-500/40 bg-red-950/50 p-3 text-[13px] text-red-200">
+          <div role="alert" className="mb-3 flex items-start gap-2.5 rounded-[4px] border border-red-500/40 bg-red-950/50 p-3 text-[13px] text-red-200">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
@@ -351,16 +378,16 @@ export default function TicketSection() {
               type="button"
               onClick={() => goTo(step - 1)}
               aria-label="Vissza"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/15 text-white active:scale-95"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[4px] border border-white/15 text-white active:scale-95"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
           )}
           <div className="min-w-0 flex-1">
-            <div className="text-[12px] text-gray-500">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
               {ticketCount} × {selectedTier.name}
             </div>
-            <div className="text-xl font-semibold tabular-nums text-white">{huf(totalPrice)}</div>
+            <div className="font-mono text-xl font-bold tabular-nums text-[#f3d77a]">{huf(totalPrice)}</div>
           </div>
           <button type="button" onClick={next} disabled={submitting} className="btn-primary h-12 shrink-0 px-6 text-[15px] disabled:opacity-50">
             {submitting ? (
@@ -388,20 +415,33 @@ export default function TicketSection() {
 /* ------------------------------ parts ------------------------------ */
 
 function Progress({ step, onJump }) {
+  // A flight route: four stops on a dashed line, the plane sits on the current one.
   return (
-    <ol className="grid grid-cols-4 gap-2" aria-label="Vásárlás lépései">
+    <ol className="relative grid grid-cols-4" aria-label="Vásárlás lépései">
+      <span className="absolute left-[12.5%] right-[12.5%] top-[15px] border-t-2 border-dashed border-white/15" aria-hidden="true" />
+      <span
+        className="absolute left-[12.5%] top-[15px] border-t-2 border-dashed border-[#d4af37] transition-[width] duration-500"
+        style={{ width: `${(step / (STEPS.length - 1)) * 75}%` }}
+        aria-hidden="true"
+      />
       {STEPS.map((label, i) => (
-        <li key={label}>
+        <li key={label} className="relative">
           <button
             type="button"
             onClick={() => onJump(i)}
             disabled={i >= step}
             aria-current={i === step ? 'step' : undefined}
-            className="w-full text-left disabled:cursor-default"
+            className="flex w-full flex-col items-center disabled:cursor-default"
           >
-            <span className={`block h-1 rounded-full transition-colors ${i <= step ? 'bg-[#d4af37]' : 'bg-white/10'}`} />
-            <span className={`mt-2 block text-[12px] font-medium ${i === step ? 'text-white' : i < step ? 'text-[#d4af37]' : 'text-gray-600'}`}>
-              {i + 1}. {label}
+            <span
+              className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors ${
+                i === step ? 'border-[#d4af37] bg-[#d4af37] text-[#05030a]' : i < step ? 'border-[#d4af37] bg-[#05030a] text-[#d4af37]' : 'border-white/15 bg-[#05030a] text-gray-600'
+              }`}
+            >
+              {i === step ? <Plane className="h-4 w-4" strokeWidth={2.5} /> : i < step ? <Check className="h-4 w-4" strokeWidth={3} /> : <span className="text-[12px] font-bold">{i + 1}</span>}
+            </span>
+            <span className={`mt-2 text-[11px] font-bold uppercase tracking-[0.12em] ${i === step ? 'text-white' : i < step ? 'text-[#d4af37]' : 'text-gray-600'}`}>
+              {label}
             </span>
           </button>
         </li>
@@ -435,7 +475,7 @@ function RoundButton({ label, disabled, onClick, children }) {
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white transition-transform active:scale-90 disabled:opacity-30"
+      className="flex h-10 w-10 items-center justify-center rounded-[4px] border border-white/20 text-[#d4af37] transition-transform active:scale-90 disabled:opacity-30"
     >
       {children}
     </button>

@@ -4,14 +4,17 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
   Cloudflare Turnstile ("not a robot") – Managed mode, shown only if Cloudflare
   needs an interaction; usually invisible. onToken(token | '') reports the
   current token; ref.reset() gets a fresh one (tokens are single-use).
-  On a LAN IP (local phone testing) Turnstile rejects the hostname, so the
-  official always-pass test key is used there.
+  On the local dev server (and on a LAN IP) the official always-pass test key
+  is used, so it matches the server's TURNSTILE_TEST_MODE.
 */
 const TEST_SITE_KEY = '1x00000000000000000000AA';
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
+// Local dev server (any address – LAN IP, localhost, the Mac's name): always the
+// test key, matching the server's TURNSTILE_TEST_MODE=1 in the local .env.
+// The production build always uses the real key.
 const isLanIp = () => /^\d{1,3}(\.\d{1,3}){3}$/.test(window.location.hostname);
-const siteKey = () => (isLanIp() ? TEST_SITE_KEY : import.meta.env.VITE_TURNSTILE_SITE_KEY);
+const siteKey = () => (import.meta.env.DEV || isLanIp() ? TEST_SITE_KEY : import.meta.env.VITE_TURNSTILE_SITE_KEY);
 
 let scriptPromise;
 function loadScript() {

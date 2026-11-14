@@ -1,5 +1,6 @@
 import React from 'react';
-import PageShell, { PageHeader } from '../components/PageShell';
+import { Info } from 'lucide-react';
+import PageShell from '../components/PageShell';
 import TicketSection from '../components/TicketSection';
 import MyTickets from '../components/MyTickets';
 import { getMyTickets } from '../lib/myTickets';
@@ -10,14 +11,24 @@ export default function TicketsPage() {
   return (
     <PageShell>
       <MyTickets />
-      <PageHeader kicker={hasTickets ? 'Új foglalás' : 'Check-in'} title={hasTickets ? 'Hozol még valakit?' : 'Foglald le a helyed.'} compact={hasTickets}>
-        A beszállókártyát és a számlát e-mailben küldjük – Apple és Google Tárcába is menthető.
-      </PageHeader>
-      {!hasTickets && (
-        <p className="mx-auto -mt-6 mb-12 max-w-md px-5 text-center text-[13px] text-gray-500">
-          Már van beszállókártyád? Nyisd meg ezen a telefonon az e-mailben a „Beszállókártyák megnyitása az appban” gombot, és itt lesznek.
-        </p>
-      )}
+      <header className={`mx-auto max-w-2xl px-5 pb-10 text-center ${hasTickets ? 'pt-14' : 'pt-32 sm:pt-40'}`}>
+        <div className="kicker">{hasTickets ? 'Új foglalás' : 'Online check-in'}</div>
+        <h1 className="display mt-4 whitespace-nowrap text-[clamp(1.5rem,7.4vw,4.5rem)]">{hasTickets ? 'Hozol még valakit?' : 'Foglald le a helyed.'}</h1>
+        {/* airport information strip */}
+        <div className="mt-7 flex items-start gap-3 rounded-[6px] border border-white/10 bg-[#0b0812] p-4 text-left">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-[#d4af37] text-[#05030a]" aria-hidden="true">
+            <Info className="h-5 w-5" strokeWidth={2.5} />
+          </span>
+          <div className="text-[14px] leading-snug text-gray-300">
+            A beszállókártyát és a számlát e-mailben küldjük – Apple és Google Tárcába is menthető.
+            {!hasTickets && (
+              <span className="mt-2 block text-[13px] text-gray-500">
+                Már van beszállókártyád? Nyisd meg ezen a telefonon az e-mailben a „Beszállókártyák megnyitása az appban” gombot, és itt lesznek.
+              </span>
+            )}
+          </div>
+        </div>
+      </header>
       <TicketSection />
     </PageShell>
   );
