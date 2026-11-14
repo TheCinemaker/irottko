@@ -110,7 +110,10 @@ function html(order, tickets) {
 </body></html>`;
 }
 
-export async function sendTicketEmail(order, tickets) {
+// idempotencyKey: Resend drops a second send with the same key for 24 h, so a
+// retry after a lost answer (function killed right after sending) never
+// e-mails the tickets twice. A deliberate resend from the admin passes its own key.
+export async function sendTicketEmail(order, tickets, { idempotencyKey = `tickets-${order.id}` } = {}) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
   if (!key) throw new Error('MISSING_RESEND_API_KEY');
@@ -131,7 +134,7 @@ export async function sendTicketEmail(order, tickets) {
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
     body: JSON.stringify({
       from,
       to: [order.email],

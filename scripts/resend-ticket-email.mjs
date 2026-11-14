@@ -15,6 +15,8 @@ if (order.status !== 'paid') {
   console.error(`Order is ${order.status}, not paid – nothing sent.`);
   process.exit(1);
 }
-await sendTicketEmail(order, tickets.filter((t) => t.status === 'valid' || t.status === 'used'));
+await sendTicketEmail(order, tickets.filter((t) => t.status === 'valid' || t.status === 'used'), {
+  idempotencyKey: `resend-${orderId}-${Date.now()}`,
+});
 await db().from('orders').update({ email_sent_at: new Date().toISOString(), email_error: null }).eq('id', orderId);
 console.log(`Sent ${tickets.length} ticket(s) for order ${orderId}.`);

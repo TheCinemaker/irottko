@@ -1,18 +1,13 @@
-// POST /.netlify/functions/admin-data   { pin }
+// POST /.netlify/functions/admin-data   { pin | token }  (login: lib/pinGuard.js)
 // Everything the admin page shows, computed server-side with the service role.
 // Env: ADMIN_PIN (separate from SCANNER_PIN – door staff must not see revenue
 // or guests' e-mails).
-import crypto from 'crypto';
 import { db, json } from './lib/db.js';
+import { authenticate } from './lib/pinGuard.js';
 
 const SLUG = process.env.VITE_EVENT_SLUG || 'one-night-irottko';
 const TZ = 'Europe/Budapest';
 
-const sameSecret = (a, b) => {
-  const x = crypto.createHash('sha256').update(String(a)).digest();
-  const y = crypto.createHash('sha256').update(String(b)).digest();
-  return crypto.timingSafeEqual(x, y);
-};
 
 // Supabase returns max 1000 rows per request → page through.
 async function all(table, select, filter = (q) => q, order = 'created_at') {
@@ -36,8 +31,6 @@ const slotKey = (iso, minutes = 15) => {
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') return json(405, { error: 'METHOD' });
-  const expected = process.env.ADMIN_PIN;
-  if (!expected) return json(500, { error: 'MISSING_ADMIN_PIN' });
 
   let body;
   try {
@@ -45,10 +38,8 @@ export const handler = async (event) => {
   } catch {
     return json(400, { error: 'BAD_JSON' });
   }
-  if (!sameSecret(body.pin ?? '', expected)) {
-    await new Promise((r) => setTimeout(r, 800));
-    return json(401, { error: 'BAD_PIN' });
-  }
+  const auth = await authenticate(event, 'admin', body, process.env.ADMIN_PIN);
+  if (auth.denied) return auth.denied;
 
   try {
     const { data: ev, error: evErr } = await db().from('events').select('*').eq('slug', SLUG).single();
@@ -200,6 +191,7 @@ export const handler = async (event) => {
     const problems = orderRows.filter((o) => !o.invoice || !o.emailSent);
 
     return json(200, {
+      token: auth.token,
       generatedAt: new Date().toISOString(),
       event: { title: ev.title, salesOpen: ev.sales_open, onlineCapacity: ev.online_capacity, capacity: ev.capacity },
       totals: {

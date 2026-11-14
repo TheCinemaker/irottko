@@ -1,43 +1,76 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { Check, X, WifiOff, Volume2, VolumeX, LogOut } from 'lucide-react';
+import { Check, X, WifiOff, Volume2, VolumeX, LogOut, Flashlight, FlashlightOff } from 'lucide-react';
+import { useLive, LiveBadge } from '../lib/useLive';
 
 /*
-  Door scanner (/scan). Staff unlock it with the PIN (SCANNER_PIN on the server).
+  Door scanner (/scan). Staff unlock it with the PIN (SCANNER_PIN on the server),
+  which returns a 24 h session token; scans send the token, not the PIN.
   Every scan goes to /.netlify/functions/check-in → check_in() in Supabase,
   which lets a ticket in exactly once and logs the scan in check_ins.
+
+  Weak signal at the door: every request gives up after REQUEST_TIMEOUT_MS and
+  shows "Nincs kapcsolat" instead of hanging. If the timed-out request did reach
+  the server, the rescan answers "already used" with an entry time from that
+  moment – that case is shown as green (it was this scan that let them in).
 */
 
-const PIN_KEY = 'irottko-scanner-pin';
+const TOKEN_KEY = 'irottko-scanner-token';
+const REQUEST_TIMEOUT_MS = 6000;
+const LOST_ANSWER_WINDOW_MS = 90_000;
 const SAME_CODE_PAUSE_MS = 6000; // the same QR stays in front of the camera after a scan
 const OK_AUTO_CLOSE_MS = 2500;
 
 const store = {
   get: () => {
     try {
-      return sessionStorage.getItem(PIN_KEY) || '';
+      return localStorage.getItem(TOKEN_KEY) || '';
     } catch {
       return '';
     }
   },
   set: (v) => {
     try {
-      v ? sessionStorage.setItem(PIN_KEY, v) : sessionStorage.removeItem(PIN_KEY);
+      v ? localStorage.setItem(TOKEN_KEY, v) : localStorage.removeItem(TOKEN_KEY);
     } catch {
-      /* private mode – PIN just isn't remembered */
+      /* private mode – the session just isn't remembered */
     }
   },
 };
 
-async function callCheckIn(pin, code) {
-  const res = await fetch('/.netlify/functions/check-in', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pin, code }),
-  });
-  if (res.status === 401) return { auth: false };
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return { auth: true, data: await res.json() };
+// auth: { token } or { pin }. Throws on network error / timeout / server error.
+async function callCheckIn(auth, code) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch('/.netlify/functions/check-in', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...auth, code }),
+      signal: ctrl.signal,
+    });
+    if (res.status === 401) return { auth: false };
+    if (res.status === 429) return { auth: false, locked: (await res.json().catch(() => ({}))).minutes || 15 };
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { auth: true, data: await res.json() };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function useOnline() {
+  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
+  }, []);
+  return online;
 }
 
 const timeHu = (iso) =>
@@ -46,34 +79,35 @@ const timeHu = (iso) =>
 /* ------------------------------------------------------------------ */
 
 export default function TicketScanner() {
-  const [pin, setPin] = useState(store.get);
-  const [unlocked, setUnlocked] = useState(Boolean(store.get()));
+  const [token, setToken] = useState(store.get);
+  const [expired, setExpired] = useState(false);
 
-  const logout = () => {
+  const logout = (isExpired = false) => {
     store.set('');
-    setPin('');
-    setUnlocked(false);
+    setToken('');
+    setExpired(isExpired === true);
   };
 
-  if (!unlocked) {
+  if (!token) {
     return (
       <PinScreen
-        onUnlock={(p) => {
-          store.set(p);
-          setPin(p);
-          setUnlocked(true);
+        expired={expired}
+        onUnlock={(t) => {
+          store.set(t);
+          setToken(t);
+          setExpired(false);
         }}
       />
     );
   }
-  return <Scanner pin={pin} onLogout={logout} />;
+  return <Scanner token={token} onLogout={logout} />;
 }
 
 /* ------------------------------ PIN ------------------------------- */
 
-function PinScreen({ onUnlock }) {
+function PinScreen({ onUnlock, expired }) {
   const [value, setValue] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(expired ? 'A munkamenet lejárt, add meg újra a PIN-t.' : '');
   const [busy, setBusy] = useState(false);
 
   const submit = async (e) => {
@@ -82,10 +116,10 @@ function PinScreen({ onUnlock }) {
     setBusy(true);
     setError('');
     try {
-      const r = await callCheckIn(value, '');
-      if (r.auth) onUnlock(value);
+      const r = await callCheckIn({ pin: value }, '');
+      if (r.auth && r.data.token) onUnlock(r.data.token);
       else {
-        setError('Hibás PIN.');
+        setError(r.locked ? `Túl sok hibás próbálkozás. Próbáld újra ${r.locked} perc múlva.` : 'Hibás PIN.');
         setValue('');
       }
     } catch {
@@ -97,6 +131,7 @@ function PinScreen({ onUnlock }) {
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-[#05030a] px-6">
       <form onSubmit={submit} className="w-full max-w-xs text-center">
+        {/* error line can be two lines long (lock-out) */}
         <div className="kicker">One Night at Írottkő</div>
         <h1 className="display mt-3 text-3xl">Beléptetés</h1>
         <input
@@ -109,7 +144,7 @@ function PinScreen({ onUnlock }) {
           placeholder="PIN"
           className="field mt-8 text-center text-2xl tracking-[0.5em]"
         />
-        <div className="mt-3 h-5 text-sm text-red-400">{error}</div>
+        <div className="mt-3 min-h-5 text-sm text-red-400">{error}</div>
         <button type="submit" disabled={busy || !value} className="btn-primary mt-2 w-full disabled:opacity-40">
           {busy ? 'Ellenőrzés…' : 'Belépés'}
         </button>
@@ -120,11 +155,14 @@ function PinScreen({ onUnlock }) {
 
 /* ---------------------------- Scanner ----------------------------- */
 
-function Scanner({ pin, onLogout }) {
+function Scanner({ token, onLogout }) {
+  const online = useOnline();
+  const [torch, setTorch] = useState(null); // null: not supported, false/true: off/on
+  const lostRef = useRef(new Map()); // code → time of a scan whose answer never came
   const [camera, setCamera] = useState('idle'); // idle | starting | on | error
   const [result, setResult] = useState(null); // { type: ok|used|invalid|offline, data }
   const [busy, setBusy] = useState(false);
-  const [totalIn, setTotalIn] = useState(null);
+  const [stats, setStats] = useState(null); // { in, waiting } – live (lib/useLive.jsx)
   const [sound, setSound] = useState(true);
   const [manual, setManual] = useState('');
 
@@ -173,15 +211,28 @@ function Scanner({ pin, onLogout }) {
 
       busyRef.current = true;
       setBusy(true);
+      const sentAt = Date.now();
       try {
-        const r = await callCheckIn(pin, code);
-        if (!r.auth) return onLogout();
+        const r = await callCheckIn({ token }, code);
+        if (!r.auth) return onLogout(true);
         const d = r.data;
-        if (typeof d.total_in === 'number') setTotalIn(d.total_in);
-        const type = d.ok ? 'ok' : d.reason === 'ALREADY_USED' ? 'used' : 'invalid';
+        if (typeof d.total_in === 'number')
+          setStats((s) => s && { ...s, in: d.total_in, waiting: d.ok ? Math.max(s.waiting - 1, 0) : s.waiting });
+        let type = d.ok ? 'ok' : d.reason === 'ALREADY_USED' ? 'used' : 'invalid';
+        // An earlier scan of this code timed out here, but the server did let it
+        // in (entry time = that attempt) → it was us: show green, not red.
+        const lostAt = lostRef.current.get(d.code || code);
+        if (type === 'used' && lostAt && d.checked_in_at) {
+          const inAt = new Date(d.checked_in_at).getTime();
+          if (inAt >= lostAt - 5000 && inAt <= lostAt + REQUEST_TIMEOUT_MS + 5000) type = 'ok-late';
+        }
+        lostRef.current.delete(d.code || code);
         setResult({ type, data: d });
-        beep(d.ok);
+        beep(type === 'ok' || type === 'ok-late');
       } catch {
+        const now2 = Date.now();
+        for (const [c, t] of lostRef.current) if (now2 - t > LOST_ANSWER_WINDOW_MS) lostRef.current.delete(c);
+        lostRef.current.set(code.toUpperCase().replace(/[^0-9A-Z]/g, ''), sentAt);
         lastRef.current = { code: '', at: 0 }; // let the same code be scanned again
         setResult({ type: 'offline', data: { code } });
         beep(false);
@@ -190,8 +241,15 @@ function Scanner({ pin, onLogout }) {
         setBusy(false);
       }
     },
-    [pin, onLogout] // eslint-disable-line react-hooks/exhaustive-deps
+    [token, onLogout] // eslint-disable-line react-hooks/exhaustive-deps
   );
+
+  // Live door counters: reload on every ping from the DB (008_live.sql).
+  const live = useLive(async () => {
+    const r = await callCheckIn({ token }, '');
+    if (!r.auth) return onLogout(true);
+    if (r.data.stats) setStats(r.data.stats);
+  });
 
   const startingRef = useRef(null);
 
@@ -208,7 +266,15 @@ function Scanner({ pin, onLogout }) {
     );
     try {
       await startingRef.current;
-      if (qrRef.current === qr) setCamera('on');
+      if (qrRef.current === qr) {
+        setCamera('on');
+        try {
+          const t = qr.getRunningTrackCameraCapabilities().torchFeature();
+          setTorch(t.isSupported() ? false : null);
+        } catch {
+          setTorch(null);
+        }
+      }
     } catch (e) {
       console.warn('Camera failed:', e);
       if (qrRef.current === qr) {
@@ -243,9 +309,19 @@ function Scanner({ pin, onLogout }) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const toggleTorch = async () => {
+    try {
+      const next = !torch;
+      await qrRef.current.getRunningTrackCameraCapabilities().torchFeature().apply(next);
+      setTorch(next);
+    } catch {
+      setTorch(null); // the camera refused – hide the button
+    }
+  };
+
   // A green result closes itself; red ones wait for a tap.
   useEffect(() => {
-    if (result?.type !== 'ok') return;
+    if (result?.type !== 'ok' && result?.type !== 'ok-late') return;
     const t = setTimeout(() => setResult(null), OK_AUTO_CLOSE_MS);
     return () => clearTimeout(t);
   }, [result]);
@@ -266,20 +342,33 @@ function Scanner({ pin, onLogout }) {
             <div className="text-lg font-semibold">Beléptetés</div>
           </div>
           <div className="flex items-center gap-1">
-            {totalIn !== null && (
-              <div className="mr-2 text-right">
-                <div className="text-xl font-semibold leading-none text-[#d4af37]">{totalIn}</div>
-                <div className="text-[10px] uppercase tracking-wider text-gray-500">bent</div>
-              </div>
+            {torch !== null && (
+              <button
+                onClick={toggleTorch}
+                className={`rounded-full p-2.5 ${torch ? 'bg-[#d4af37] text-black' : 'text-gray-400 hover:text-white'}`}
+                aria-label={torch ? 'Lámpa kikapcsolása' : 'Lámpa bekapcsolása'}
+                aria-pressed={torch}
+              >
+                {torch ? <Flashlight className="h-5 w-5" /> : <FlashlightOff className="h-5 w-5" />}
+              </button>
             )}
             <button onClick={() => setSound((s) => !s)} className="rounded-full p-2.5 text-gray-400 hover:text-white" aria-label="Hang">
               {sound ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
             </button>
-            <button onClick={onLogout} className="rounded-full p-2.5 text-gray-400 hover:text-white" aria-label="Kilépés">
+            <button onClick={() => onLogout()} className="rounded-full p-2.5 text-gray-400 hover:text-white" aria-label="Kilépés">
               <LogOut className="h-5 w-5" />
             </button>
           </div>
         </header>
+
+        <DoorStats stats={stats} live={live} />
+
+        {!online && (
+          <div role="status" className="mt-3 flex items-center gap-2 rounded-2xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black">
+            <WifiOff className="h-4 w-4 shrink-0" />
+            Nincs internet – a jegyeket most nem lehet ellenőrizni.
+          </div>
+        )}
 
         <div className="relative mt-4 aspect-square w-full overflow-hidden rounded-3xl border border-white/10 bg-black">
           <div id="qr-reader" className="h-full w-full [&_video]:!h-full [&_video]:!w-full [&_video]:object-cover" />
@@ -325,10 +414,43 @@ function Scanner({ pin, onLogout }) {
   );
 }
 
+/* --------------------------- Door stats --------------------------- */
+
+function DoorStats({ stats, live }) {
+  const total = stats ? stats.in + stats.waiting : 0;
+  const share = total ? Math.round((stats.in / total) * 100) : 0;
+  return (
+    <section className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3" aria-live="polite">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <div className="text-3xl font-semibold leading-none tabular-nums text-[#d4af37]">{stats ? stats.in : '–'}</div>
+          <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-500">bent</div>
+        </div>
+        <div className="text-center">
+          <div className="text-3xl font-semibold leading-none tabular-nums">{stats ? stats.waiting : '–'}</div>
+          <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-500">még nem jött</div>
+        </div>
+        <div className="text-right">
+          <div className="text-lg font-semibold leading-none tabular-nums text-gray-300">{stats ? total : '–'}</div>
+          <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-500">összes jegy</div>
+        </div>
+      </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-[#d4af37] transition-[width] duration-500" style={{ width: `${share}%` }} />
+      </div>
+      <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
+        <span>{stats ? `${share}% bent` : 'Betöltés…'}</span>
+        <LiveBadge status={live} />
+      </div>
+    </section>
+  );
+}
+
 /* ----------------------------- Result ----------------------------- */
 
 const LOOK = {
   ok: { bg: 'bg-emerald-600', Icon: Check, title: 'Érvényes jegy' },
+  'ok-late': { bg: 'bg-emerald-600', Icon: Check, title: 'Érvényes jegy' },
   used: { bg: 'bg-red-600', Icon: X, title: 'Már felhasznált' },
   invalid: { bg: 'bg-red-600', Icon: X, title: 'Érvénytelen jegy' },
   offline: { bg: 'bg-amber-500', Icon: WifiOff, title: 'Nincs kapcsolat' },
@@ -343,7 +465,8 @@ function ResultScreen({ result, onClose }) {
   if (type === 'used') detail = `Ezzel a jeggyel ${timeHu(data.checked_in_at)}-kor már beléptek.`;
   if (type === 'invalid')
     detail = data.reason === 'NOT_PAID' ? 'A jegy nincs kifizetve vagy sztornózták.' : 'Ilyen jegykód nincs a rendszerben.';
-  if (type === 'offline') detail = 'Ellenőrizd a netet, és olvasd be újra.';
+  if (type === 'offline') detail = 'Nem jött válasz 6 másodpercen belül. Olvasd be újra, ha visszajött a net.';
+  if (type === 'ok-late') detail = `Az előző, megszakadt beolvasásnál ${timeHu(data.checked_in_at)}-kor már beléptettük – mehet.`;
 
   return (
     <button
@@ -364,7 +487,7 @@ function ResultScreen({ result, onClose }) {
         </div>
       )}
 
-      {type === 'ok' && vip && <div className="mt-4 text-lg font-bold">VIP karszalagot adj!</div>}
+      {(type === 'ok' || type === 'ok-late') && vip && <div className="mt-4 text-lg font-bold">VIP karszalagot adj!</div>}
 
       {data.order_tickets > 1 && type !== 'invalid' && (
         <div className="mt-4 text-base opacity-90">
@@ -377,7 +500,7 @@ function ResultScreen({ result, onClose }) {
       {data.code && <div className="mt-6 font-mono text-xs tracking-widest opacity-70">{data.code}</div>}
 
       <div className="absolute inset-x-0 bottom-10 text-sm font-semibold uppercase tracking-widest opacity-80">
-        {type === 'ok' ? 'Koppints a folytatáshoz' : 'Koppints a bezáráshoz'}
+        {type === 'ok' || type === 'ok-late' ? 'Koppints a folytatáshoz' : 'Koppints a bezáráshoz'}
       </div>
     </button>
   );

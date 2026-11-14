@@ -64,6 +64,9 @@ export const handler = async () => {
     await sleep(GAP_MS);
   }
 
+  // 3) wrong-PIN log older than a day (personal data: IP addresses)
+  await db().from('pin_failures').delete().lt('failed_at', ago(86400e3));
+
   if (report.synced || report.delivered || report.errors.length) console.log('retry-fulfillment', JSON.stringify(report));
   return json(200, report);
 };

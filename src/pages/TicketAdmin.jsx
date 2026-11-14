@@ -1,42 +1,51 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, LogOut, Download, Search, AlertTriangle, Check, X, Copy, Ban } from 'lucide-react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useLive, LiveBadge } from '../lib/useLive';
+import { RefreshCw, LogOut, Download, Search, AlertTriangle, Check, X, Copy, Ban, Send, Printer } from 'lucide-react';
 
 /*
   Admin (/admin) – sales, orders and door check-ins at a glance.
-  Data: POST /.netlify/functions/admin-data { pin } (ADMIN_PIN on the server).
-  Refreshes itself every 30 s.
+  Login: ADMIN_PIN → a 12 h session token (netlify/functions/lib/pinGuard.js).
+  Data: POST /.netlify/functions/admin-data { token }, reloaded live on every
+  DB change (lib/useLive.jsx + supabase/008_live.sql), fallback poll 20 s.
+  Actions (resend tickets, printable guest list): /.netlify/functions/admin-action.
 */
 
-const PIN_KEY = 'irottko-admin-pin';
-const REFRESH_MS = 30000;
+const TOKEN_KEY = 'irottko-admin-token';
 
 const store = {
   get: () => {
     try {
-      return sessionStorage.getItem(PIN_KEY) || '';
+      return sessionStorage.getItem(TOKEN_KEY) || '';
     } catch {
       return '';
     }
   },
   set: (v) => {
     try {
-      v ? sessionStorage.setItem(PIN_KEY, v) : sessionStorage.removeItem(PIN_KEY);
+      v ? sessionStorage.setItem(TOKEN_KEY, v) : sessionStorage.removeItem(TOKEN_KEY);
     } catch {
       /* private mode */
     }
   },
 };
 
-async function load(pin) {
-  const res = await fetch('/.netlify/functions/admin-data', {
+// auth: { token } or { pin }. → { auth:false, locked? } | { auth:true, status, data }
+async function call(fn, auth, extra = {}) {
+  const res = await fetch(`/.netlify/functions/${fn}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pin }),
+    body: JSON.stringify({ ...auth, ...extra }),
   });
   if (res.status === 401) return { auth: false };
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return { auth: true, data: await res.json() };
+  if (res.status === 429 && fn === 'admin-data') return { auth: false, locked: true };
+  const data = await res.json().catch(() => ({}));
+  if (res.status >= 500 && fn === 'admin-data') throw new Error(`HTTP ${res.status}`);
+  return { auth: true, status: res.status, data };
 }
+const load = (auth) => call('admin-data', auth);
+
+// The session token, for actions deep in the tabs.
+const AdminAuth = createContext({ token: '', logout: () => {} });
 
 const TZ = 'Europe/Budapest';
 const nf = new Intl.NumberFormat('hu-HU');
@@ -51,7 +60,7 @@ const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 /* ------------------------------------------------------------------ */
 
 export default function TicketAdmin() {
-  const [pin, setPin] = useState(store.get);
+  const [pin, setPin] = useState(store.get); // the session token
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -66,7 +75,7 @@ export default function TicketAdmin() {
     if (!pin) return;
     setLoading(true);
     try {
-      const r = await load(pin);
+      const r = await load({ token: pin });
       if (!r.auth) return logout();
       setData(r.data);
       setError('');
@@ -77,20 +86,15 @@ export default function TicketAdmin() {
     }
   }, [pin]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!pin) return;
-    refresh();
-    const t = setInterval(refresh, REFRESH_MS);
-    return () => clearInterval(t);
-  }, [pin, refresh]);
+  const live = useLive(refresh, { enabled: !!pin, minGapMs: 1500 });
 
   if (!pin)
     return (
       <PinScreen
-        onUnlock={(p, d) => {
-          store.set(p);
+        onUnlock={(token, d) => {
+          store.set(token);
           setData(d);
-          setPin(p);
+          setPin(token);
         }}
       />
     );
@@ -104,6 +108,7 @@ export default function TicketAdmin() {
             <h1 className="mt-1 text-2xl font-semibold">Admin</h1>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500">
+            <LiveBadge status={live} />
             {data && <span>Frissítve: {tm(data.generatedAt)}</span>}
             <button onClick={refresh} className="rounded-full p-2.5 text-gray-400 hover:bg-white/5 hover:text-white" aria-label="Frissítés">
               <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
@@ -116,7 +121,9 @@ export default function TicketAdmin() {
 
         {error && <div className="mt-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{error}</div>}
 
-        {!data ? <p className="mt-16 text-center text-gray-500">Betöltés…</p> : <Dashboard d={data} />}
+        <AdminAuth.Provider value={{ token: pin, logout }}>
+          {!data ? <p className="mt-16 text-center text-gray-500">Betöltés…</p> : <Dashboard d={data} />}
+        </AdminAuth.Provider>
       </div>
     </main>
   );
@@ -134,10 +141,10 @@ function PinScreen({ onUnlock }) {
     setBusy(true);
     setError('');
     try {
-      const r = await load(value);
-      if (r.auth) onUnlock(value, r.data);
+      const r = await load({ pin: value });
+      if (r.auth && r.data.token) onUnlock(r.data.token, r.data);
       else {
-        setError('Hibás PIN.');
+        setError(r.locked ? 'Túl sok hibás próbálkozás. Próbáld újra 15 perc múlva.' : 'Hibás PIN.');
         setValue('');
       }
     } catch {
@@ -161,7 +168,7 @@ function PinScreen({ onUnlock }) {
           placeholder="PIN"
           className="field mt-8 text-center text-2xl tracking-[0.5em]"
         />
-        <div className="mt-3 h-5 text-sm text-red-400">{error}</div>
+        <div className="mt-3 min-h-5 text-sm text-red-400">{error}</div>
         <button type="submit" disabled={busy || !value} className="btn-primary mt-2 w-full disabled:opacity-40">
           {busy ? 'Ellenőrzés…' : 'Belépés'}
         </button>
@@ -338,6 +345,37 @@ function Meter({ label, used, total, left, note }) {
 
 /* ----------------------------- Orders ----------------------------- */
 
+function ResendButton({ o }) {
+  const { token, logout } = useContext(AdminAuth);
+  const [state, setState] = useState(''); // '' | busy | ok | error text
+  const send = async () => {
+    if (!window.confirm(`Újraküldjük ${o.name} jegyeit (${o.qty} db) erre a címre?\n\n${o.email}`)) return;
+    setState('busy');
+    try {
+      const r = await call('admin-action', { token }, { action: 'resend', orderId: o.id });
+      if (!r.auth) return logout();
+      if (r.status === 200) return setState('ok');
+      setState(r.data.error === 'TOO_SOON' ? 'Az imént ment ki, várj egy percet.' : 'Nem sikerült elküldeni.');
+    } catch {
+      setState('Nincs kapcsolat.');
+    }
+  };
+  if (state === 'ok') return <span className="text-xs text-emerald-400">Újraküldve</span>;
+  return (
+    <span className="inline-flex flex-col items-start">
+      <button
+        onClick={send}
+        disabled={state === 'busy'}
+        className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-white/15 px-2.5 py-1 text-xs text-gray-300 hover:border-[#d4af37] hover:text-white disabled:opacity-40"
+        title="Jegyek újraküldése a vevő e-mail-címére"
+      >
+        <Send className="h-3 w-3" /> {state === 'busy' ? 'Küldés…' : 'Újraküldés'}
+      </button>
+      {state && state !== 'busy' && <span className="mt-1 text-[11px] text-red-400">{state}</span>}
+    </span>
+  );
+}
+
 function Orders({ d }) {
   const [q, setQ] = useState('');
   const rows = useMemo(() => {
@@ -368,8 +406,8 @@ function Orders({ d }) {
     <div className="space-y-4">
       {noEmail.length > 0 && (
         <Alert red>
-          {noEmail.length} fizetett rendelésnél nem ment ki a jegy e-mail: {noEmail.map((o) => o.name).join(', ')}. Újraküldés:{' '}
-          <code className="text-xs">node --env-file=.env scripts/resend-ticket-email.mjs &lt;rendelésszám&gt;</code>
+          {noEmail.length} fizetett rendelésnél nem ment ki a jegy e-mail: {noEmail.map((o) => o.name).join(', ')}. A rendszer 5 percenként
+          újrapróbálja; azonnal a sor végén lévő „Újraküldés” gombbal küldheted.
         </Alert>
       )}
       {noInvoice.length > 0 && (
@@ -394,8 +432,8 @@ function Orders({ d }) {
         }
       >
         <Table
-          head={['Fizetve', 'Vevő', 'Jegyek', 'Összeg', 'Bent', 'Számla', 'E-mail']}
-          align={['l', 'l', 'l', 'r', 'r', 'l', 'l']}
+          head={['Fizetve', 'Vevő', 'Jegyek', 'Összeg', 'Bent', 'Számla', 'E-mail', '']}
+          align={['l', 'l', 'l', 'r', 'r', 'l', 'l', 'l']}
           rows={rows.map((o) => [
             <span key="t" className="whitespace-nowrap text-gray-400">{dt(o.paidAt)}</span>,
             <div key="n">
@@ -416,6 +454,7 @@ function Orders({ d }) {
             ) : (
               <span key="e" className="text-red-400" title={o.emailError || ''}>nem ment ki</span>
             ),
+            <ResendButton key="r" o={o} />,
           ])}
           empty={q ? 'Nincs találat.' : 'Még nincs fizetett rendelés.'}
         />
@@ -432,6 +471,81 @@ const RESULT = {
   not_found: { label: 'Ismeretlen kód', cls: 'text-red-400', Icon: X },
   not_paid: { label: 'Nem fizetett', cls: 'text-amber-400', Icon: Ban },
 };
+
+// Printable emergency list for the door (no internet / scanner down):
+// every paid ticket, A–Z by name, with a tick box. Opened in a new window and
+// printed from there; the window is opened on the click, so it isn't blocked.
+const escHtml = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+function guestListHtml(list, generatedAt) {
+  const rows = list
+    .map(
+      (g, i) => `<tr${g.in ? ' class="in"' : ''}><td class="box">${g.in ? '✓' : ''}</td><td>${i + 1}.</td><td><b>${escHtml(g.name)}</b>${
+        g.buyer && g.buyer !== g.name ? `<div class="sub">vevő: ${escHtml(g.buyer)}</div>` : ''
+      }</td><td>${g.vip ? '<b>VIP</b>' : escHtml(g.tier)}</td><td class="code">${escHtml(g.code)}</td><td>${g.in ? `bent ${tm(g.in)}` : ''}</td></tr>`
+    )
+    .join('');
+  const vip = list.filter((g) => g.vip).length;
+  return `<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Vendéglista – One Night at Írottkő</title><style>
+    body{font:12px/1.35 -apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#000;margin:24px}
+    h1{font-size:18px;margin:0}.meta{color:#555;margin:4px 0 14px}
+    table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #ccc;padding:5px 6px;text-align:left;vertical-align:top}
+    th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #000}
+    thead{display:table-header-group}tr{break-inside:avoid}
+    .box{width:18px;height:18px;border:1.5px solid #000;text-align:center;font-weight:700}
+    .code{font-family:Menlo,Consolas,monospace;font-size:11px;letter-spacing:.05em}
+    .sub{color:#666;font-size:10px}.in td{color:#777}
+    .note{margin-top:14px;font-size:10px;color:#555}
+    @media print{body{margin:0}.noprint{display:none}}
+  </style></head><body>
+    <button class="noprint" onclick="print()" style="float:right;padding:8px 16px">Nyomtatás</button>
+    <h1>One Night at Írottkő – vendéglista</h1>
+    <div class="meta">Állapot: ${escHtml(dt(generatedAt))} · ${list.length} jegy · ${vip} VIP · ${list.filter((g) => g.in).length} már bent volt a lista készítésekor</div>
+    <table><thead><tr><th></th><th>#</th><th>Név</th><th>Jegy</th><th>Jegykód</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="note">Csak vészhelyzetre (nincs net, nem működik a szkenner). Akit beengedsz, pipáld ki, és nézd meg a nevét a személyiigazolványán.
+    Amint újra van net, a szkennerrel olvassátok be a kódokat. BIZALMAS – a rendezvény után semmisítsd meg.</div>
+  </body></html>`;
+}
+
+function GuestListCard() {
+  const { token, logout } = useContext(AdminAuth);
+  const [state, setState] = useState('');
+  const open = async () => {
+    const w = window.open('', '_blank');
+    if (!w) return setState('A böngésző letiltotta az új ablakot – engedélyezd a felugró ablakokat.');
+    w.document.write('<p style="font:14px sans-serif;margin:24px">Vendéglista betöltése…</p>');
+    setState('busy');
+    try {
+      const r = await call('admin-action', { token }, { action: 'guestlist' });
+      if (!r.auth) {
+        w.close();
+        return logout();
+      }
+      if (r.status !== 200) throw new Error();
+      w.document.open();
+      w.document.write(guestListHtml(r.data.guests, r.data.generatedAt));
+      w.document.close();
+      setState('');
+    } catch {
+      w.close();
+      setState('Nem sikerült betölteni a listát.');
+    }
+  };
+  return (
+    <Card title="Vészhelyzeti vendéglista" className="lg:col-span-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-2xl text-sm text-gray-400">
+          Ha elmegy a net vagy nem működik a szkenner: minden fizetett jegy ABC-sorrendben, jegykóddal és kipipálható négyzettel.
+          Nyomtasd ki kapunyitás előtt, és tegyetek egy példányt minden kapuhoz.
+        </p>
+        <button onClick={open} disabled={state === 'busy'} className="btn-secondary shrink-0 px-4 py-2 disabled:opacity-40">
+          <Printer className="h-4 w-4" /> {state === 'busy' ? 'Betöltés…' : 'Lista nyomtatása'}
+        </button>
+      </div>
+      {state && state !== 'busy' && <p className="mt-2 text-sm text-red-400">{state}</p>}
+    </Card>
+  );
+}
 
 function Door({ d }) {
   const [filter, setFilter] = useState('all');
@@ -475,6 +589,8 @@ function Door({ d }) {
         <Meter label="Összes jegy" used={t.checkedIn} total={t.ticketsSold} note={`${pct(t.checkedIn, t.ticketsSold)}% bent · még ${num(t.ticketsSold - t.checkedIn)} vendég érkezhet`} />
         <Meter label="VIP" used={t.vipCheckedIn} total={t.vipSold} note={`${pct(t.vipCheckedIn, t.vipSold)}% bent · még ${num(t.vipSold - t.vipCheckedIn)} VIP érkezhet`} />
       </Card>
+
+      <GuestListCard />
 
       {d.duplicates.length > 0 && (
         <Card title={`Duplázni próbálták (${d.duplicates.length} jegy)`} className="lg:col-span-3">

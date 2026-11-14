@@ -4,9 +4,9 @@
 //
 // Env:
 //   SZAMLAZZ_AGENT_KEY       Számla Agent kulcs (Fiók → Számla Agent kulcsok)
-//   SZAMLAZZ_VAT             '27' (default) | 'AAM' | 'TAM' … – CONFIRM WITH THE ACCOUNTANT
+//   SZAMLAZZ_VAT             '27' (default; admission tickets – same as jegy.hu invoices) | 'AAM' | 'TAM' …
 //   SZAMLAZZ_EINVOICE        'true' (default) – e-számla; the account must have it enabled
-//   SZAMLAZZ_PAYMENT_METHOD  default 'Barion' (printed on the invoice)
+//   SZAMLAZZ_PAYMENT_METHOD  default 'Bankkártya (Barion)' (printed on the invoice)
 //   SZAMLAZZ_PREFIX          optional invoice number prefix (számlaszám előtag)
 //   SZAMLAZZ_EMAIL_REPLYTO / SZAMLAZZ_EMAIL_SUBJECT / SZAMLAZZ_EMAIL_TEXT – optional
 
@@ -70,6 +70,7 @@ export function buildInvoiceXml(order, lines) {
         ['nettoErtek', v.net],
         ['afaErtek', v.vatValue],
         ['bruttoErtek', v.gross],
+        ['megjegyzes', l.note], // line note under the item (event, holder, code)
       ])}</tetel>`;
     })
     .join('');
@@ -86,11 +87,10 @@ export function buildInvoiceXml(order, lines) {
       ['keltDatum', date],
       ['teljesitesDatum', date],
       ['fizetesiHataridoDatum', date],
-      ['fizmod', process.env.SZAMLAZZ_PAYMENT_METHOD || 'Barion'],
+      ['fizmod', process.env.SZAMLAZZ_PAYMENT_METHOD || 'Bankkártya (Barion)'],
       ['penznem', 'HUF'],
       ['szamlaNyelve', 'hu'],
-      ['megjegyzes', `Rendelésszám: ${order.id}`],
-      ['rendelesSzam', order.id],
+      ['rendelesSzam', order.id], // printed on the invoice as "Rendelésszám"
       ['szamlaszamElotag', process.env.SZAMLAZZ_PREFIX],
       ['fizetve', 'true'],
     ])}</fejlec>` +

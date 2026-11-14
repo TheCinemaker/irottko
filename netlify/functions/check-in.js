@@ -1,22 +1,42 @@
-// POST /.netlify/functions/check-in   { pin, code?, staff? }
-// The door scanner calls this. Without `code` it only checks the PIN (login).
+// POST /.netlify/functions/check-in   { pin | token, code?, staff? }  (without code: login / stats)
+// The door scanner calls this. Without `code` it is the login: a correct PIN
+// returns a session token (lib/pinGuard.js), which later scans send instead.
 // With `code` it runs the check_in RPC: marks the ticket used exactly once and
 // logs every scan in the check_ins table.
 // Env: SCANNER_PIN (staff PIN, set it in Netlify env – at least 6 digits).
-import crypto from 'crypto';
 import { db, json } from './lib/db.js';
+import { authenticate } from './lib/pinGuard.js';
 
-const sameSecret = (a, b) => {
-  const x = crypto.createHash('sha256').update(String(a)).digest();
-  const y = crypto.createHash('sha256').update(String(b)).digest();
-  return crypto.timingSafeEqual(x, y);
-};
+const SLUG = process.env.VITE_EVENT_SLUG || 'one-night-irottko';
+let eventId = null;
+
+// Door counters for the scanner header: inside / still expected (paid, not yet
+// scanned). Counts only – door staff never see names, e-mails or revenue here.
+async function doorStats() {
+  try {
+    if (!eventId) {
+      const { data, error } = await db().from('events').select('id').eq('slug', SLUG).single();
+      if (error) throw error;
+      eventId = data.id;
+    }
+    const count = (status) =>
+      db()
+        .from('tickets')
+        .select('id, orders!inner(status)', { count: 'exact', head: true })
+        .eq('event_id', eventId)
+        .eq('status', status)
+        .eq('orders.status', 'paid');
+    const [used, valid] = await Promise.all([count('used'), count('valid')]);
+    if (used.error || valid.error) throw used.error || valid.error;
+    return { in: used.count ?? 0, waiting: valid.count ?? 0, at: new Date().toISOString() };
+  } catch (e) {
+    console.warn('doorStats failed:', e.message);
+    return null;
+  }
+}
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') return json(405, { error: 'METHOD' });
-
-  const expected = process.env.SCANNER_PIN;
-  if (!expected) return json(500, { error: 'MISSING_SCANNER_PIN' });
 
   let body;
   try {
@@ -25,13 +45,12 @@ export const handler = async (event) => {
     return json(400, { error: 'BAD_JSON' });
   }
 
-  if (!sameSecret(body.pin ?? '', expected)) {
-    await new Promise((r) => setTimeout(r, 800)); // slow down PIN guessing
-    return json(401, { error: 'BAD_PIN' });
-  }
+  const auth = await authenticate(event, 'scanner', body, process.env.SCANNER_PIN);
+  if (auth.denied) return auth.denied;
 
   const code = String(body.code ?? '').trim();
-  if (!code) return json(200, { ok: true }); // PIN check only
+  // Login, or a stats refresh (the scanner calls this on every live ping).
+  if (!code) return json(200, { ok: true, token: auth.token, stats: await doorStats() });
 
   if (code.length > 64) return json(200, { ok: false, reason: 'NOT_FOUND', code: code.slice(0, 64) });
 
@@ -41,5 +60,6 @@ export const handler = async (event) => {
     console.error('check_in failed:', error.message);
     return json(500, { error: 'DB' });
   }
+  // No stats here: the scan answer must be fast; the live ping refreshes them.
   return json(200, data);
 };

@@ -30,6 +30,11 @@ export async function ticketsPdf(order, tickets) {
   doc.registerFontkit(fontkit);
   doc.setTitle(`${EVENT_DETAILS.title} – jegyek`);
   doc.setAuthor(EVENT_DETAILS.title);
+  // Fixed dates → the same order always gives byte-identical PDFs, so a retried
+  // e-mail matches the first one and Resend's idempotency key can drop it.
+  const stamp = new Date(order.paid_at || order.created_at || 0);
+  doc.setCreationDate(stamp);
+  doc.setModificationDate(stamp);
   const regular = await doc.embedFont(asset('fonts/Inter_400Regular.ttf'), { subset: false, features: { calt: false, liga: false, case: false } });
   const semi = await doc.embedFont(asset('fonts/Inter_600SemiBold.ttf'), { subset: false, features: { calt: false, liga: false, case: false } });
   const display = await doc.embedFont(asset('fonts/Cinzel_700Bold.ttf'), { subset: true });

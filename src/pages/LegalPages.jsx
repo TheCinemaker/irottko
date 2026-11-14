@@ -62,7 +62,7 @@ export function TermsPage() {
       <ul>
         <li>A jegyárak bruttó árak, az általános forgalmi adót tartalmazzák. Az ár a vásárlás időpontjától függ (időszakonként emelkedő árazás); a vásárláskor érvényes ár a kosárban látható.</li>
         <li>A fizetés bankkártyával vagy más, a Barion által kínált módon történik, a Barion Payment Zrt. biztonságos fizetési oldalán. A kártyaadatokat az eladó nem látja és nem tárolja.</li>
-        <li>A jegyek a fizetés idejére (legfeljebb 15 percre) lefoglalásra kerülnek. Sikertelen vagy megszakított fizetés esetén a foglalás megszűnik, terhelés nem történik.</li>
+        <li>A jegyek a fizetés idejére (legfeljebb 4 percre) lefoglalásra kerülnek. Sikertelen vagy megszakított fizetés esetén a foglalás megszűnik, terhelés nem történik.</li>
         <li>Az eladó a vásárlásról elektronikus számlát állít ki, amelyet a Számlázz.hu rendszere e-mailben küld el.</li>
       </ul>
 
@@ -101,11 +101,28 @@ export function TermsPage() {
       <h2>8. Panaszkezelés</h2>
       <p>
         Panaszt az eladó e-mail címén ({SELLER.email}) lehet tenni; az eladó 30 napon belül írásban válaszol. Ha a panasz rendezése nem
-        sikerül, a fogyasztó a lakóhelye szerint illetékes békéltető testülethez fordulhat; az eladó székhelye szerint illetékes:
-        Vas Vármegyei Békéltető Testület (9700 Szombathely, Honvéd tér 2.).
+        sikerül, a fogyasztó a lakóhelye szerint illetékes békéltető testülethez fordulhat. Az eladó székhelye (Vas vármegye) szerint
+        illetékes:
+      </p>
+      <ul>
+        <li>Győr-Moson-Sopron Vármegyei Kereskedelmi és Iparkamara által működtetett Békéltető Testület (illetékes Győr-Moson-Sopron, Vas és Zala vármegyében)</li>
+        <li>Cím: 9022 Győr, Szent István út 10/A.</li>
+        <li>Telefon: +36 96 520 200 · E-mail: bekelteto.testulet@gymsmkik.hu</li>
+        <li>
+          <a href="https://bekeltetesgyor.hu" target="_blank" rel="noreferrer">bekeltetesgyor.hu</a>
+        </li>
+      </ul>
+      <p>A fogyasztó panaszával a fogyasztóvédelmi hatósághoz (a lakóhelye szerinti vármegyei kormányhivatalhoz) is fordulhat.</p>
+
+      <h2>9. Kellékszavatosság</h2>
+      <p>
+        Ha az eladó a szolgáltatást hibásan teljesíti (például a jegy kódja nem működik, vagy a jegy szerinti szolgáltatás nem vehető
+        igénybe), a Vásárló a Polgári Törvénykönyv szerint kellékszavatossági igényt érvényesíthet: elsősorban a hiba kijavítását
+        (például a jegy újbóli kiállítását) kérheti, ha ez nem lehetséges, az ellenszolgáltatás arányos leszállítását vagy a szerződéstől
+        való elállást. A hibát a felfedezése után haladéktalanul jelezni kell az eladó e-mail címén ({SELLER.email}).
       </p>
 
-      <h2>9. Egyéb</h2>
+      <h2>10. Egyéb</h2>
       <p>
         A személyes adatok kezeléséről az <Link to="/adatkezeles">adatkezelési tájékoztató</Link> szól. Az eladó adatait az{' '}
         <Link to="/impresszum">impresszum</Link> tartalmazza. A szerződésre a magyar jog az irányadó.
@@ -157,15 +174,15 @@ export function PrivacyPage() {
 
       <h2>4. Kik férnek hozzá az adatokhoz (adatfeldolgozók)</h2>
       <ul>
-        <li>{OPERATOR.name} – a platform üzemeltetése.</li>
-        <li>Supabase, Inc. – adatbázis ({DB_REGION}).</li>
-        <li>{HOSTING.name} – a weboldal és a szerverfunkciók tárhelye (USA).</li>
-        <li>Resend (Plus Five Five, Inc.) – a jegyküldő e-mailek kézbesítése (USA).</li>
-        <li>KBOSS.hu Kft. (Számlázz.hu) – számlakészítés és -küldés.</li>
-        <li>Barion Payment Zrt. – a fizetés lebonyolítása (önálló adatkezelőként).</li>
+        <li>{OPERATOR.name} ({OPERATOR.seat}) – a platform üzemeltetése.</li>
+        <li>Supabase Pte. Ltd. (65 Chulia Street #38-02/03, OCBC Centre, Singapore 049513, supabase.com) – adatbázis; az adatok tárolási helye: {DB_REGION}.</li>
+        <li>{HOSTING.name} ({HOSTING.address}, netlify.com) – a weboldal és a szerverfunkciók tárhelye.</li>
+        <li>Plus Five Five, Inc. – Resend (2261 Market Street #5039, San Francisco, CA 94114, USA, resend.com) – a jegyküldő e-mailek kézbesítése.</li>
+        <li>KBOSS.hu Kft. – Számlázz.hu (1031 Budapest, Záhony utca 7., szamlazz.hu) – számlakészítés és -küldés.</li>
+        <li>Barion Payment Zrt. (1083 Budapest, Bókay János utca 44–46., barion.com) – a fizetés lebonyolítása (önálló adatkezelőként).</li>
       </ul>
       <p>
-        Az USA-ba irányuló adattovábbítás az Európai Bizottság általános szerződési feltételei (SCC), illetve az EU–USA adatvédelmi
+        Az Európai Gazdasági Térségen kívülre (USA, Szingapúr) irányuló adattovábbítás az Európai Bizottság általános szerződési feltételei (SCC), illetve az EU–USA adatvédelmi
         keretrendszer alapján történik. Ha a Vásárló a jegyét az Apple Tárcához vagy a Google Wallethez adja, a jegy adatai (név, jegykód,
         jegytípus) az Apple, illetve a Google rendszerébe kerülnek, azok saját feltételei szerint.
       </p>

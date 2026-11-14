@@ -49,6 +49,22 @@ export function lines(tickets) {
   return [...map.values()];
 }
 
+/** Invoice lines: one line per ticket (like the big ticket offices), with the
+ *  event, venue, time, tier and the ticket holder in the line note. */
+export function invoiceLines(order, tickets) {
+  const when = `${EVENT_DETAILS.dateString.replace(/\s*\(.*\)/, '')} ${EVENT_DETAILS.doorsOpen}`;
+  return tickets
+    .filter((t) => t.status === 'valid' || t.status === 'used')
+    .map((t) => ({
+      name: `Belépőjegy – ${t.tier_kind === 'vip' ? 'VIP Lounge' : t.tier_name}`,
+      note: [EVENT_DETAILS.title, EVENT_DETAILS.venue, EVENT_DETAILS.address, when, t.holder_name || order.full_name, `jegykód: ${t.code}`]
+        .filter(Boolean)
+        .join(' – '),
+      unitPrice: t.price_huf,
+      quantity: 1,
+    }));
+}
+
 async function claim(orderId) {
   const staleBefore = new Date(Date.now() - LOCK_MINUTES * 60000).toISOString();
   const { data } = await db()
@@ -79,7 +95,7 @@ export async function fulfillPaid(orderId, { invoice = true } = {}) {
         let number = order.invoice_attempted_at ? await findInvoiceByOrder(order.id) : null;
         if (!number) {
           await db().from('orders').update({ invoice_attempted_at: new Date().toISOString() }).eq('id', orderId);
-          number = (await createInvoice(order, lines(tickets))).number;
+          number = (await createInvoice(order, invoiceLines(order, tickets))).number;
         }
         patch.invoice_number = number;
         patch.invoice_error = null;
