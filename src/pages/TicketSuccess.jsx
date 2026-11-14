@@ -43,7 +43,7 @@ export default function TicketSuccess() {
           confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#d4af37', '#f7e7a9', '#ffffff'] });
           return;
         }
-        if (['cancelled', 'expired', 'unknown', 'payment_check', 'forbidden'].includes(data.status)) return setState(data);
+        if (['cancelled', 'expired', 'unknown', 'payment_check', 'forbidden', 'unavailable'].includes(data.status)) return setState(data);
         setState({ status: 'pending' });
       } catch {
         if (stop) return;
@@ -122,6 +122,7 @@ const MESSAGES = {
   cancelled: ['A fizetés nem sikerült.', 'A kártyádat nem terheltük meg. Próbáld újra, a foglalásod felszabadult.'],
   expired: ['A fizetési idő lejárt.', 'A kártyádat nem terheltük meg. Indíts új vásárlást.'],
   unknown: ['Ezt a rendelést nem találjuk.', null],
+  unavailable: ['A jegyek most nem tölthetők be.', 'Átmeneti hiba. Próbáld újra pár perc múlva – a jegyeidet e-mailben is megkapod.'],
   forbidden: ['Ez a link nem érvényes.', 'Nyisd meg a jegyeidet a visszaigazoló e-mailben kapott gombbal.'],
   payment_check: [
     'A fizetést ellenőriznünk kell.',
@@ -133,7 +134,7 @@ const MESSAGES = {
 function Status({ status }) {
   const [title, text] = MESSAGES[status] || MESSAGES.unknown;
   const busy = status === 'loading' || status === 'pending';
-  const failed = ['cancelled', 'expired', 'unknown', 'none', 'forbidden'].includes(status);
+  const failed = ['cancelled', 'expired', 'unknown', 'none', 'forbidden', 'unavailable'].includes(status);
   return (
     <div className="text-center">
       {busy ? (

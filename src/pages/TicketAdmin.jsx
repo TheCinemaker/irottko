@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useLive, LiveBadge } from '../lib/useLive';
-import { RefreshCw, LogOut, Download, Search, AlertTriangle, Check, X, Copy, Ban, Send, Printer } from 'lucide-react';
+import { RefreshCw, LogOut, Download, Search, AlertTriangle, Check, X, Copy, Ban, Send, Printer, Smartphone } from 'lucide-react';
+import QRCode from 'qrcode';
 
 /*
   Admin (/admin) – sales, orders and door check-ins at a glance.
@@ -560,6 +561,115 @@ function GuestListCard() {
   );
 }
 
+/* Door phone without the PIN: a one-time, 10-minute QR code (lib/enroll.js).
+   Works even while PIN logins are locked by a flood of wrong PINs. */
+function EnrollCard() {
+  const { token, logout } = useContext(AdminAuth);
+  const [label, setLabel] = useState('');
+  const [issued, setIssued] = useState(null); // { id, link, qr, expiresAt }
+  const [list, setList] = useState([]);
+  const [msg, setMsg] = useState('');
+  const [, tick] = useState(0);
+
+  const act = useCallback(
+    async (action, extra = {}) => {
+      const r = await call('admin-action', { token }, { action, ...extra });
+      if (!r.auth) {
+        logout();
+        return null;
+      }
+      if (r.status !== 200) throw new Error(r.data?.error || 'ERROR');
+      return r.data;
+    },
+    [token, logout]
+  );
+  const load = useCallback(() => act('enroll-list').then((d) => d && setList(d.list)).catch(() => {}), [act]);
+  useEffect(() => {
+    load();
+    const id = setInterval(() => {
+      tick((n) => n + 1);
+      load();
+    }, 15000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  const create = async () => {
+    setMsg('');
+    try {
+      const d = await act('enroll-create', { label });
+      if (!d) return;
+      const link = `${window.location.origin}/scan#enroll=${d.code}`;
+      setIssued({ id: d.id, link, qr: await QRCode.toDataURL(link, { margin: 1, width: 240 }), expiresAt: d.expiresAt });
+      setLabel('');
+      load();
+    } catch {
+      setMsg('Nem sikerült kódot készíteni (lefutott a 012-es SQL?).');
+    }
+  };
+  const revoke = async (id) => {
+    try {
+      await act('enroll-revoke', { id });
+      if (issued?.id === id) setIssued(null);
+      load();
+    } catch {
+      setMsg('A visszavonás nem sikerült.');
+    }
+  };
+
+  const left = issued ? Math.max(0, Math.round((new Date(issued.expiresAt).getTime() - Date.now()) / 60000)) : 0;
+  const status = (e) =>
+    e.used_at ? ['felhasználva ' + tm(e.used_at), 'text-emerald-400'] : e.revoked_at ? ['visszavonva', 'text-gray-500'] : new Date(e.expires_at) < new Date() ? ['lejárt', 'text-gray-500'] : ['aktív', 'text-[#d4af37]'];
+
+  return (
+    <Card title="Kapus telefon hozzáadása PIN nélkül" className="lg:col-span-3">
+      <p className="max-w-2xl text-sm text-gray-400">
+        Egyszer használható, 10 percig érvényes QR-kód. A kapus a telefonja kamerájával beolvassa, és a szkenner PIN nélkül, 24 órára
+        bejelentkezik. Akkor is működik, ha a PIN-es belépést túl sok hibás próbálkozás miatt lezárta a rendszer. Ne fotózd le, ne küldd tovább.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Eszköz neve (pl. 2. kapu)" maxLength={40} className="field max-w-xs py-2 text-sm" />
+        <button onClick={create} className="btn-secondary px-4 py-2">
+          <Smartphone className="h-4 w-4" /> QR-kód készítése
+        </button>
+      </div>
+      {issued && left > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-5 rounded-xl border border-[#d4af37]/30 bg-[#d4af37]/5 p-4">
+          <img src={issued.qr} alt="Regisztrációs QR-kód" className="h-40 w-40 rounded bg-white p-1" />
+          <div className="text-sm text-gray-300">
+            <div className="font-semibold text-white">Még {left} percig érvényes, egyszer használható.</div>
+            <div className="mt-1 text-gray-400">Beolvasás után a lenti listában „felhasználva” lesz.</div>
+            <button onClick={() => revoke(issued.id)} className="mt-3 text-[13px] text-red-300 underline">Visszavonás</button>
+          </div>
+        </div>
+      )}
+      {list.length > 0 && (
+        <ul className="mt-4 divide-y divide-white/5 text-sm">
+          {list.map((e) => {
+            const [txt, cls] = status(e);
+            const active = txt === 'aktív';
+            return (
+              <li key={e.id} className="flex items-center justify-between gap-3 py-2">
+                <span className="text-gray-300">
+                  {e.label || 'Névtelen eszköz'} <span className="text-gray-500">· {tm(e.created_at)}</span>
+                </span>
+                <span className="flex items-center gap-3">
+                  <span className={cls}>{txt}</span>
+                  {active && (
+                    <button onClick={() => revoke(e.id)} className="text-[13px] text-red-300 underline">
+                      Visszavonás
+                    </button>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {msg && <p className="mt-2 text-sm text-red-400">{msg}</p>}
+    </Card>
+  );
+}
+
 function Door({ d }) {
   const [filter, setFilter] = useState('all');
   const [q, setQ] = useState('');
@@ -604,6 +714,7 @@ function Door({ d }) {
       </Card>
 
       <GuestListCard />
+      <EnrollCard />
 
       {d.duplicates.length > 0 && (
         <Card title={`Duplázni próbálták (${d.duplicates.length} jegy)`} className="lg:col-span-3">

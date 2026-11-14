@@ -5,7 +5,7 @@ import { db, appUrl, json } from './lib/db.js';
 import { startPayment } from './lib/barion.js';
 import { loadOrder, lines } from './lib/fulfill.js';
 import { verifyTurnstile } from './lib/turnstile.js';
-import { orderLink } from './lib/orderAccess.js';
+import { orderLink, orderLinksReady } from './lib/orderAccess.js';
 
 const SLUG = () => process.env.EVENT_SLUG || process.env.VITE_EVENT_SLUG || 'one-night-irottko';
 
@@ -19,6 +19,7 @@ const KNOWN = {
 // Abuse limits: a reservation holds tickets without payment, so a script could
 // keep everything "sold out". Limits on unpaid, still-held orders:
 const MAX_PENDING_PER_EMAIL = 2;
+const UNAVAILABLE = 'A jegyfoglalás átmenetileg nem elérhető. Kérjük, próbáld újra pár másodperc múlva.';
 const MAX_PENDING_PER_IP = 4; // not applied during door sales (shared hotel Wi-Fi)
 
 const clientIp = (event) =>
@@ -29,17 +30,19 @@ async function tooManyPending(email, ip) {
   const now = new Date().toISOString();
   const pending = () => db().from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending').gt('expires_at', now);
 
-  const { count: byEmail } = await pending().eq('email', email);
+  const { count: byEmail, error: emailErr } = await pending().eq('email', email);
+  if (emailErr || byEmail == null) throw new Error(`email limit: ${emailErr?.message || 'no count'}`);
   if (byEmail >= MAX_PENDING_PER_EMAIL) {
     return 'Ezzel az e-mail címmel már folyamatban van egy fizetés. Fejezd be, vagy próbáld újra pár perc múlva.';
   }
 
   if (ip) {
-    const { data: door } = await db().from('tier_status').select('id').eq('channel', 'door').eq('active', true).limit(1);
-    if (!door?.length) {
+    const { data: door, error: doorErr } = await db().from('tier_status').select('id').eq('channel', 'door').eq('active', true).limit(1);
+    if (doorErr) throw new Error(`door check: ${doorErr.message}`);
+    if (!door.length) {
       const { count: byIp, error } = await pending().eq('client_ip', ip);
-      if (error) console.error('IP limit skipped (run 006_client_ip.sql):', error.message);
-      else if (byIp >= MAX_PENDING_PER_IP) return 'Erről a hálózatról túl sok fizetés van folyamatban. Próbáld újra pár perc múlva.';
+      if (error || byIp == null) throw new Error(`IP limit: ${error?.message || 'no count'}`);
+      if (byIp >= MAX_PENDING_PER_IP) return 'Erről a hálózatról túl sok fizetés van folyamatban. Próbáld újra pár perc múlva.';
     }
   }
   return null;
@@ -88,17 +91,28 @@ export const handler = async (event) => {
 
   const ip = clientIp(event);
 
+  // Without the link secret the buyer could not open their tickets → don't sell.
+  if (!orderLinksReady()) {
+    console.error('ORDER_LINK_SECRET missing – checkout disabled');
+    return json(503, { error: UNAVAILABLE });
+  }
+
   const human = await verifyTurnstile(input.turnstileToken, ip);
+  if (!human.ok && human.reason === 'unavailable') {
+    return json(503, { error: 'A robotellenőrzés átmenetileg nem elérhető. Kérjük, próbáld újra pár másodperc múlva.', retryTurnstile: true });
+  }
   if (!human.ok) {
     console.warn('turnstile rejected:', human.reason);
     return json(403, { error: 'A robotellenőrzés nem sikerült. Frissítsd az oldalt, és próbáld újra.', retryTurnstile: true });
   }
 
+  // Fail closed: if the limits can't be checked, no new reservation.
   try {
     const limited = await tooManyPending(b.email, ip);
     if (limited) return json(429, { error: limited });
   } catch (e) {
-    console.error('pending check failed (continuing):', e.message);
+    console.error('pending check failed – refusing:', e.message);
+    return json(503, { error: UNAVAILABLE });
   }
 
   let orderId;

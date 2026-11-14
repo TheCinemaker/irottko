@@ -1,29 +1,37 @@
 // Access token for one order's tickets (success page + "open in the app" e-mail link).
 //
 // The Barion PaymentId is NOT a secret: Barion issues sequential, time-based
-// GUIDs (the last 22 hex digits are the same for every payment, the rest grows
-// with time), so neighbouring ids can be guessed. The token instead is an HMAC
-// of the order id under a server-only key: 128 bits, unguessable, and nothing
-// to store (it can be recomputed whenever an e-mail is sent).
-// Env: ORDER_LINK_SECRET (falls back to SUPABASE_SERVICE_ROLE_KEY). Changing it
-// invalidates every link already sent.
+// GUIDs, so neighbouring ids can be guessed. The token instead is an HMAC of
+// the order id under ORDER_LINK_SECRET (lib/secrets.js): ~128 bits, nothing to
+// store, recomputable whenever an e-mail is sent.
+// Rotation: move the old key to ORDER_LINK_SECRET_PREVIOUS – links already sent
+// keep working until it is removed. No secret → links are neither issued nor
+// accepted (fail closed).
 import crypto from 'crypto';
+import { secretKeys, hasSecret } from './secrets.js';
 
-const key = () => {
-  const k = process.env.ORDER_LINK_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!k) throw new Error('MISSING_ORDER_LINK_SECRET');
-  return k;
-};
+const NAME = 'ORDER_LINK_SECRET';
+const TOKEN_LENGTH = 22;
+const mac = (key, orderId) => crypto.createHmac('sha256', key).update(`order-access:${orderId}`).digest('base64url').slice(0, TOKEN_LENGTH);
 
-export const orderToken = (orderId) =>
-  crypto.createHmac('sha256', key()).update(`order-access:${orderId}`).digest('base64url').slice(0, 22);
+export const orderLinksReady = () => hasSecret(NAME);
 
+/** Throws MissingSecret when ORDER_LINK_SECRET is not set. */
+export const orderToken = (orderId) => mac(secretKeys(NAME).current, orderId);
+
+/** Throws MissingSecret when ORDER_LINK_SECRET is not set. */
 export function validOrderToken(orderId, token) {
-  if (typeof orderId !== 'string' || typeof token !== 'string' || token.length !== 22) return false;
-  const a = Buffer.from(orderToken(orderId));
-  const b = Buffer.from(token);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+  const { all } = secretKeys(NAME);
+  if (typeof orderId !== 'string' || typeof token !== 'string' || token.length !== TOKEN_LENGTH) return false;
+  const given = Buffer.from(token);
+  let ok = false;
+  for (const key of all) {
+    const want = Buffer.from(mac(key, orderId));
+    // constant time per key; every key is always checked
+    if (want.length === given.length && crypto.timingSafeEqual(want, given)) ok = true;
+  }
+  return ok;
 }
 
-/** The buyer's link to their tickets. */
+/** The buyer's link to their tickets. Throws MissingSecret when not configured. */
 export const orderLink = (base, orderId) => `${base}/success?o=${encodeURIComponent(orderId)}&t=${orderToken(orderId)}`;

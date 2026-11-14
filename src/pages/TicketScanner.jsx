@@ -78,9 +78,34 @@ const timeHu = (iso) =>
 
 /* ------------------------------------------------------------------ */
 
+// One-time device code from the admin page: /scan#enroll=<code> (lib/enroll.js).
+// Read from the #fragment, so it never reaches server logs or a Referer header.
+const takeEnrollCode = () => {
+  const m = window.location.hash.match(/enroll=([A-Za-z0-9_-]{43})/);
+  if (m) window.history.replaceState(null, '', window.location.pathname); // don't leave it in the address bar
+  return m ? m[1] : '';
+};
+
 export default function TicketScanner() {
   const [token, setToken] = useState(store.get);
   const [expired, setExpired] = useState(false);
+  const [enrollMsg, setEnrollMsg] = useState('');
+
+  useEffect(() => {
+    const code = takeEnrollCode();
+    if (!code) return;
+    setEnrollMsg('Eszköz regisztrálása…');
+    fetch('/.netlify/functions/check-in', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enroll: code }) })
+      .then(async (res) => {
+        const d = await res.json().catch(() => ({}));
+        if (res.ok && d.token) {
+          store.set(d.token);
+          setToken(d.token);
+          setEnrollMsg('');
+        } else setEnrollMsg('Ez a regisztrációs kód lejárt, visszavonták, vagy már felhasználták. Kérj újat az admintól, vagy lépj be a PIN-nel.');
+      })
+      .catch(() => setEnrollMsg('Nincs kapcsolat a szerverrel – próbáld újra a QR-kóddal.'));
+  }, []);
 
   const logout = (isExpired = false) => {
     store.set('');
@@ -92,6 +117,7 @@ export default function TicketScanner() {
     return (
       <PinScreen
         expired={expired}
+        notice={enrollMsg}
         onUnlock={(t) => {
           store.set(t);
           setToken(t);
@@ -105,9 +131,12 @@ export default function TicketScanner() {
 
 /* ------------------------------ PIN ------------------------------- */
 
-function PinScreen({ onUnlock, expired }) {
+function PinScreen({ onUnlock, expired, notice }) {
   const [value, setValue] = useState('');
   const [error, setError] = useState(expired ? 'A munkamenet lejárt, add meg újra a PIN-t.' : '');
+  useEffect(() => {
+    if (notice) setError(notice);
+  }, [notice]);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e) => {
@@ -119,7 +148,7 @@ function PinScreen({ onUnlock, expired }) {
       const r = await callCheckIn({ pin: value }, '');
       if (r.auth && r.data.token) onUnlock(r.data.token);
       else {
-        setError(r.locked ? `Túl sok hibás próbálkozás. Próbáld újra ${r.locked} perc múlva.` : 'Hibás PIN.');
+        setError(r.locked ? `Túl sok hibás próbálkozás. Próbáld újra ${r.locked} perc múlva, vagy kérj belépő QR-kódot az admintól.` : 'Hibás PIN.');
         setValue('');
       }
     } catch {

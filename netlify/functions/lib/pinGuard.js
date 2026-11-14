@@ -12,6 +12,8 @@
 //    already logged in, even when they share an IP (venue Wi-Fi, mobile CGNAT).
 import crypto from 'crypto';
 import { db, json } from './db.js';
+import { secretKeys, MissingSecret } from './secrets.js';
+import { consumeEnrollment } from './enroll.js';
 
 const MAX_FAILS = 5; // per IP
 const WINDOW_MIN = 15;
@@ -34,21 +36,24 @@ const sameSecret = (a, b) => {
   return crypto.timingSafeEqual(x, y);
 };
 
-// The key mixes in a server-only secret: a stolen token alone can't be used
-// to brute-force the (short, numeric) PIN offline.
-const pepper = () => process.env.SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const sign = (scope, exp, secret) =>
-  crypto.createHmac('sha256', `${scope}:${secret}:${pepper()}`).update(String(exp)).digest('base64url');
+// Session tokens are signed with SESSION_SECRET (lib/secrets.js, its own key –
+// a stolen token alone can't be used to brute-force the PIN offline) plus the
+// PIN itself (changing the PIN logs every device out). SESSION_SECRET_PREVIOUS
+// keeps sessions alive across a key rotation.
+const sign = (key, scope, exp, secret) =>
+  crypto.createHmac('sha256', `${scope}:${secret}:${key}`).update(String(exp)).digest('base64url');
 
 function issueToken(scope, secret) {
   const exp = Date.now() + TOKEN_HOURS[scope] * 3600e3;
-  return `${exp}.${sign(scope, exp, secret)}`;
+  return `${exp}.${sign(secretKeys('SESSION_SECRET').current, scope, exp, secret)}`;
 }
 
 function validToken(scope, token, secret) {
   const [exp, mac] = String(token || '').split('.');
   if (!exp || !mac || !(Number(exp) > Date.now())) return false;
-  return sameSecret(mac, sign(scope, exp, secret));
+  let ok = false;
+  for (const key of secretKeys('SESSION_SECRET').all) if (sameSecret(mac, sign(key, scope, exp, secret))) ok = true;
+  return ok;
 }
 
 async function recentFails(scope, ip = null) {
@@ -59,18 +64,19 @@ async function recentFails(scope, ip = null) {
     .gt('failed_at', new Date(Date.now() - WINDOW_MIN * 60000).toISOString());
   if (ip) q = q.eq('ip', ip);
   const { count, error } = await q;
-  // A missing table gives an error – or, for a HEAD count request, just count: null.
-  if (error || count == null) {
-    console.warn('PIN lock skipped (run 007_pin_guard.sql):', error?.message || 'no pin_failures table');
-    return 0;
-  }
-  return count || 0;
+  // Fail closed: if the lock can't be checked, PIN login is refused (tokens still work).
+  if (error || count == null) throw new Error(`PIN lock check failed: ${error?.message || 'no count'}`);
+  return count;
 }
 
 /**
- * body: { token } or { pin }. scope: 'scanner' | 'admin'.
+ * body: { token } | { pin } | { enroll } (scanner only). scope: 'scanner' | 'admin'.
  * Returns { denied: response } or { token } (token: a fresh one after a PIN
- * login, null when the caller already sent a valid token).
+ * login or an enrolment, null when the caller already sent a valid token).
+ *
+ * enroll: a one-time device code the admin issued (lib/enroll.js). It is not a
+ * PIN path – only a logged-in admin can create one – so the PIN locks don't
+ * apply to it and a locked-out PIN login can't block adding a door phone.
  */
 export async function authenticate(event, scope, body, secret) {
   if (!secret) return { denied: json(500, { error: `MISSING_${scope.toUpperCase()}_PIN` }) };
@@ -79,19 +85,35 @@ export async function authenticate(event, scope, body, secret) {
     console.error(`${scope.toUpperCase()}_PIN is shorter than ${MIN_PIN_LENGTH} characters – login disabled`);
     return { denied: json(500, { error: 'WEAK_PIN_CONFIG' }) };
   }
-  if (body.token && validToken(scope, body.token, secret)) return { token: null };
-  if (body.token && !body.pin) return { denied: json(401, { error: 'SESSION_EXPIRED' }) };
+  try {
+    if (body.token && validToken(scope, body.token, secret)) return { token: null };
+    if (body.token && !body.pin && !body.enroll) return { denied: json(401, { error: 'SESSION_EXPIRED' }) };
 
-  const ip = clientIp(event);
-  const [mine, all] = await Promise.all([recentFails(scope, ip), recentFails(scope)]);
-  if (mine >= MAX_FAILS || all >= MAX_FAILS_GLOBAL) {
-    if (all >= MAX_FAILS_GLOBAL) console.error(`PIN LOGIN LOCKED (${scope}): ${all} wrong PINs in ${WINDOW_MIN} min from all addresses`);
-    return { denied: json(429, { error: 'LOCKED', minutes: WINDOW_MIN }) };
+    if (body.enroll) {
+      if (scope !== 'scanner') return { denied: json(400, { error: 'ENROLL_SCANNER_ONLY' }) };
+      return (await consumeEnrollment(body.enroll))
+        ? { token: issueToken(scope, secret) }
+        : { denied: json(401, { error: 'ENROLL_INVALID' }) };
+    }
+
+    const ip = clientIp(event);
+    const [mine, all] = await Promise.all([recentFails(scope, ip), recentFails(scope)]);
+    if (mine >= MAX_FAILS || all >= MAX_FAILS_GLOBAL) {
+      if (all >= MAX_FAILS_GLOBAL) console.error(`PIN LOGIN LOCKED (${scope}): ${all} wrong PINs in ${WINDOW_MIN} min from all addresses`);
+      return { denied: json(429, { error: 'LOCKED', minutes: WINDOW_MIN }) };
+    }
+    if (sameSecret(body.pin ?? '', secret)) return { token: issueToken(scope, secret) };
+
+    const { error } = await db().from('pin_failures').insert({ scope, ip });
+    if (error) console.error('pin_failures insert:', error.message);
+    await new Promise((r) => setTimeout(r, 800));
+    return { denied: json(401, { error: 'BAD_PIN' }) };
+  } catch (e) {
+    if (e instanceof MissingSecret) {
+      console.error('SESSION_SECRET missing – logins disabled');
+      return { denied: json(500, { error: 'MISSING_SESSION_SECRET' }) };
+    }
+    console.error(`authenticate (${scope}) failed – refusing:`, e.message);
+    return { denied: json(503, { error: 'UNAVAILABLE' }) };
   }
-  if (sameSecret(body.pin ?? '', secret)) return { token: issueToken(scope, secret) };
-
-  const { error } = await db().from('pin_failures').insert({ scope, ip });
-  if (error && error.code !== 'PGRST205') console.warn('pin_failures insert:', error.message);
-  await new Promise((r) => setTimeout(r, 800));
-  return { denied: json(401, { error: 'BAD_PIN' }) };
 }

@@ -4,10 +4,15 @@
 //                                  (to the address on the order)
 //   action 'guestlist'           → every issued ticket, for the printable
 //                                  emergency list at the door
+//   action 'enroll-create', label → one-time 10-minute code to add a door phone
+//                                  without the PIN (lib/enroll.js)
+//   action 'enroll-list'          → codes of the last 24 h (status only, no codes)
+//   action 'enroll-revoke', id    → revoke an unused code
 import { db, json } from './lib/db.js';
 import { authenticate } from './lib/pinGuard.js';
 import { loadOrder } from './lib/fulfill.js';
 import { sendTicketEmail } from './lib/ticketEmail.js';
+import { createEnrollment, listEnrollments, revokeEnrollment, ENROLL_MINUTES } from './lib/enroll.js';
 
 const SLUG = process.env.VITE_EVENT_SLUG || 'one-night-irottko';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -76,6 +81,9 @@ export const handler = async (event) => {
   try {
     if (body.action === 'resend') return await resend(body.orderId);
     if (body.action === 'guestlist') return await guestlist();
+    if (body.action === 'enroll-create') return json(200, { ...(await createEnrollment(body.label)), minutes: ENROLL_MINUTES });
+    if (body.action === 'enroll-list') return json(200, { list: await listEnrollments() });
+    if (body.action === 'enroll-revoke') return json(200, { revoked: await revokeEnrollment(body.id) });
     return json(400, { error: 'UNKNOWN_ACTION' });
   } catch (e) {
     console.error('admin-action failed:', e.message);

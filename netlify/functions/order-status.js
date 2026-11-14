@@ -5,13 +5,17 @@
 // PaymentId alone is guessable and grants nothing.
 import { db, json } from './lib/db.js';
 import { syncPayment, loadOrder } from './lib/fulfill.js';
-import { validOrderToken } from './lib/orderAccess.js';
+import { validOrderToken, orderLinksReady } from './lib/orderAccess.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const handler = async (event) => {
   const q = event.queryStringParameters || {};
   const orderId = String(q.o || '');
+  if (!orderLinksReady()) {
+    console.error('ORDER_LINK_SECRET missing – order links disabled');
+    return json(503, { status: 'unavailable' });
+  }
   if (!UUID.test(orderId) || !validOrderToken(orderId, String(q.t || ''))) return json(403, { status: 'forbidden' });
 
   try {
