@@ -300,7 +300,8 @@ function Sales({ d }) {
         </div>
       </Card>
 
-      <LimitsCard d={d} />
+      {/* remount when the saved settings change (e.g. page opened before the migration) */}
+      <LimitsCard key={`${d.event.limitOn}-${d.event.venueLimit}-${d.event.nonTicketCount}`} d={d} />
 
       <Card title="Jegytípusok" className="lg:col-span-3">
         <Table
@@ -336,15 +337,17 @@ function LimitsCard({ d }) {
   const { token, logout } = useContext(AdminAuth);
   const ev = d.event;
   const migrated = ev.venueLimit != null || ev.nonTicketCount != null;
-  const [on, setOn] = useState(ev.limitOn);
+  const [on, setOn] = useState(ev.limitOn === true);
   const [limit, setLimit] = useState(String(ev.venueLimit ?? ''));
   const [crew, setCrew] = useState(String(ev.nonTicketCount ?? 30));
   const [salesOpen, setSalesOpen] = useState(ev.salesOpen);
   const [msg, setMsg] = useState(null); // [text, ok]
   const [busy, setBusy] = useState(false);
+  // last saved values (the live data may lag behind a save by a few seconds)
+  const [saved, setSaved] = useState({ on: ev.limitOn === true, limit: String(ev.venueLimit ?? ''), crew: String(ev.nonTicketCount ?? 30) });
 
-  // follow live data unless the form has unsaved edits
-  const dirty = on !== ev.limitOn || limit !== String(ev.venueLimit ?? '') || crew !== String(ev.nonTicketCount ?? 30);
+  // unsaved edits = differs from the last saved values (new server values remount the card)
+  const dirty = on !== saved.on || limit !== saved.limit || crew !== saved.crew;
   useEffect(() => setSalesOpen(ev.salesOpen), [ev.salesOpen]);
 
   const act = async (action, extra) => {
@@ -363,9 +366,9 @@ function LimitsCard({ d }) {
   };
 
   const save = async () => {
-    const r = await act('set-limits', { venueLimit: Number(limit), nonTicketCount: Number(crew), enabled: on });
+    const r = await act('set-limits', { venueLimit: Number(limit), nonTicketCount: Number(crew), enabled: Boolean(on) });
     if (r) {
-      Object.assign(ev, { limitOn: r.enabled, venueLimit: r.venueLimit, nonTicketCount: r.nonTicketCount, ticketCap: r.venueLimit - r.nonTicketCount });
+      setSaved({ on: r.enabled, limit: String(r.venueLimit), crew: String(r.nonTicketCount) });
       setMsg([r.enabled ? `Mentve: legfeljebb ${num(r.venueLimit - r.nonTicketCount)} jegy adható el.` : 'Mentve: a plafon KI van kapcsolva, a jegyeladás korlátlan.', true]);
     }
   };
