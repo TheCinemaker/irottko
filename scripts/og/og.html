@@ -27,16 +27,21 @@
       linear-gradient(180deg, rgba(5,3,10,.82), rgba(5,3,10,.93));
   }
   .pass {
-    position: relative; display: flex; width: 1110px; height: 540px; border-radius: 6px; overflow: hidden;
+    position: relative; display: flex; flex-direction: column; width: 1110px; height: 560px; border-radius: 6px; overflow: hidden;
     background: linear-gradient(160deg, #120d1b 0%, #08060e 70%);
     border: 2px solid rgba(212,175,55,.75);
     box-shadow: 0 40px 90px -30px rgba(0,0,0,.95);
   }
-  .main { flex: 1; min-width: 0; padding: 34px 44px 32px; display: flex; flex-direction: column; }
+  .body { flex: 1; display: flex; min-height: 0; }
+  .band { height: 84px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 30px 0 44px;
+    background: linear-gradient(90deg, #f3d36a, #d4af37 55%, #b8901d); color: #0a0710; }
+  .band b { font-weight: 800; font-size: 44px; letter-spacing: .2em; }
+  .band .meta { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 20px; letter-spacing: .14em; }
+  .main { flex: 1; min-width: 0; padding: 24px 44px 28px; display: flex; flex-direction: column; }
   .kick { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; letter-spacing: .28em; color: #f0c94a; }
   .kick .sep { color: #6f6a7c; }
   .kick .r { color: #d6d1e2; letter-spacing: .18em; }
-  .brand { margin-top: 14px; font-family: Cinzel; font-weight: 700; font-size: 53px; line-height: 1; letter-spacing: .03em; white-space: nowrap; color: #fff; }
+  .brand { margin-top: 6px; font-family: Cinzel; font-weight: 700; font-size: 53px; line-height: 1; letter-spacing: .03em; white-space: nowrap; color: #fff; }
   .brand span { color: #f5cf4f; }
   .brand small { font-family: Inter; font-size: 15px; font-weight: 600; letter-spacing: .3em; color: #f0c94a; margin-left: 14px; vertical-align: 3px; }
   .mono { width: 44px; height: 44px; }
@@ -45,9 +50,9 @@
   .route .dash { width: 90px; height: 3px; background: repeating-linear-gradient(90deg, #f0c94a 0 9px, transparent 9px 16px); }
   .route .city { font-size: 13px; letter-spacing: .24em; color: #b9b4c6; margin-left: 2px; }
 
-  .label { margin-top: 38px; font-size: 16px; font-weight: 600; letter-spacing: .34em; color: #f0c94a; }
+  .label { margin-top: 26px; font-size: 16px; font-weight: 600; letter-spacing: .34em; color: #f0c94a; }
   .headliner {
-    margin-top: 6px; font-weight: 800; font-size: 112px; line-height: .95; letter-spacing: -.035em;
+    margin-top: 4px; font-weight: 800; font-size: 104px; line-height: .95; letter-spacing: -.035em;
     background: linear-gradient(180deg, #fff3c4 0%, #f5cf4f 45%, #c99a1c 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
     filter: drop-shadow(0 6px 24px rgba(212,175,55,.25));
@@ -58,9 +63,10 @@
   .others b { color: #fff; font-weight: 600; }
 
   .perf { position: relative; width: 0; border-left: 2px dashed rgba(255,255,255,.32); margin: 22px 0; }
+  .perf.top::before { display: none; }
   .perf::before, .perf::after { content: ''; position: absolute; left: -16px; width: 30px; height: 30px; border-radius: 50%; background: #070510; border: 2px solid rgba(212,175,55,.75); }
-  .perf::before { top: -38px; } .perf::after { bottom: -38px; }
-  .stub { width: 260px; flex-shrink: 0; padding: 30px 30px 30px; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(212,175,55,.12), rgba(212,175,55,.02)); }
+  .perf::before { top: -38px; } /* hidden under the band */ .perf::after { bottom: -38px; }
+  .stub { width: 260px; flex-shrink: 0; padding: 24px 30px 28px; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(212,175,55,.12), rgba(212,175,55,.02)); }
   .f { white-space: nowrap; }
   .f + .f { margin-top: 20px; }
   .f .k { font-size: 14px; font-weight: 600; letter-spacing: .24em; color: #c4bfd0; }
@@ -72,13 +78,14 @@
 </head>
 <body>
   <div class="pass">
+    <div class="band">
+      <b>BOARDING PASS</b>
+      <span class="meta">ÍR 0115 · KSZ
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#0a0710"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" transform="rotate(90 12 12)"/></svg>
+        ÍRK</span>
+    </div>
+    <div class="body">
     <div class="main">
-      <div class="kick">
-        <span>BOARDING PASS</span><span class="sep">·</span>
-        <span class="r">KSZ</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#f0c94a"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" transform="rotate(90 12 12)"/></svg>
-        <span class="r">ÍRK</span>
-      </div>
       <div class="brand">ONE NIGHT <span>AT ÍROTTKŐ</span></div>
 
       <div class="label">HEADLINER</div>
@@ -90,7 +97,7 @@
       </div>
     </div>
 
-    <div class="perf"></div>
+    <div class="perf top"></div>
 
     <div class="stub">
       <svg style="width:44px;height:44px;margin-bottom:22px" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7e7a9"/><stop offset="1" stop-color="#aa820a"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="#d4af37" stroke-opacity=".7" stroke-width="2"/><path fill="url(#g)" d="M22 21h20v3.5h-5.5v22h5.5V50H22v-3.5h5.5v-22H22z"/><path fill="url(#g)" d="M30.5 17.5 36 9.5h5.5l-7.5 8z"/></svg>
@@ -98,6 +105,7 @@
       <div class="f"><div class="k">GATE OPEN</div><div class="v gold">19:00</div></div>
       <div class="f"><div class="k">JÁRAT</div><div class="v">ÍR 0115</div></div>
       <div class="bars" id="bars"></div>
+    </div>
     </div>
   </div>
 <script>
