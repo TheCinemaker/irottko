@@ -200,7 +200,17 @@ export const handler = async (event) => {
     return json(200, {
       token: auth.token,
       generatedAt: new Date().toISOString(),
-      event: { title: ev.title, salesOpen: ev.sales_open, onlineCapacity: ev.online_capacity, capacity: ev.capacity },
+      event: {
+        title: ev.title,
+        salesOpen: ev.sales_open,
+        onlineCapacity: ev.online_capacity,
+        capacity: ev.capacity,
+        // fire-safety limit (013_venue_limit.sql); undefined before the migration
+        venueLimit: ev.venue_limit ?? null,
+        nonTicketCount: ev.non_ticket_count ?? null,
+        limitOn: ev.venue_limit_on ?? false,
+        ticketCap: ev.venue_limit != null ? ev.venue_limit - (ev.non_ticket_count ?? 0) : null,
+      },
       totals: {
         ticketsSold: sold.length,
         revenue: sold.reduce((a, t) => a + t.price_huf, 0),
@@ -219,6 +229,8 @@ export const handler = async (event) => {
             ? null
             : Math.max(vipTier.quantity - sold.filter((t) => kindOf(t) === 'vip').length - held.filter((t) => kindOf(t) === 'vip').length, 0),
         heldNow: held.length,
+        // all live tickets (paid + held for payment) against the fire-safety cap
+        ticketsLive: sold.length + held.length,
         checkedIn: used.length,
         vipCheckedIn: used.filter((t) => kindOf(t) === 'vip').length,
         scans: scans.length,

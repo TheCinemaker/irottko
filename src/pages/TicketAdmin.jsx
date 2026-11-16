@@ -296,9 +296,11 @@ function Sales({ d }) {
         <div className="mt-5 space-y-2 border-t border-white/10 pt-4 text-sm">
           <Row k="Most fizetés alatt (foglalva)" v={`${num(t.heldNow)} jegy`} />
           <Row k="Megszakított / lejárt fizetés" v={`${num(lostOrders)} rendelés`} />
-          <Row k="Online eladás" v={d.event.salesOpen ? <span className="text-emerald-400">nyitva</span> : <span className="text-red-400">zárva</span>} />
+          <Row k="Jegyeladás" v={d.event.salesOpen ? <span className="text-emerald-400">nyitva</span> : <span className="text-red-400">zárva</span>} />
         </div>
       </Card>
+
+      <LimitsCard d={d} />
 
       <Card title="Jegytípusok" className="lg:col-span-3">
         <Table
@@ -323,6 +325,133 @@ function Sales({ d }) {
         />
       </Card>
     </div>
+  );
+}
+
+/* Fire-safety limit + emergency stop (supabase/013_venue_limit.sql).
+   Sellable tickets = venue limit − people inside without a ticket. Every ticket
+   type counts (online, VIP, door QR). Switched off, the numbers are kept but
+   sales are unlimited. */
+function LimitsCard({ d }) {
+  const { token, logout } = useContext(AdminAuth);
+  const ev = d.event;
+  const migrated = ev.venueLimit !== null || ev.nonTicketCount !== null;
+  const [on, setOn] = useState(ev.limitOn);
+  const [limit, setLimit] = useState(String(ev.venueLimit ?? ''));
+  const [crew, setCrew] = useState(String(ev.nonTicketCount ?? 30));
+  const [salesOpen, setSalesOpen] = useState(ev.salesOpen);
+  const [msg, setMsg] = useState(null); // [text, ok]
+  const [busy, setBusy] = useState(false);
+
+  // follow live data unless the form has unsaved edits
+  const dirty = on !== ev.limitOn || limit !== String(ev.venueLimit ?? '') || crew !== String(ev.nonTicketCount ?? 30);
+  useEffect(() => setSalesOpen(ev.salesOpen), [ev.salesOpen]);
+
+  const act = async (action, extra) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await call('admin-action', { token }, { action, ...extra });
+      if (!r.auth) return logout();
+      if (r.status !== 200) throw new Error(r.data?.error);
+      return r.data;
+    } catch {
+      setMsg(['Nem sikerült menteni. Ellenőrizd a számokat (a létszám nagyobb legyen, mint a jegy nélküliek száma).', false]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const save = async () => {
+    const r = await act('set-limits', { venueLimit: Number(limit), nonTicketCount: Number(crew), enabled: on });
+    if (r) {
+      Object.assign(ev, { limitOn: r.enabled, venueLimit: r.venueLimit, nonTicketCount: r.nonTicketCount, ticketCap: r.venueLimit - r.nonTicketCount });
+      setMsg([r.enabled ? `Mentve: legfeljebb ${num(r.venueLimit - r.nonTicketCount)} jegy adható el.` : 'Mentve: a plafon KI van kapcsolva, a jegyeladás korlátlan.', true]);
+    }
+  };
+  const toggleSales = async () => {
+    const next = !salesOpen;
+    const q = next
+      ? 'Újraindítod a jegyeladást? (online, VIP és a helyszíni QR-kód is)'
+      : 'Leállítod az ÖSSZES jegyeladást most? (online, VIP és a helyszíni QR-kód is)\nA már eladott jegyek érvényesek maradnak.';
+    if (!window.confirm(q)) return;
+    const r = await act('set-sales-open', { open: next });
+    if (r) {
+      setSalesOpen(r.salesOpen);
+      setMsg([r.salesOpen ? 'A jegyeladás újra nyitva.' : 'A jegyeladás LEÁLLÍTVA.', true]);
+    }
+  };
+
+  const cap = Number(limit) - Number(crew);
+  const live = d.totals.ticketsLive ?? d.totals.ticketsSold;
+  const capOk = Number.isInteger(cap) && cap > 0;
+
+  return (
+    <Card title="Létszám-plafon és jegyeladás" className="lg:col-span-3">
+      {!migrated ? (
+        <p className="text-sm text-amber-300">Futtasd le a Supabase-ben a 013_venue_limit.sql-t – utána itt állítható a plafon.</p>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div>
+            <label className="flex cursor-pointer items-center gap-3 text-sm text-white">
+              <input type="checkbox" checked={on} onChange={(e) => setOn(e.target.checked)} className="h-5 w-5 accent-[#d4af37]" />
+              Létszám-plafon bekapcsolva
+            </label>
+            <p className="mt-2 text-sm text-gray-400">
+              {on
+                ? 'Minden jegyfajta együtt számít (online, VIP, helyszíni QR). Ha elfogy, az oldalon és a kapus telefonján is „Telt ház” látszik.'
+                : 'Kikapcsolva a jegyeladás korlátlan (csak az online és a VIP saját kerete számít). A számok megmaradnak.'}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <label className="text-xs text-gray-400">
+                Tűzvédelmi létszám (fő)
+                <input inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value.replace(/\D/g, ''))} className="field mt-1 py-2 text-sm" />
+              </label>
+              <label className="text-xs text-gray-400">
+                Bent jegy nélkül (staff, fellépő, vendég)
+                <input inputMode="numeric" value={crew} onChange={(e) => setCrew(e.target.value.replace(/\D/g, ''))} className="field mt-1 py-2 text-sm" />
+              </label>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button onClick={save} disabled={busy || !dirty || !capOk} className="btn-secondary px-4 py-2 disabled:opacity-40">
+                <Check className="h-4 w-4" /> Mentés
+              </button>
+              <span className="text-sm text-gray-300">
+                Eladható jegy összesen: <b className="tabular-nums text-white">{capOk ? num(cap) : '–'}</b>
+              </span>
+            </div>
+          </div>
+
+          <div>
+            {ev.limitOn && ev.ticketCap != null ? (
+              <Meter
+                label="Jegyek a plafonhoz képest (fizetett + fizetés alatt)"
+                used={live}
+                total={ev.ticketCap}
+                left={Math.max(ev.ticketCap - live, 0)}
+                note={live >= ev.ticketCap ? 'TELT HÁZ – több jegy nem adható el.' : undefined}
+              />
+            ) : (
+              <p className="mb-4 text-sm text-gray-400">A plafon ki van kapcsolva – eddig {num(live)} jegy kelt el / van fizetés alatt.</p>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
+              <div className="text-sm">
+                Jegyeladás:{' '}
+                {salesOpen ? <span className="font-semibold text-emerald-400">nyitva</span> : <span className="font-semibold text-red-400">LEÁLLÍTVA</span>}
+              </div>
+              <button
+                onClick={toggleSales}
+                disabled={busy}
+                className={`btn-secondary px-4 py-2 disabled:opacity-40 ${salesOpen ? '!border-red-500/60 !text-red-300' : ''}`}
+              >
+                {salesOpen ? <Ban className="h-4 w-4" /> : <Check className="h-4 w-4" />} {salesOpen ? 'Eladás leállítása most' : 'Eladás újraindítása'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {msg && <p className={`mt-3 text-sm ${msg[1] ? 'text-emerald-400' : 'text-red-400'}`}>{msg[0]}</p>}
+    </Card>
   );
 }
 

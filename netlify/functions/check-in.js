@@ -10,6 +10,22 @@ import { authenticate } from './lib/pinGuard.js';
 const SLUG = process.env.VITE_EVENT_SLUG || 'one-night-irottko';
 let eventId = null;
 
+// Fire-safety limit (013_venue_limit.sql): how many tickets can still be sold.
+// null when no limit is set or the migration hasn't run yet.
+async function ticketsLeft() {
+  try {
+    const { data: ev, error } = await db().from('events').select('*').eq('slug', SLUG).single();
+    if (error) throw error;
+    if (!ev.venue_limit_on || ev.venue_limit == null) return null; // switched off in the admin
+    const { data: taken, error: tErr } = await db().rpc('total_taken', { p_event: ev.id });
+    if (tErr) throw tErr;
+    return Math.max(ev.venue_limit - (ev.non_ticket_count ?? 0) - taken, 0);
+  } catch (e) {
+    console.warn('ticketsLeft failed:', e.message);
+    return null;
+  }
+}
+
 // Door counters for the scanner header: inside / still expected (paid, not yet
 // scanned). Counts only – door staff never see names, e-mails or revenue here.
 async function doorStats() {
@@ -26,9 +42,10 @@ async function doorStats() {
         .eq('event_id', eventId)
         .eq('status', status)
         .eq('orders.status', 'paid');
-    const [used, valid] = await Promise.all([count('used'), count('valid')]);
+    const [used, valid, limits] = await Promise.all([count('used'), count('valid'), ticketsLeft()]);
     if (used.error || valid.error) throw used.error || valid.error;
-    return { in: used.count ?? 0, waiting: valid.count ?? 0, at: new Date().toISOString() };
+    // left: tickets that can still be sold (door QR too); null = no limit set
+    return { in: used.count ?? 0, waiting: valid.count ?? 0, left: limits, at: new Date().toISOString() };
   } catch (e) {
     console.warn('doorStats failed:', e.message);
     return null;

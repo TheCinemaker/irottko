@@ -5,7 +5,7 @@ import { supabase } from './supabaseClient';
   Live ticket prices from the DB (supabase/seed_2027.sql is the single source).
   Returns { status, standard, vip, next, doorFrom, onlineLeft }:
     status: 'loading' | 'open' | 'between' (online closed, door not yet open)
-            | 'closed' | 'error'
+            | 'full' (fire-safety limit reached) | 'closed' | 'error'
     standard / vip: the tier on sale right now (or null)
     next: the next standard price step after the current one (or null)
 */
@@ -40,15 +40,18 @@ export function usePricing() {
       const door = std.find((t) => t.channel === 'door');
       const onlineSoldOut = standard?.channel === 'online' && data.online_left === 0;
 
+      // full: the fire-safety limit is reached (013_venue_limit.sql) – nothing can be sold
+      const full = data.full === true;
       let status = 'open';
       if (!data.event.sales_open) status = 'closed';
+      else if (full) status = 'full';
       else if (!standard && !vip) status = door && new Date(data.now) < new Date(door.sales_from) ? 'between' : 'closed';
 
       setState({
         status,
-        standard: onlineSoldOut ? null : standard,
+        standard: onlineSoldOut || full ? null : standard,
         onlineSoldOut,
-        vip,
+        vip: full ? null : vip,
         next,
         doorFrom: door?.sales_from || null,
         onlineLeft: data.online_left,

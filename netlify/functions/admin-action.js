@@ -8,6 +8,9 @@
 //                                  without the PIN (lib/enroll.js)
 //   action 'enroll-list'          → codes of the last 24 h (status only, no codes)
 //   action 'enroll-revoke', id    → revoke an unused code
+//   action 'set-sales-open', open → emergency stop / restart of all ticket sales
+//   action 'set-limits', venueLimit, nonTicketCount, enabled → fire-safety limit (013);
+//                                  enabled=false keeps the numbers but sells without a limit
 import { db, json } from './lib/db.js';
 import { authenticate } from './lib/pinGuard.js';
 import { loadOrder } from './lib/fulfill.js';
@@ -67,6 +70,35 @@ async function guestlist() {
   return json(200, { generatedAt: new Date().toISOString(), guests });
 }
 
+// Emergency stop / restart of ALL ticket sales (online, VIP, door QR).
+async function setSalesOpen(open) {
+  if (typeof open !== 'boolean') return json(400, { error: 'BAD_VALUE' });
+  const { data, error } = await db().from('events').update({ sales_open: open }).eq('slug', SLUG).select('sales_open').single();
+  if (error) throw error;
+  console.log(`admin: ticket sales ${open ? 'OPENED' : 'STOPPED'}`);
+  return json(200, { salesOpen: data.sales_open });
+}
+
+// Fire-safety limit (013_venue_limit.sql): sellable tickets = venueLimit − nonTicketCount.
+// Lowering it below the tickets already sold is allowed: nobody loses a ticket,
+// sales just stop.
+async function setLimits(venueLimit, nonTicketCount, enabled) {
+  if (typeof enabled !== 'boolean') return json(400, { error: 'BAD_VALUE' });
+  const okInt = (n, min, max) => Number.isInteger(n) && n >= min && n <= max;
+  if (!okInt(venueLimit, 1, 10000) || !okInt(nonTicketCount, 0, 1000) || nonTicketCount >= venueLimit) {
+    return json(400, { error: 'BAD_VALUE' });
+  }
+  const { data, error } = await db()
+    .from('events')
+    .update({ venue_limit: venueLimit, non_ticket_count: nonTicketCount, venue_limit_on: enabled })
+    .eq('slug', SLUG)
+    .select('venue_limit, non_ticket_count, venue_limit_on')
+    .single();
+  if (error) throw error;
+  console.log(`admin: venue limit ${data.venue_limit_on ? 'ON' : 'OFF'} ${data.venue_limit}, without ticket ${data.non_ticket_count}`);
+  return json(200, { venueLimit: data.venue_limit, nonTicketCount: data.non_ticket_count, enabled: data.venue_limit_on });
+}
+
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') return json(405, { error: 'METHOD' });
   let body;
@@ -84,6 +116,8 @@ export const handler = async (event) => {
     if (body.action === 'enroll-create') return json(200, { ...(await createEnrollment(body.label)), minutes: ENROLL_MINUTES });
     if (body.action === 'enroll-list') return json(200, { list: await listEnrollments() });
     if (body.action === 'enroll-revoke') return json(200, { revoked: await revokeEnrollment(body.id) });
+    if (body.action === 'set-sales-open') return await setSalesOpen(body.open);
+    if (body.action === 'set-limits') return await setLimits(body.venueLimit, body.nonTicketCount, body.enabled);
     return json(400, { error: 'UNKNOWN_ACTION' });
   } catch (e) {
     console.error('admin-action failed:', e.message);

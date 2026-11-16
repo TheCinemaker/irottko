@@ -471,6 +471,17 @@ function DoorStats({ stats, live }) {
         <span>{stats ? `${share}% bent` : 'Betöltés…'}</span>
         <LiveBadge status={live} />
       </div>
+      {/* fire-safety limit: tickets that can still be sold (door QR too) */}
+      {stats?.left != null &&
+        (stats.left === 0 ? (
+          <div className="mt-3 rounded-lg bg-red-600 px-3 py-2 text-center text-sm font-semibold text-white">
+            TELT HÁZ – jegyet már nem lehet venni, csak jeggyel lehet belépni
+          </div>
+        ) : (
+          <div className={`mt-3 text-center text-xs ${stats.left <= 20 ? 'font-semibold text-amber-400' : 'text-gray-400'}`}>
+            Még eladható jegy (a helyszíni QR-kóddal is): <span className="tabular-nums">{stats.left}</span>
+          </div>
+        ))}
     </section>
   );
 }

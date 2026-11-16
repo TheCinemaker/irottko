@@ -12,6 +12,8 @@ const SLUG = () => process.env.EVENT_SLUG || process.env.VITE_EVENT_SLUG || 'one
 const KNOWN = {
   SALES_CLOSED: [409, 'A jegyértékesítés jelenleg nem elérhető.'],
   SOLD_OUT: [409, 'Ebből a jegytípusból nincs már elég szabad hely.'],
+  // venue limit (013_venue_limit.sql): every ticket type together
+  FULL_HOUSE: [409, 'A járat megtelt – ennyi szabad hely már nincs. Ha kevesebb jegyet választasz, lehet, hogy még belefér.'],
   INVALID_QTY: [400, 'Érvénytelen jegyszám.'],
   EVENT_NOT_FOUND: [500, 'Az esemény nincs beállítva.'],
 };
