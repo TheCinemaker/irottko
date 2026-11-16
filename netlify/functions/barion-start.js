@@ -22,7 +22,10 @@ const KNOWN = {
 // keep everything "sold out". Limits on unpaid, still-held orders:
 const MAX_PENDING_PER_EMAIL = 2;
 const UNAVAILABLE = 'A jegyfoglalás átmenetileg nem elérhető. Kérjük, próbáld újra pár másodperc múlva.';
-const MAX_PENDING_PER_IP = 4; // not applied during door sales (shared hotel Wi-Fi)
+// 10, not lower: mobile carriers put many subscribers behind one shared IP (CGNAT),
+// so a presale rush must not block real buyers. Scripts are also stopped by the
+// per-e-mail limit and Turnstile.
+const MAX_PENDING_PER_IP = 10; // not applied during door sales (shared hotel Wi-Fi)
 
 const clientIp = (event) =>
   event.headers?.['x-nf-client-connection-ip'] || (event.headers?.['x-forwarded-for'] || '').split(',')[0].trim() || null;
