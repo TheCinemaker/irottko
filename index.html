@@ -3,19 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>ONE NIGHT AT ÍROTTKŐ – 2027. január 15. · Kőszeg</title>
-    <meta name="description" content="Egy éjszaka, 3 DJ, 3 bár és VIP Lounge a Hotel Írottkőben. Sztárvendég: DJ Bárány Attila. Egyetlen éjszaka, exkluzív party!" />
-    <meta property="og:title" content="ONE NIGHT AT ÍROTTKŐ" />
-    <meta property="og:description" content="3 DJ • 3 Bár • VIP Lounge – Hotel Írottkő, Kőszeg. Sztárvendég: DJ Bárány Attila." />
-    <meta property="og:image" content="/hero.jpg" />
+    <title>ONE NIGHT AT ÍROTTKŐ – Csak egy járat indul! · 2027. január 15., Kőszeg</title>
+    <meta name="description" content="2027. január 15. · Hotel Írottkő, Kőszeg · Gate open 19:00. Négy fellépő, három bár a fedélzeten. Headliner: DJ Bárány Attila. Beszállókártya online." />
+
+    <!-- Share preview (Facebook, Messenger, iMessage, WhatsApp, X).
+         Absolute URLs: switch the host to the final domain at go-live (TEENDOK.md).
+         Image source: scripts/og/og.html → node scripts/og/render.cjs -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ONE NIGHT AT ÍROTTKŐ" />
+    <meta property="og:locale" content="hu_HU" />
+    <meta property="og:url" content="https://irottko.netlify.app/" />
+    <meta property="og:title" content="ONE NIGHT AT ÍROTTKŐ – Csak egy járat indul!" />
+    <meta property="og:description" content="2027. január 15. · Hotel Írottkő, Kőszeg · Gate open 19:00. Négy fellépő, három bár a fedélzeten. Headliner: DJ Bárány Attila." />
+    <meta property="og:image" content="https://irottko.netlify.app/og/og-boarding-pass.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="Beszállókártya: ONE NIGHT AT ÍROTTKŐ, KSZ → ÍRK, ÍR 0115, 2027.01.15., gate open 19:00" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Icons: gold "Í" monogram (public/favicon.svg → scripts/og/render.cjs) -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Írottkő" />
     <meta name="theme-color" content="#05030a" />
     
     <!-- Google Fonts: Cinzel (luxury gold) and Montserrat (modern UI) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800;900&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body class="bg-[#090511] text-gray-100 antialiased selection:bg-[#d4af37] selection:text-black">
     <div id="root"></div>

@@ -31,3 +31,6 @@ netlify/_legacy-theticket/
 _static-v1/
 # original AI video clips (frames are in public/frames)
 _video-original/
+
+# internal to-do list
+TEENDOK.md
