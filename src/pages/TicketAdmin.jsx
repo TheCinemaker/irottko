@@ -49,9 +49,9 @@ const load = (auth) => call('admin-data', auth);
 const AdminAuth = createContext({ token: '', logout: () => {} });
 
 const TZ = 'Europe/Budapest';
-const nf = new Intl.NumberFormat('hu-HU');
-const num = (n) => nf.format(n ?? 0);
-const huf = (n) => `${nf.format(n ?? 0)} Ft`;
+// Grouped thousands with a non-breaking space ("9 992 Ft") – Intl hu-HU leaves 4-digit numbers ungrouped.
+const num = (n) => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+const huf = (n) => `${num(n)} Ft`;
 const dt = (iso) =>
   iso ? new Date(iso).toLocaleString('hu-HU', { timeZone: TZ, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–';
 const tm = (iso) => (iso ? new Date(iso).toLocaleTimeString('hu-HU', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '–');

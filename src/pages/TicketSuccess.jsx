@@ -89,7 +89,7 @@ function Paid({ data }) {
         {tickets.map((t, i) => (
           <li key={t.code} className="surface flex flex-col items-center p-8 text-center">
             <div className="text-[12px] font-medium uppercase tracking-[0.15em] text-gray-400">
-              {i + 1}. jegy · {t.tier}
+              {i + 1}. utas · {t.tier}
             </div>
             <div className="mt-2 text-xl font-semibold text-white">{t.name}
             </div>

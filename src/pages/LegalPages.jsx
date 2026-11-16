@@ -169,6 +169,7 @@ export function PrivacyPage() {
       <h2>3. Meddig őrizzük az adatokat</h2>
       <ul>
         <li>A rendelési, jegy- és beléptetési adatokat a rendezvény után {RETENTION_DAYS_AFTER_EVENT} napig (az esetleges panaszok rendezéséig), utána töröljük.</li>
+        <li>A foglalást indító eszköz IP-címét 30 nap után töröljük.</li>
         <li>A számlát és a számviteli bizonylatokat a számviteli törvény szerint 8 évig.</li>
       </ul>
 

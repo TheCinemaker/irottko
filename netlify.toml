@@ -17,6 +17,10 @@
 [functions."retry-fulfillment"]
   schedule = "*/5 * * * *"
 
+# Data retention (privacy notice): old IPs after 30 days, event data 90 days after the event.
+[functions."purge-after-event"]
+  schedule = "@daily"
+
 # Local: `npx netlify dev` → site + functions on http://localhost:8888
 [dev]
   command = "npm run dev"
@@ -44,6 +48,12 @@
     X-Robots-Tag = "noindex, nofollow"
 [[headers]]
   for = "/scan"
+  [headers.values]
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/success"
   [headers.values]
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow"

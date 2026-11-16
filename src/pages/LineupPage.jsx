@@ -83,7 +83,7 @@ export default function LineupPage() {
     <PageShell>
       <header className="mx-auto max-w-3xl px-5 pb-10 pt-32 text-center sm:pt-40">
         <div className="kicker">
-          Line-up · Járat <span className="whitespace-nowrap font-mono font-bold tracking-[0.12em] text-white">IR0115</span>
+          Line-up · Járat <span className="whitespace-nowrap font-mono font-bold tracking-[0.12em] text-white">ÍR 0115</span>
         </div>
         <h1 className="display mt-4 text-[2.6rem] leading-[1.05] sm:text-7xl">
           Fedélzeti <span className="text-[#d4af37]">menetrend</span>

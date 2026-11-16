@@ -167,6 +167,18 @@ export async function syncPayment(paymentId) {
     if (order.status !== 'paid') {
       const { error } = await db().rpc('mark_order_paid', { p_order: order.id, p_provider: 'barion', p_ref: paymentId });
       if (error) throw error;
+      // mark_order_paid only flips pending/expired orders. Money taken for an
+      // order that was cancelled/failed meanwhile → no tickets, flag it for the
+      // admin (refund or re-issue by hand) instead of reporting 'paid'.
+      const { data: now, error: reErr } = await db().from('orders').select('status').eq('id', order.id).single();
+      if (reErr) throw reErr;
+      if (now.status !== 'paid') {
+        const msg = `fizetett, de a rendelés állapota: ${now.status}`;
+        console.error(`PAID BUT NOT ACTIVE order ${order.id} payment ${paymentId}: ${msg}`);
+        const { error: peErr } = await db().from('orders').update({ payment_error: msg }).eq('id', order.id);
+        if (peErr) console.error('payment_error not saved:', peErr.message);
+        return { orderId: order.id, status: 'payment_check' };
+      }
     }
     await fulfillPaid(order.id);
     return { orderId: order.id, status: 'paid' };

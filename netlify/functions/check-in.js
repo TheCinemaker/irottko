@@ -3,7 +3,7 @@
 // returns a session token (lib/pinGuard.js), which later scans send instead.
 // With `code` it runs the check_in RPC: marks the ticket used exactly once and
 // logs every scan in the check_ins table.
-// Env: SCANNER_PIN (staff PIN, set it in Netlify env – at least 6 digits).
+// Env: SCANNER_PIN (staff PIN, set it in Netlify env – at least 8 digits).
 import { db, json } from './lib/db.js';
 import { authenticate } from './lib/pinGuard.js';
 

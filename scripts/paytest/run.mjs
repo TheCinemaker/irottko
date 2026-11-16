@@ -91,6 +91,13 @@ answers.set(o6.pid, () => ({ status: 'Failed', paymentRequestId: o6.id, total: o
 r = await syncPayment(o6.pid); s = await state(o6.id);
 ok(s.status === 'paid' && s.tickets === 'valid', `rendelés ${s.status}, jegy ${s.tickets}`);
 
+console.log('11) Már törölt rendelésre később „Succeeded” érkezik → nincs jegy/számla, admin-jelzés (payment_check)');
+answers.set(o1.pid, () => ({ status: 'Succeeded', paymentRequestId: o1.id, total: o1.total, currency: 'HUF' }));
+r = await syncPayment(o1.pid); s = await state(o1.id);
+const { data: pe } = await db().from('orders').select('payment_error').eq('id', o1.id).single();
+ok(r.status === 'payment_check' && s.status === 'cancelled' && s.tickets === 'void' && !s.invoice_number && /fizetett/.test(pe.payment_error || ''),
+  `válasz ${r.status}, rendelés ${s.status}, jegy ${s.tickets}, számla ${s.invoice_number || 'nincs'}, jelzés: ${pe.payment_error}`);
+
 console.log(`\nEREDMÉNY: ${pass} OK, ${fail} HIBA`);
 console.log('Teszt-rendelések:', [o1, o2, o3, o4, o5, o6].map((o) => o.id).join(' '));
 process.exit(0);

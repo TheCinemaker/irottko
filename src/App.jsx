@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import HomePage from './pages/HomePage';
@@ -7,15 +7,20 @@ import BarsPage from './pages/BarsPage';
 import BarPage from './pages/BarPage';
 import VipPage from './pages/VipPage';
 import TicketsPage from './pages/TicketsPage';
-import TicketSuccess from './pages/TicketSuccess';
-import TicketScanner from './pages/TicketScanner';
-import TicketAdmin from './pages/TicketAdmin';
-import { TermsPage, PrivacyPage, ImprintPage } from './pages/LegalPages';
+// Loaded on demand: staff tools (QR scanner, admin), post-purchase page (QR codes)
+// and the long legal texts are not needed by the landing page.
+const TicketSuccess = lazy(() => import('./pages/TicketSuccess'));
+const TicketScanner = lazy(() => import('./pages/TicketScanner'));
+const TicketAdmin = lazy(() => import('./pages/TicketAdmin'));
+const TermsPage = lazy(() => import('./pages/LegalPages').then((m) => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import('./pages/LegalPages').then((m) => ({ default: m.PrivacyPage })));
+const ImprintPage = lazy(() => import('./pages/LegalPages').then((m) => ({ default: m.ImprintPage })));
 
 export default function App() {
   return (
     <>
       <ScrollToTop />
+      <Suspense fallback={<div className="min-h-screen bg-black" />}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/lineup" element={<LineupPage />} />
@@ -35,6 +40,7 @@ export default function App() {
 
         <Route path="*" element={<HomePage />} />
       </Routes>
+      </Suspense>
     </>
   );
 }
