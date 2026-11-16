@@ -335,7 +335,7 @@ function Sales({ d }) {
 function LimitsCard({ d }) {
   const { token, logout } = useContext(AdminAuth);
   const ev = d.event;
-  const migrated = ev.venueLimit !== null || ev.nonTicketCount !== null;
+  const migrated = ev.venueLimit != null || ev.nonTicketCount != null;
   const [on, setOn] = useState(ev.limitOn);
   const [limit, setLimit] = useState(String(ev.venueLimit ?? ''));
   const [crew, setCrew] = useState(String(ev.nonTicketCount ?? 30));
