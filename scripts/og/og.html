@@ -23,40 +23,41 @@
   body::before { /* darken the hall photo, gold glow behind the pass */
     content: ''; position: absolute; inset: 0;
     background:
-      radial-gradient(ellipse 60% 55% at 50% 55%, rgba(212,175,55,.22), transparent 70%),
-      linear-gradient(180deg, rgba(5,3,10,.78), rgba(5,3,10,.9));
+      radial-gradient(ellipse 60% 55% at 50% 55%, rgba(212,175,55,.16), transparent 70%),
+      linear-gradient(180deg, rgba(5,3,10,.82), rgba(5,3,10,.92));
   }
   .pass {
     position: relative; display: flex; width: 1040px; height: 470px;
     border-radius: 6px; overflow: hidden;
-    background: linear-gradient(160deg, #15101f 0%, #0b0812 70%);
-    border: 1px solid rgba(212,175,55,.45);
+    background: linear-gradient(160deg, #120d1b 0%, #08060e 70%);
+    border: 2px solid rgba(212,175,55,.75);
     box-shadow: 0 40px 90px -30px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.04) inset;
   }
   .main { flex: 1; padding: 34px 40px 30px; display: flex; flex-direction: column; }
   .top { display: flex; justify-content: space-between; align-items: center; }
   .brand { font-family: Cinzel; font-weight: 700; font-size: 22px; letter-spacing: .12em; }
-  .brand small { font-family: Inter; font-size: 13px; font-weight: 600; letter-spacing: .32em; color: #d4af37; margin-left: 14px; vertical-align: 3px; }
+  .brand small { font-family: Inter; font-size: 15px; font-weight: 600; letter-spacing: .3em; color: #f0c94a; margin-left: 14px; vertical-align: 3px; }
   .mono { width: 46px; height: 46px; }
   .route { display: flex; align-items: center; gap: 26px; margin-top: 34px; }
-  .iata { font-weight: 600; font-size: 92px; line-height: 1; letter-spacing: -.02em; }
-  .city { font-size: 14px; font-weight: 600; letter-spacing: .28em; color: #9a96a6; margin-top: 8px; }
-  .path { flex: 1; position: relative; height: 2px; background: repeating-linear-gradient(90deg, #d4af37 0 10px, transparent 10px 20px); opacity: .8; }
+  .iata { font-weight: 600; font-size: 96px; color: #ffffff; line-height: 1; letter-spacing: -.02em; }
+  .city { font-size: 16px; font-weight: 600; letter-spacing: .26em; color: #d6d1e2; margin-top: 8px; }
+  .path { flex: 1; position: relative; height: 2px; background: repeating-linear-gradient(90deg, #f0c94a 0 12px, transparent 12px 22px); height: 3px; }
   .plane { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: #0f0b17; border-radius: 50%; display: grid; place-items: center; }
-  .fields { display: flex; gap: 46px; margin-top: auto; }
-  .f .k { font-size: 12px; font-weight: 600; letter-spacing: .26em; color: #8d8899; }
-  .f .v { font-size: 26px; font-weight: 600; margin-top: 6px; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
-  .f .v.gold { color: #d4af37; }
-  .slogan { margin-top: 26px; font-family: Cinzel; font-weight: 700; font-size: 34px; color: #f3d77a; letter-spacing: .01em; }
+  .fields { display: flex; gap: 38px; margin-top: auto; }
+  .f { white-space: nowrap; }
+  .f .k { font-size: 14px; font-weight: 600; letter-spacing: .24em; color: #c4bfd0; }
+  .f .v { font-size: 28px; font-weight: 600; margin-top: 6px; color: #ffffff; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+  .f .v.gold { color: #f5cf4f; }
+  .slogan { margin-top: 26px; font-family: Cinzel; font-weight: 700; font-size: 38px; color: #f8dc7c; letter-spacing: .01em; }
   /* perforation between the main part and the stub */
-  .perf { position: relative; width: 0; border-left: 2px dashed rgba(255,255,255,.18); margin: 22px 0; }
-  .perf::before, .perf::after { content: ''; position: absolute; left: -16px; width: 30px; height: 30px; border-radius: 50%; background: #070510; border: 1px solid rgba(212,175,55,.45); }
+  .perf { position: relative; width: 0; border-left: 2px dashed rgba(255,255,255,.32); margin: 22px 0; }
+  .perf::before, .perf::after { content: ''; position: absolute; left: -16px; width: 30px; height: 30px; border-radius: 50%; background: #070510; border: 2px solid rgba(212,175,55,.75); }
   .perf::before { top: -38px; } .perf::after { bottom: -38px; }
   .stub { width: 250px; padding: 34px 30px 28px; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(212,175,55,.10), rgba(212,175,55,.02)); }
   .stub .f + .f { margin-top: 22px; }
   .stub .v { font-size: 30px; }
   .bars { margin-top: auto; height: 74px; display: flex; gap: 2px; align-items: stretch; }
-  .bars i { display: block; background: #e9e4f2; }
+  .bars i { display: block; background: #ffffff; }
 </style>
 </head>
 <body>

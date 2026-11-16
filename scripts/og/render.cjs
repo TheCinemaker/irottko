@@ -1,7 +1,7 @@
 // Renders the social share image and the icon set from HTML/SVG sources.
 //   node scripts/og/render.cjs <path-to-a-folder-with-puppeteer-installed>
 // (puppeteer is not a project dependency – any local install works.)
-// Output: public/og/og-boarding-pass.jpg (1200×630) and public/icons/*.png
+// Output: public/og/og-boarding-pass.jpg (2400×1260 = 1200×630 at 2×) and public/icons/*.png
 const path = require('path');
 const fs = require('fs');
 const root = path.resolve(__dirname, '../..');
@@ -13,10 +13,11 @@ const puppeteer = require(require.resolve('puppeteer', { paths: [process.argv[2]
 
   // 1) share image
   fs.mkdirSync(path.join(root, 'public/og'), { recursive: true });
-  await p.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 });
+  // 2× pixels (2400×1260): crisp text on high-density phone screens after Facebook rescales.
+  await p.setViewport({ width: 1200, height: 630, deviceScaleFactor: 2 });
   await p.goto('file://' + path.join(__dirname, 'og.html').replace(/\\/g, '/'), { waitUntil: 'networkidle0' });
   await p.evaluate(() => document.fonts.ready);
-  await p.screenshot({ path: path.join(root, 'public/og/og-boarding-pass.jpg'), type: 'jpeg', quality: 88 });
+  await p.screenshot({ path: path.join(root, 'public/og/og-boarding-pass.jpg'), type: 'jpeg', quality: 92 });
 
   // 2) icons from the favicon SVG (dark tile, gold "Í")
   fs.mkdirSync(path.join(root, 'public/icons'), { recursive: true });
