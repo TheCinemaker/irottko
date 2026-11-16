@@ -1,8 +1,7 @@
 // Company and legal data used by /aszf, /adatkezeles and /impresszum.
-// Have a lawyer review the three pages, then set LEGAL_DRAFT = false
-// (removes the "draft" banner).
-export const LEGAL_DRAFT = true;
-export const LEGAL_UPDATED = '2026. november 13.';
+// LEGAL_DRAFT = true shows a "draft" banner on the three pages (final since 2026-11-16).
+export const LEGAL_DRAFT = false;
+export const LEGAL_UPDATED = '2026. november 16.';
 
 // Seller and data controller: the hotel's operating company.
 // Source: hotel imprint + Nemzeti Cégtár (provided by the user, 2026-11-13).
