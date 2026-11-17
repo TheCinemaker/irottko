@@ -144,15 +144,36 @@ export async function findInvoiceByOrder(orderId) {
     header('xmlszamlaxml', 'agentxml') +
     el([['szamlaagentkulcs', agentKey()], ['rendelesSzam', orderId], ['pdf', 'false']]) +
     `</xmlszamlaxml>`;
-  try {
-    const res = await post('action-szamla_agent_xml', xml);
-    const body = await res.text();
-    return body.match(/<szamlaszam>([^<]+)<\/szamlaszam>/)?.[1] || null;
-  } catch (e) {
-    if (e.code) {
-      console.log('Számlázz.hu lookup – treated as not found:', e.message);
-      return null; // Agent answers "not found" with an error code
-    }
-    throw e; // network error: don't guess, try again later
+  // post() throws on any szlahu_error_code header / HTTP error → caller retries later.
+  const res = await post('action-szamla_agent_xml', xml);
+  const body = await res.text();
+  return parseLookup(body);
+}
+
+/**
+ * The lookup answer, read strictly. ONE PURCHASE = ONE INVOICE: "no invoice yet"
+ * is accepted only when Számlázz.hu says exactly that, because "not found" is
+ * what lets the caller issue a (new) invoice.
+ *   found:      a <szamla> document with its <szamlaszam>            → number
+ *   not found:  <xmlszamlavalasz> sikeres=false, hibakod 7 "ismeretlen …
+ *               rendelésszám …" (checked on the test account 2026-11-17) → null
+ *   ANYTHING else – wrong key (hibakod 3 "Sikertelen bejelentkezés", also
+ *   HTTP 200!), maintenance, an unknown answer → throws: no new invoice, try later.
+ */
+export function parseLookup(body) {
+  const text = (tag) => body.match(new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${tag}>`))?.[1]?.trim();
+  if (/<szamla[\s>]/.test(body)) {
+    const number = text('szamlaszam');
+    if (!number) throw new Error('Számlázz.hu lookup: invoice without number – not issuing another');
+    return number;
   }
+  if (/<xmlszamlavalasz[\s>]/.test(body) && text('sikeres') === 'false') {
+    const code = text('hibakod');
+    const msg = text('hibauzenet') || '';
+    if (code === '7' && /ismeretlen/i.test(msg) && /rendelésszám/i.test(msg)) return null;
+    const err = new Error(`Számlázz.hu lookup ${code}: ${msg}`);
+    err.code = code;
+    throw err;
+  }
+  throw new Error(`Számlázz.hu lookup: unexpected answer – not issuing another (${body.slice(0, 120)})`);
 }

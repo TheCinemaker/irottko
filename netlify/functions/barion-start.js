@@ -2,6 +2,10 @@
 // Reserves tickets (price comes from the DB, never from the browser),
 // starts a Barion payment and returns the gateway URL to redirect to.
 import { db, appUrl, json } from './lib/db.js';
+import { normalizeTaxNumber } from '../../src/lib/taxNumber.js';
+
+// "9 990 Ft" for messages
+const hufText = (n) => `${String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} Ft`;
 import { startPayment } from './lib/barion.js';
 import { loadOrder, lines } from './lib/fulfill.js';
 import { verifyTurnstile } from './lib/turnstile.js';
@@ -75,14 +79,15 @@ export const handler = async (event) => {
     city: clean(input.city, 100),
     address: clean(input.address),
     companyName: input.isCompany ? clean(input.companyName) : null,
-    taxNumber: input.isCompany ? clean(input.taxNumber, 20) : null,
+    // canonical 12345678-1-23 (or null if invalid) – this goes on the NAV-reported invoice
+    taxNumber: input.isCompany ? normalizeTaxNumber(clean(input.taxNumber, 20)) : null,
   };
 
   if (!b.fullName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email) || !b.zip || !b.city || !b.address) {
     return json(400, { error: 'Kérjük, tölts ki minden kötelező mezőt.' });
   }
-  if (input.isCompany && (!b.companyName || !/^\d{8}-?\d-?\d{2}$/.test(b.taxNumber))) {
-    return json(400, { error: 'Céges vásárlásnál a cégnév és egy érvényes adószám (12345678-1-23) kötelező.' });
+  if (input.isCompany && (!b.companyName || !b.taxNumber)) {
+    return json(400, { error: 'Céges vásárlásnál a cégnév és egy érvényes adószám (12345678-1-23) kötelező. Ellenőrizd az adószámot!' });
   }
   if (!Number.isInteger(b.qty) || b.qty < 1) return json(400, { error: KNOWN.INVALID_QTY[1] });
   // Named tickets (like a boarding pass): one attendee name per ticket.
@@ -138,6 +143,19 @@ export const handler = async (event) => {
     }
     orderId = res.order_id;
 
+    // The buyer pays exactly what the last checkout step showed. If the price
+    // changed meanwhile (weekly price step at midnight), release the hold and
+    // show the new price instead of charging more without a word.
+    const seen = Number(input.expectedTotal);
+    if (input.expectedTotal != null && seen !== res.total_huf) {
+      await db().rpc('mark_order_failed', { p_order: orderId, p_status: 'cancelled' });
+      orderId = null;
+      return json(409, {
+        error: `Közben változott az ár: a végösszeg most ${hufText(res.total_huf)} (eddig ${hufText(seen)}). Nézd át, és ha rendben van, indítsd újra a fizetést.`,
+        priceChanged: true,
+      });
+    }
+
     const { error: upErr } = await db()
       .from('orders')
       .update({ zip: b.zip, city: b.city, address: b.address, company_name: b.companyName, tax_number: b.taxNumber })
@@ -177,8 +195,9 @@ export const handler = async (event) => {
       redirectUrl: orderLink(appUrl(), orderId), // Barion appends &paymentId=…; access is the token
       callbackUrl: `${appUrl()}/.netlify/functions/barion-callback`,
       // Barion closes 1 minute before our hold ends, so a payment can never
-      // succeed after the tickets were released to someone else.
-      windowMinutes: Math.max(1, (evt?.hold_minutes || 4) - 1),
+      // succeed after the tickets were released to someone else. Hold 8 min →
+      // 7 min to pay, enough for a bank-app (3-D Secure) confirmation.
+      windowMinutes: Math.max(1, (evt?.hold_minutes || 8) - 1),
     });
 
     if (pay.total !== res.total_huf) throw new Error(`Total mismatch ${pay.total} vs ${res.total_huf}`);

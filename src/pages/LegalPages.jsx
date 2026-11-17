@@ -62,7 +62,7 @@ export function TermsPage() {
       <ul>
         <li>A jegyárak bruttó árak, az általános forgalmi adót tartalmazzák. Az ár a vásárlás időpontjától függ (időszakonként emelkedő árazás); a vásárláskor érvényes ár a kosárban látható.</li>
         <li>A fizetés bankkártyával vagy más, a Barion által kínált módon történik, a Barion Payment Zrt. biztonságos fizetési oldalán. A kártyaadatokat az eladó nem látja és nem tárolja.</li>
-        <li>A jegyek a fizetés idejére (legfeljebb 4 percre) lefoglalásra kerülnek. Sikertelen vagy megszakított fizetés esetén a foglalás megszűnik, terhelés nem történik.</li>
+        <li>A jegyek a fizetés idejére (legfeljebb 8 percre) lefoglalásra kerülnek. Sikertelen vagy megszakított fizetés esetén a foglalás megszűnik, terhelés nem történik.</li>
         <li>Az eladó a vásárlásról elektronikus számlát állít ki, amelyet a Számlázz.hu rendszere e-mailben küld el.</li>
       </ul>
 

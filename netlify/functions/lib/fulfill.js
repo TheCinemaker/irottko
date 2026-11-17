@@ -9,6 +9,9 @@ import { sendTicketEmail } from './ticketEmail.js';
 import { EVENT_DETAILS } from '../../../src/data/eventData.js';
 
 const LOCK_MINUTES = 3;
+// After an invoice attempt that broke off, wait this long before looking it up /
+// retrying: Számlázz.hu may still be finishing the first one (see fulfillPaid).
+const INVOICE_SETTLE_MIN = 5;
 
 export async function loadOrder(orderId) {
   const { data: order, error } = await db().from('orders').select('*').eq('id', orderId).single();
@@ -89,16 +92,40 @@ export async function fulfillPaid(orderId, { invoice = true } = {}) {
     let { order, tickets } = await loadOrder(orderId);
     const patch = {};
 
+    // ONE PURCHASE = ONE INVOICE (it goes to the tax authority, NAV). Rules:
+    //  1. Only one call works on an order at a time (claim() above).
+    //  2. Before issuing, the attempt is recorded – and if that record can't be
+    //     saved, nothing is issued.
+    //  3. After an earlier attempt, a new invoice is issued only if Számlázz.hu
+    //     says exactly "no invoice with this order number" (parseLookup); any
+    //     other answer → no invoice now, retry later, shown in the admin.
+    //  4. An attempt that broke off (timeout) may still be finishing at
+    //     Számlázz.hu, so it is not retried for INVOICE_SETTLE_MIN minutes –
+    //     the 5-minute retry job picks it up after that.
+    //  5. The number is saved right away, before the e-mail.
     if (invoice && !order.invoice_number) {
       try {
-        // A previous attempt may have created the invoice but lost the answer.
-        let number = order.invoice_attempted_at ? await findInvoiceByOrder(order.id) : null;
-        if (!number) {
-          await db().from('orders').update({ invoice_attempted_at: new Date().toISOString() }).eq('id', orderId);
-          number = (await createInvoice(order, invoiceLines(order, tickets))).number;
+        let number = null;
+        const attemptedAt = order.invoice_attempted_at ? new Date(order.invoice_attempted_at).getTime() : null;
+        if (attemptedAt && Date.now() - attemptedAt < INVOICE_SETTLE_MIN * 60000) {
+          console.log(`Invoice for ${orderId}: earlier attempt ${order.invoice_attempted_at} may still be finishing – later.`);
+        } else {
+          if (attemptedAt) number = await findInvoiceByOrder(order.id); // null only for a certain "not found"
+          if (!number) {
+            const { data: marked, error: markErr } = await db()
+              .from('orders')
+              .update({ invoice_attempted_at: new Date().toISOString() })
+              .eq('id', orderId)
+              .is('invoice_number', null)
+              .select('id');
+            if (markErr || marked?.length !== 1) throw new Error(`invoice attempt not recorded (${markErr?.message || 'no row'}) – nothing issued`);
+            number = (await createInvoice(order, invoiceLines(order, tickets))).number;
+          }
+          const { error: saveErr } = await db().from('orders').update({ invoice_number: number, invoice_error: null }).eq('id', orderId);
+          if (saveErr) console.error(`Invoice ${number} issued but not saved yet (the lookup will find it):`, saveErr.message);
+          patch.invoice_number = number;
+          patch.invoice_error = null;
         }
-        patch.invoice_number = number;
-        patch.invoice_error = null;
       } catch (e) {
         console.error('Invoice failed:', e.message);
         patch.invoice_error = e.message.slice(0, 500);

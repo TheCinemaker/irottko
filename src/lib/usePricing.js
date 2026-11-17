@@ -115,6 +115,9 @@ function start() {
     .subscribe((s) => s === 'SUBSCRIBED' && reload());
 }
 
+/** Re-read the sale state now (e.g. after the server reported a price change). */
+export const refreshPricing = () => reload();
+
 export function usePricing() {
   const [state, setState] = useState(current);
   useEffect(() => {

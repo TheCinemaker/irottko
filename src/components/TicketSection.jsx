@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { Check, Lock, AlertCircle, ChevronLeft, Minus, Plus, Plane, Armchair, Crown, Users } from 'lucide-react';
 import Turnstile from './Turnstile';
 import { TICKET_PERKS } from '../data/eventData';
-import { usePricing, huf, dayHu } from '../lib/usePricing';
+import { usePricing, refreshPricing, huf, dayHu } from '../lib/usePricing';
+import { normalizeTaxNumber } from '../lib/taxNumber';
 
 /*
   Ticket purchase in four steps, like a flight-booking app:
@@ -62,8 +63,8 @@ export default function TicketSection() {
       if (!EMAIL_RE.test(formData.email.trim())) return 'Adj meg egy érvényes e-mail címet – ide küldjük a jegyeket.';
       if (buyerName.trim().length < 2 || !formData.zip.trim() || !formData.city.trim() || !formData.address.trim())
         return 'Töltsd ki a számlázási adatokat.';
-      if (isCompany && (!formData.companyName.trim() || !/^\d{8}-?\d-?\d{2}$/.test(formData.taxNumber.trim())))
-        return 'Céges vásárlásnál a cégnév és egy érvényes adószám (12345678-1-23) kötelező.';
+      if (isCompany && (!formData.companyName.trim() || !normalizeTaxNumber(formData.taxNumber)))
+        return 'Céges vásárlásnál a cégnév és egy érvényes adószám (12345678-1-23) kötelező. Ellenőrizd az adószámot!';
       return '';
     }
     if (s === 3) {
@@ -102,9 +103,11 @@ export default function TicketSection() {
           acceptTerms,
           ...formData,
           fullName: buyerName.trim(),
+          expectedTotal: totalPrice, // the server refuses if the price changed meanwhile
         }),
       });
       const data = await res.json().catch(() => ({}));
+      if (data.priceChanged) refreshPricing(); // show the new price right away
       if (!res.ok || !data.gatewayUrl) throw new Error(data.error || 'A fizetés indítása nem sikerült. Kérjük, próbáld újra!');
       window.location.assign(data.gatewayUrl);
     } catch (err) {
@@ -311,7 +314,7 @@ export default function TicketSection() {
                 {formData.email}
               </SummaryRow>
               <SummaryRow label="Számla" onEdit={() => goTo(2)}>
-                <div>{isCompany ? `${formData.companyName} (${formData.taxNumber})` : buyerName}</div>
+                <div>{isCompany ? `${formData.companyName} (${normalizeTaxNumber(formData.taxNumber) || formData.taxNumber})` : buyerName}</div>
                 <div className="text-gray-400">
                   {formData.zip} {formData.city}, {formData.address}
                 </div>
@@ -342,7 +345,7 @@ export default function TicketSection() {
               <Turnstile ref={turnstile} onToken={setHumanToken} />
             </div>
             <p className="mt-4 text-center text-[13px] text-gray-500">
-              Az ár tartalmazza az áfát. A fizetésre 3 perced van. A kártyaadatokat a Barion Payment Zrt. kezeli, azokat mi nem látjuk és nem
+              Az ár tartalmazza az áfát. A fizetésre 7 perced van. A kártyaadatokat a Barion Payment Zrt. kezeli, azokat mi nem látjuk és nem
               tároljuk.
             </p>
           </>
