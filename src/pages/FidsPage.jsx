@@ -19,7 +19,7 @@ import { SLOTS } from '../lib/onAir';
   Rows, like an airport: the flights first (gate open + the four acts), then
   the on-board services. A finished set disappears and the rows below move up
   (the flaps flip to their new text). Status words of real boards:
-  ON TIME → BOARDING (30 min before) → FINAL CALL (10 min, blinking) →
+  ON TIME → BOARDING (30 min before) → LAST CALL (10 min, blinking) →
   IN FLIGHT (playing). All text from eventData / the site (no invented data).
   Not linked anywhere, noindex (netlify.toml). Tap = full screen; keeps the
   screen awake where the browser allows it.
@@ -27,7 +27,7 @@ import { SLOTS } from '../lib/onAir';
 
 const DRUM = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-.!';
 const FLIGHT = 'IR0115';
-const LEN = { time: 5, name: 16, flight: 6, gate: 6, status: 10 };
+const LEN = { time: 5, name: 23, flight: 6, status: 9 };
 const ROWS = 10;
 const REMARKS = ['CSAK EGY JARAT INDUL!', 'DOHANYZAS AZ UDVARON', 'AKI KISZALL A FOLDON MARAD', 'NEVRE SZOLO BESZALLOKARTYA', 'FENYKEPES IGAZOLVANY 18+'];
 const REMARK_LEN = 28;
@@ -38,7 +38,8 @@ const WHITE = '#efefe9';
 const YELLOW = '#f6c945';
 
 const MIN = 60000;
-const GATE_OPEN = new Date(EVENT_DETAILS.isoDate); // 19:00
+// on the board the gate opens 5 minutes before the official 19:00 (the user's call)
+const GATE_OPEN = new Date(new Date(EVENT_DETAILS.isoDate).getTime() - 5 * MIN); // 18:55
 const BARS_CLOSE = SLOTS[SLOTS.length - 1].end; // the end of the last set
 
 const plain = (s) =>
@@ -55,7 +56,7 @@ const hhmm = (d = new Date()) =>
 function flightStatus(start, end, now) {
   if (now >= end) return null; // gone from the board
   if (now >= start) return 'IN FLIGHT';
-  if (now >= start - 10 * MIN) return 'FINAL CALL';
+  if (now >= start - 10 * MIN) return 'LAST CALL';
   if (now >= start - 30 * MIN) return 'BOARDING';
   return 'ON TIME';
 }
@@ -65,17 +66,17 @@ function rowsAt(now) {
   const rows = [];
   // the gate itself: on the board until half an hour after it opened
   const gate = now >= GATE_OPEN.getTime() ? (now < GATE_OPEN.getTime() + 30 * MIN ? 'OPEN' : null) : flightStatus(GATE_OPEN.getTime(), Infinity, now);
-  if (gate) rows.push({ time: hhmm(GATE_OPEN), name: 'GATE OPEN', flight: FLIGHT, gate: 'FO TER', status: gate });
+  if (gate) rows.push({ time: hhmm(GATE_OPEN), name: 'GATE OPEN', flight: FLIGHT, status: gate });
   DJS.forEach((dj, i) => {
     const st = flightStatus(SLOTS[i].start.getTime(), SLOTS[i].end.getTime(), now);
-    if (st) rows.push({ time: dj.time.slice(0, 5), name: dj.name, flight: FLIGHT, gate: 'KARZAT', status: st, blink: st === 'FINAL CALL' });
+    if (st) rows.push({ time: dj.time.slice(0, 5), name: dj.name, flight: FLIGHT, status: st, blink: st === 'LAST CALL' });
   });
-  // services aboard (gates as on the site's bar cards)
+  // services aboard
   const open = now >= GATE_OPEN.getTime() ? (now < BARS_CLOSE.getTime() ? 'OPEN' : 'CLOSED') : 'ON TIME';
-  rows.push({ time: hhmm(GATE_OPEN), name: 'KOKTELBAR', flight: FLIGHT, gate: 'A', status: open });
-  rows.push({ time: hhmm(GATE_OPEN), name: 'BORBAR - JAGODICS', flight: FLIGHT, gate: 'B', status: open });
-  rows.push({ time: hhmm(GATE_OPEN), name: 'SORBAR - KOSZEGI', flight: FLIGHT, gate: 'C', status: open });
-  rows.push({ time: hhmm(GATE_OPEN), name: 'FEDELZETI MENU', flight: FLIGHT, gate: '', status: open });
+  rows.push({ time: hhmm(GATE_OPEN), name: 'KOKTELBAR', flight: FLIGHT, status: open });
+  rows.push({ time: hhmm(GATE_OPEN), name: 'BORBAR JAGODICS PINCE', flight: FLIGHT, status: open });
+  rows.push({ time: hhmm(GATE_OPEN), name: 'SORBAR KOSZEGI SOR', flight: FLIGHT, status: open });
+  rows.push({ time: hhmm(GATE_OPEN), name: 'FEDELZETI MENU', flight: FLIGHT, status: open });
   return rows.slice(0, ROWS);
 }
 
@@ -107,8 +108,8 @@ function Flap({ ch, size, delay = 0, ink = WHITE }) {
       style={{
         fontSize: size,
         color: TILE,
-        // the hinge cut is at 48.8–51.2 % of the card (glyph y 344–376 of -343…1063); a little wider so pixel rounding never leaves a light edge
-        backgroundImage: `linear-gradient(${ink} 0 48%, ${HINGE} 48% 52%, ${ink} 52% 100%)`,
+        // dark band over the hinge cut (48.7–51.3 % of the ink box, see CSS); wider so pixel rounding never leaves a light edge at any screen size
+        backgroundImage: `linear-gradient(${ink} 0 46%, ${HINGE} 46% 54%, ${ink} 54% 100%)`,
       }}
     >
       {shown}
@@ -166,10 +167,10 @@ function useWakeLock() {
 }
 
 // font size from the screen: all cards of a row (1.196 em each) + column gaps
-const CARDS = LEN.time + LEN.name + LEN.flight + LEN.gate + LEN.status;
+const CARDS = LEN.time + LEN.name + LEN.flight + LEN.status;
 function useSize() {
   const calc = () =>
-    Math.floor(Math.min((window.innerWidth * 0.94) / (CARDS * 1.196 + 4 * 0.8), window.innerHeight / (ROWS * 1.72 + 6.5)));
+    Math.floor(Math.min((window.innerWidth * 0.94) / (CARDS * 1.196 + 3 * 0.8), window.innerHeight / (ROWS * 1.72 + 6.5)));
   const [s, setS] = useState(calc);
   useEffect(() => {
     const on = () => setS(calc());
@@ -179,7 +180,7 @@ function useSize() {
   return s;
 }
 
-const cols = (s) => [LEN.time, LEN.name, LEN.flight, LEN.gate, LEN.status].map((n) => `${n * 1.196 * s}px`).join(' ');
+const cols = (s) => [LEN.time, LEN.name, LEN.flight, LEN.status].map((n) => `${Math.round(n * 1.196 * s)}px`).join(' ');
 
 export default function FidsPage() {
   const now = useNow();
@@ -190,7 +191,7 @@ export default function FidsPage() {
     document.title = 'Departures · IR0115';
   }, []);
   const full = () => document.documentElement.requestFullscreen?.().catch(() => {});
-  const grid = { gridTemplateColumns: cols(s), columnGap: s * 0.8 };
+  const grid = { gridTemplateColumns: cols(s), columnGap: Math.round(s * 0.8) };
   const rows = rowsAt(now);
 
   return (
@@ -219,11 +220,10 @@ export default function FidsPage() {
         <span>Idő</span>
         <span>Fellépő / úti cél</span>
         <span>Járat</span>
-        <span>Kapu</span>
         <span>Állapot</span>
       </div>
 
-      <ol className="sf-rows" style={{ rowGap: s * 0.25 }}>
+      <ol className="sf-rows" style={{ rowGap: Math.round(s * 0.25) }}>
         {Array.from({ length: ROWS }, (_, i) => {
           const r = rows[i] || {};
           return (
@@ -231,7 +231,6 @@ export default function FidsPage() {
               <FlapText text={r.time || ''} len={LEN.time} size={s} delay={i * 220} />
               <FlapText text={r.name || ''} len={LEN.name} size={s} delay={i * 220 + 120} ink={YELLOW} />
               <FlapText text={r.flight || ''} len={LEN.flight} size={s} delay={i * 220 + 420} />
-              <FlapText text={r.gate || ''} len={LEN.gate} size={s} delay={i * 220 + 560} />
               <FlapText text={r.status || ''} len={LEN.status} size={s} delay={i * 220 + 700} blink={r.blink} />
             </li>
           );
@@ -243,6 +242,9 @@ export default function FidsPage() {
           Megjegyzés
         </span>
         <FlapText text={REMARKS[remark]} len={REMARK_LEN} size={s} />
+        <span className="sf-credit" style={{ fontSize: s * 0.28 }}>
+          Font: Split-Flap TV
+        </span>
       </footer>
     </main>
   );
@@ -262,11 +264,13 @@ const CSS = `
 .sf-rows { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .sf-row { display: inline-flex; }
 .sf-foot { display: flex; align-items: center; margin-top: auto; }
+.sf-credit { margin-left: auto; align-self: flex-end; font-family: Inter, Arial, sans-serif; color: #3d3d3a; }
 /* one card = one glyph. The glyph box (line-height 1.606 = ascent+descent)
-   puts the card at x 0.1–1.096 em, y 0.1–1.506 em; the ink is painted just
-   inside that, so it only shows through the cut-out letter. */
+   puts the card at x 0.1–1.096 em, y 0.1–1.506 em; the ink is painted well
+   inside that (clear of the rounded corners), so it only shows through the
+   cut-out letter. Hinge cut: glyph y 344–376 → 48.7–51.3 % of the ink box. */
 .sf-card { display: inline-block; white-space: pre; line-height: 1.606; font-family: 'Split-Flap TV', monospace;
-  background-repeat: no-repeat; background-size: 0.94em 1.35em; background-position: 0.128em 0.128em;
+  background-repeat: no-repeat; background-size: 0.856em 1.266em; background-position: 0.17em 0.17em;
   transform-origin: 50% 50%; animation: sf-flip 70ms ease-out both; }
 @keyframes sf-flip { 0% { transform: scaleY(.1); filter: brightness(.45); } 100% { transform: scaleY(1); filter: brightness(1); } }
 .sf-blink { animation: sf-blink 1s steps(2, jump-none) infinite; }
