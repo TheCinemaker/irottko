@@ -142,7 +142,7 @@ a, button { -webkit-tap-highlight-color: transparent; }
   animation: flap-in 420ms cubic-bezier(0.3, 0.7, 0.2, 1) both;
   transform-origin: 50% 0;
 }
-/* Re-flip every 5 s (LineupBoard useCycle): one quick flap per character. */
+/* Re-flip every 13.5 s – 10 s still (LineupBoard useCycle): one quick flap per character. */
 @keyframes flap-tick {
   0% { transform: perspective(200px) rotateX(-90deg); filter: brightness(0.45); }
   100% { transform: perspective(200px) rotateX(0); filter: brightness(1); }

@@ -55,7 +55,7 @@ function useWalk(on, count, ms = 4000) { // ≈2.5 s lit + 1.5 s fade
    real departures board: each tile spins through a few characters and lands on
    its value again. Returns a counter that changes on every re-flip.
    Reduced motion: never. */
-function useCycle(on, ms = 5000) {
+function useCycle(on, ms = 13500) { // ≈3.5 s of flapping + 10 s standing still
   const [n, setN] = useState(0);
   useEffect(() => {
     if (!on || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
