@@ -23,7 +23,7 @@ begin
 
   update events
      set online_capacity = 550,   -- normál online jegyek közös kerete
-         capacity        = 590,   -- tájékoztató: 550 + 40 VIP (a helyszíni jegy korlátlan)
+         capacity        = 590,   -- tájékoztató: 550 + 40 VIP; a valódi plafon: venue_limit (013, admin)
          max_per_order   = 10,
          hold_minutes    = 8      -- foglalás 8 perc; a Barion-ablak 7 perc (banki appos jóváhagyás is beleférjen)
    where id = v_event;
