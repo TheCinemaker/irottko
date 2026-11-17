@@ -303,6 +303,7 @@ function Sales({ d }) {
       {/* remount when the saved settings change (e.g. page opened before the migration) */}
       <LimitsCard key={`${d.event.limitOn}-${d.event.venueLimit}-${d.event.nonTicketCount}`} d={d} />
       <AnnouncementCard key={`ann-${d.event.announcement ?? ''}`} d={d} />
+      <WalletMessageCard d={d} />
 
       <Card title="Jegytípusok" className="lg:col-span-3">
         <Table
@@ -334,6 +335,78 @@ function Sales({ d }) {
    Sellable tickets = venue limit − people inside without a ticket. Every ticket
    type counts (online, VIP, door QR). Switched off, the numbers are kept but
    sales are unlimited. */
+/* "Üzenet az utasoknak": a lock-screen message on every Apple / Google Wallet
+   ticket (lib/walletPush.js). Apple: the phones registered for updates get a
+   push and show "ÍR 0115: <text>"; Google: a message on the ticket class. */
+function WalletMessageCard({ d }) {
+  const { token, logout } = useContext(AdminAuth);
+  const [text, setText] = useState('');
+  const [msg, setMsg] = useState(null); // [text, ok]
+  const [busy, setBusy] = useState(false);
+  const ev = d.event;
+
+  const send = async () => {
+    const clean = text.trim();
+    if (!window.confirm(`Kiküldöd minden Tárcában lévő jegyre?\n\n„ÍR 0115: ${clean}”\n\n(Apple: ${d.walletDevices} telefon · Google: minden mentett jegy)`)) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await call('admin-action', { token }, { action: 'wallet-message', text: clean });
+      if (!r.auth) return logout();
+      if (r.status === 429) throw new Error('Két üzenet között várj legalább 2 percet.');
+      if (r.status !== 200) throw new Error(r.data?.error === 'MIGRATION' ? 'Futtasd le a 016_wallet_push.sql-t.' : 'Nem sikerült elküldeni.');
+      const a = r.data.apple;
+      const g = r.data.google;
+      setText('');
+      setMsg([
+        `Elküldve. Apple: ${a.sent}/${a.devices} telefon${a.failed ? ` (${a.failed} hiba${a.removed ? `, ${a.removed} törölt jegy` : ''})` : ''} · Google: ${g.ok ? g.note || 'kiküldve' : `hiba – ${g.error}`}`,
+        a.failed === 0 && g.ok,
+      ]);
+    } catch (e) {
+      setMsg([e.message, false]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card title="Üzenet az utasoknak (Apple / Google Tárca)" className="lg:col-span-3">
+      {!ev.walletReady ? (
+        <p className="text-sm text-amber-300">Futtasd le a Supabase-ben a 016_wallet_push.sql-t – utána innen küldhetsz.</p>
+      ) : (
+        <>
+          <p className="max-w-2xl text-sm text-gray-400">
+            Zárképernyős értesítés minden Tárcába mentett beszállókártyára („ÍR 0115: …”), és a jegy hátoldalán is megjelenik. Csak
+            fontos dolgokra (pl. „A gate 18:55-kor nyit”, „Bárány Attila 22:00-kor kezd”) – a Google naponta csak néhányat enged.
+          </p>
+          <div className="mt-3 text-sm text-gray-300">
+            Apple Tárcában frissítésre feliratkozott telefonok: <b className="tabular-nums text-white">{num(d.walletDevices)}</b>
+            {ev.walletMessage && (
+              <span className="ml-3 text-gray-500">
+                Utolsó üzenet ({dt(ev.walletMessageAt)}): „{ev.walletMessage}”
+              </span>
+            )}
+          </div>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              maxLength={150}
+              placeholder="Pl.: A gate 18:55-kor nyit – készítsd elő a beszállókártyád!"
+              className="field flex-1 py-2 text-sm"
+            />
+            <button onClick={send} disabled={busy || text.trim().length < 3} className="btn-secondary px-4 py-2 disabled:opacity-40">
+              <Send className="h-4 w-4" /> {busy ? 'Küldés…' : 'Kiküldés'}
+            </button>
+          </div>
+          <div className="mt-1 text-right text-xs text-gray-500">{text.length} / 150</div>
+          {msg && <p className={`mt-1 text-sm ${msg[1] ? 'text-emerald-400' : 'text-red-400'}`}>{msg[0]}</p>}
+        </>
+      )}
+    </Card>
+  );
+}
+
 /* "Utastájékoztatás" strip at the top of every page of the site
    (015_announcement.sql). Live: visitors see it within a second or two. */
 function AnnouncementCard({ d }) {

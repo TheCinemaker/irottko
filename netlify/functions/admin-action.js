@@ -8,6 +8,7 @@
 //                                  without the PIN (lib/enroll.js)
 //   action 'enroll-list'          → codes of the last 24 h (status only, no codes)
 //   action 'enroll-revoke', id    → revoke an unused code
+//   action 'wallet-message', text   → lock-screen message on all Wallet tickets (Apple push + Google)
 //   action 'set-announcement', text → "Utastájékoztatás" strip on the site ('' clears it)
 //   action 'set-sales-open', open → emergency stop / restart of all ticket sales
 //   action 'set-limits', venueLimit, nonTicketCount, enabled → fire-safety limit (013);
@@ -16,6 +17,7 @@ import { db, json } from './lib/db.js';
 import { authenticate } from './lib/pinGuard.js';
 import { loadOrder } from './lib/fulfill.js';
 import { sendTicketEmail } from './lib/ticketEmail.js';
+import { sendPassengerMessage } from './lib/walletPush.js';
 import { createEnrollment, listEnrollments, revokeEnrollment, ENROLL_MINUTES } from './lib/enroll.js';
 
 const SLUG = process.env.VITE_EVENT_SLUG || 'one-night-irottko';
@@ -69,6 +71,21 @@ async function guestlist() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'hu'));
   return json(200, { generatedAt: new Date().toISOString(), guests });
+}
+
+// "Üzenet az utasoknak": lock-screen message on every Apple / Google Wallet
+// ticket (lib/walletPush.js, 016_wallet_push.sql). At most one every 2 minutes
+// (a double click must not notify everyone twice).
+async function walletMessage(text) {
+  const clean = typeof text === 'string' ? text.replace(/\s+/g, ' ').trim() : '';
+  if (clean.length < 3 || clean.length > 150) return json(400, { error: 'BAD_VALUE' });
+  const { data: ev, error } = await db().from('events').select('*').eq('slug', SLUG).single();
+  if (error) throw error;
+  if (!('wallet_message' in ev)) return json(409, { error: 'MIGRATION' });
+  if (ev.wallet_message_at && Date.now() - new Date(ev.wallet_message_at).getTime() < 2 * 60000) return json(429, { error: 'TOO_SOON' });
+  const result = await sendPassengerMessage(clean);
+  console.log('admin: passenger message sent', JSON.stringify({ apple: result.apple, google: result.google }));
+  return json(200, result);
 }
 
 // Passenger announcement strip on every page (015_announcement.sql); '' = none.
@@ -128,6 +145,7 @@ export const handler = async (event) => {
     if (body.action === 'enroll-list') return json(200, { list: await listEnrollments() });
     if (body.action === 'enroll-revoke') return json(200, { revoked: await revokeEnrollment(body.id) });
     if (body.action === 'set-sales-open') return await setSalesOpen(body.open);
+    if (body.action === 'wallet-message') return await walletMessage(body.text);
     if (body.action === 'set-announcement') return await setAnnouncement(body.text);
     if (body.action === 'set-limits') return await setLimits(body.venueLimit, body.nonTicketCount, body.enabled);
     return json(400, { error: 'UNKNOWN_ACTION' });

@@ -160,6 +160,12 @@ export function PrivacyPage() {
           léphessen be, és a rendezvény biztonsága. Jogalap: szerződés teljesítése és az adatkezelő jogos érdeke (GDPR 6. cikk (1) b) és f)).
         </li>
         <li>
+          <strong>Tárca-értesítések:</strong> ha a beszállókártyát az Apple Tárcához adod, a telefonod egy eszközazonosítót és egy
+          értesítési azonosítót (push token) küld nekünk, hogy a jegyet frissíthessük, és a rendezvényről utastájékoztatást
+          küldhessünk rá (pl. kapunyitás). Google Wallet esetén ilyen adatot nem kapunk, az üzenetet a Google juttatja el. A
+          Tárcából a jegy bármikor törölhető, ezzel a frissítés is megszűnik. Jogalap: szerződés teljesítése (GDPR 6. cikk (1) b)).
+        </li>
+        <li>
           <strong>Visszaélések megelőzése:</strong> a foglalást indító eszköz IP-címe. Cél: hogy egy forrásból ne lehessen tömegesen,
           fizetés nélkül lefoglalni a jegyeket. Jogalap: az adatkezelő jogos érdeke (GDPR 6. cikk (1) f)).
         </li>
@@ -170,6 +176,7 @@ export function PrivacyPage() {
       <ul>
         <li>A rendelési, jegy- és beléptetési adatokat a rendezvény után {RETENTION_DAYS_AFTER_EVENT} napig (az esetleges panaszok rendezéséig), utána töröljük.</li>
         <li>A foglalást indító eszköz IP-címét 30 nap után töröljük.</li>
+        <li>A Tárca-értesítésekhez kapott eszköz- és értesítési azonosítókat a rendezvény után ugyanekkor töröljük.</li>
         <li>A számlát és a számviteli bizonylatokat a számviteli törvény szerint 8 évig.</li>
       </ul>
 
@@ -178,6 +185,7 @@ export function PrivacyPage() {
         <li>{OPERATOR.name} ({OPERATOR.seat}) – a platform üzemeltetése.</li>
         <li>Supabase Pte. Ltd. (65 Chulia Street #38-02/03, OCBC Centre, Singapore 049513, supabase.com) – adatbázis; az adatok tárolási helye: {DB_REGION}.</li>
         <li>{HOSTING.name} ({HOSTING.address}, netlify.com) – a weboldal és a szerverfunkciók tárhelye.</li>
+        <li>Apple Inc. (One Apple Park Way, Cupertino, CA 95014, USA) és Google Ireland Ltd. (Gordon House, Barrow Street, Dublin 4, Írország) – a Tárcába mentett beszállókártyák frissítése és értesítései.</li>
         <li>Plus Five Five, Inc. – Resend (2261 Market Street #5039, San Francisco, CA 94114, USA, resend.com) – a jegyküldő e-mailek kézbesítése.</li>
         <li>KBOSS.hu Kft. – Számlázz.hu (1031 Budapest, Záhony utca 7., szamlazz.hu) – számlakészítés és -küldés.</li>
         <li>Barion Payment Zrt. (1083 Budapest, Bókay János utca 44–46., barion.com) – a fizetés lebonyolítása (önálló adatkezelőként).</li>

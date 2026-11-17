@@ -1,6 +1,7 @@
 // GET /.netlify/functions/wallet-apple?c=CODE → .pkpass download (Apple Wallet).
 import { loadTicketByCode } from './lib/fulfill.js';
 import { applePass } from './lib/wallet.js';
+import { currentMessage } from './lib/walletPush.js';
 
 export const handler = async (event) => {
   const code = (event.queryStringParameters?.c || '').toUpperCase();
@@ -9,7 +10,9 @@ export const handler = async (event) => {
   try {
     const ticket = await loadTicketByCode(code);
     if (!ticket) return { statusCode: 404, body: 'Ticket not found' };
-    const buf = await applePass(ticket);
+    // the current passengers' message (016); before the migration: none
+    const message = await currentMessage().then((m) => m.text).catch(() => null);
+    const buf = await applePass(ticket, { message });
     return {
       statusCode: 200,
       headers: {

@@ -8,6 +8,7 @@
 //   signups       – newsletter sign-ups of the event
 //   pin_failures  – wrong-PIN log (IP addresses)
 //   scanner_enrollments – door-phone enrolment codes (hashes only)
+//   wallet_registrations – Apple Wallet device ids + push tokens (016)
 // Invoices stay in Számlázz.hu (8-year legal retention) – nothing to do here.
 // dryRun: true → only counts, nothing is deleted.
 import { db } from './db.js';
@@ -37,6 +38,8 @@ export async function purgeEvent(slug, { dryRun = true, removeRetiredTiers = fal
     signups: await count(head('signups').eq('event_id', ev.id)),
     pin_failures: await count(head('pin_failures')),
     scanner_enrollments: await count(head('scanner_enrollments')),
+    // Apple Wallet registrations (device id + push token, 016) – table may not exist yet
+    wallet_registrations: await count(head('wallet_registrations')).catch(() => 0),
     retired_tiers: removeRetiredTiers ? await count(head('ticket_tiers').eq('event_id', ev.id).like('name', '%(régi teszt)%')) : 0,
   };
   if (dryRun) return { dryRun: true, ...plan };
@@ -57,6 +60,7 @@ export async function purgeEvent(slug, { dryRun = true, removeRetiredTiers = fal
   await del(db().from('signups').delete().eq('event_id', ev.id));
   await del(db().from('pin_failures').delete().gte('failed_at', '1970-01-01'));
   await del(db().from('scanner_enrollments').delete().gte('created_at', '1970-01-01'));
+  if (plan.wallet_registrations) await del(db().from('wallet_registrations').delete().gte('created_at', '1970-01-01'));
   if (removeRetiredTiers) await del(db().from('ticket_tiers').delete().eq('event_id', ev.id).like('name', '%(régi teszt)%'));
 
   return { dryRun: false, ...plan };

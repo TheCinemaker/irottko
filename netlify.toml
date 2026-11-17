@@ -52,6 +52,13 @@
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow"
 
+# Apple Wallet update service (the pass's webServiceURL = <site>/passkit)
+[[redirects]]
+  from = "/passkit/*"
+  to = "/.netlify/functions/passkit/:splat"
+  status = 200
+  force = true
+
 # TV departures board for the venue – not for search engines
 [[headers]]
   for = "/kijelzo"

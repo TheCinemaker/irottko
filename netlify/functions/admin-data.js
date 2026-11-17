@@ -196,6 +196,8 @@ export const handler = async (event) => {
     }
 
     const problems = orderRows.filter((o) => !o.invoice || !o.emailSent);
+    // Apple Wallet phones that receive the passengers' message (016; 0 before it)
+    const { count: walletDevices } = await db().from('wallet_registrations').select('id', { count: 'exact', head: true });
 
     return json(200, {
       token: auth.token,
@@ -205,6 +207,9 @@ export const handler = async (event) => {
         salesOpen: ev.sales_open,
         announcement: ev.announcement ?? null, // undefined before 015
         announcementReady: 'announcement' in ev,
+        walletReady: 'wallet_message' in ev,
+        walletMessage: ev.wallet_message ?? null,
+        walletMessageAt: ev.wallet_message_at ?? null,
         onlineCapacity: ev.online_capacity,
         capacity: ev.capacity,
         // fire-safety limit (013_venue_limit.sql); undefined before the migration
@@ -242,6 +247,7 @@ export const handler = async (event) => {
       orderStatus,
       orders: orderRows,
       problems,
+      walletDevices: walletDevices ?? 0,
       paymentIssues: (payErr || []).map((o) => ({
         id: o.id,
         name: o.full_name,

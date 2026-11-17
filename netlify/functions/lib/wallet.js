@@ -14,13 +14,14 @@ import { PKPass } from 'passkit-generator';
 import { EVENT_DETAILS } from '../../../src/data/eventData.js';
 import { appUrl } from './db.js';
 import { openSealed } from './sealedCerts.js';
+import { passAuthToken } from './passAuth.js';
 
-const APPLE_PASS_TYPE_ID = () => process.env.APPLE_PASS_TYPE_ID || 'pass.hu.koszeg.koszegpass';
+export const APPLE_PASS_TYPE_ID = () => process.env.APPLE_PASS_TYPE_ID || 'pass.hu.koszeg.koszegpass';
 const APPLE_TEAM_ID = () => process.env.APPLE_TEAM_ID || '97FG847W58';
 const GOOGLE_CLASS_SUFFIX = () => process.env.GOOGLE_WALLET_CLASS_SUFFIX || 'one_night_irottko_2027';
 
 const EVENT_START = new Date(EVENT_DETAILS.isoDate);
-const EVENT_END = new Date(EVENT_START.getTime() + 12 * 3600 * 1000); // doors 19:00 → 07:00 next day
+export const EVENT_END = new Date(EVENT_START.getTime() + 12 * 3600 * 1000); // doors 19:00 → 07:00 next day
 
 function file(rel) {
   const candidates = [path.resolve(process.cwd(), 'netlify/functions', rel), path.resolve(process.cwd(), rel)];
@@ -34,7 +35,7 @@ function file(rel) {
 /* ------------------------------ Apple ------------------------------ */
 
 let appleCerts;
-function appleCertificates() {
+export function appleCertificates() {
   if (appleCerts) return appleCerts;
   const password = process.env.APPLE_PASS_P12_PASSWORD;
   if (password === undefined) throw new Error('MISSING_APPLE_PASS_P12_PASSWORD');
@@ -65,8 +66,25 @@ const dateShort = (() => {
   return d.toLocaleDateString('hu-HU', { timeZone: 'Europe/Budapest', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\s/g, '');
 })(); // "2027.01.15."
 
-/** ticket: { code, tier_name, tier_kind, holder_name, order_id } → Buffer (.pkpass) */
-export async function applePass(ticket) {
+// The venue (Hotel Írottkő entrance, from the organiser 2026-11-17): Wallet
+// offers the pass on the lock screen within VENUE_RADIUS metres.
+export const VENUE = { latitude: 47.38818724050592, longitude: 16.542536180924632 };
+const VENUE_RADIUS = 100;
+const VENUE_TEXT = 'Üdvözlünk az ÍR 0115 fedélzetén! Készítsd elő a beszállókártyád.';
+const DEFAULT_MESSAGE = 'Jó utat az ÍR 0115 fedélzetén!';
+
+// Google fetches logos / checks origins itself: only a public https URL works
+// (not localhost or a LAN address like https://192.168.x.x during dev).
+// Apple's phones must reach the update service the same way.
+const isPublicHttps = (u) =>
+  /^https:\/\//.test(u) && !/^https:\/\/(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(u);
+
+/**
+ * ticket: { code, tier_name, tier_kind, holder_name, order_id } → Buffer (.pkpass)
+ * opts.message: the current "Utastájékoztatás" (admin) – a back field with
+ * changeMessage, so a new message shows on the lock screen after an update.
+ */
+export async function applePass(ticket, { message } = {}) {
   const vip = ticket.tier_kind === 'vip';
   const assets = {};
   for (const f of ['icon.png', 'icon@2x.png', 'icon@3x.png']) assets[f] = file(`wallet-assets/${f}`);
@@ -87,11 +105,16 @@ export async function applePass(ticket) {
       : { backgroundColor: 'rgb(5, 3, 10)', foregroundColor: 'rgb(255, 255, 255)', labelColor: 'rgb(212, 175, 55)' }),
     sharingProhibited: true,
     groupingIdentifier: 'one-night-irottko',
+    // lock-screen suggestion near the venue (see VENUE)
+    maxDistance: VENUE_RADIUS,
+    // updates + messages (netlify/functions/passkit.js, lib/walletPush.js)
+    ...(isPublicHttps(appUrl()) ? { webServiceURL: `${appUrl()}/passkit`, authenticationToken: passAuthToken(`irottko-${ticket.code}`) } : {}),
   });
 
   pass.type = 'boardingPass';
   pass.transitType = 'PKTransitTypeAir';
   pass.setRelevantDate(EVENT_START);
+  pass.setLocations({ latitude: VENUE.latitude, longitude: VENUE.longitude, relevantText: VENUE_TEXT });
   pass.setExpirationDate(EVENT_END);
 
   pass.headerFields.push(
@@ -112,6 +135,8 @@ export async function applePass(ticket) {
     { key: 'tier', label: 'JEGY', value: vip ? 'VIP' : ticket.tier_name || '', textAlignment: 'PKTextAlignmentRight' }
   );
   pass.backFields.push(
+    // the passengers' message: changing it shows "ÍR 0115: …" on the lock screen
+    { key: 'news', label: 'Utastájékoztatás', value: message || DEFAULT_MESSAGE, changeMessage: 'ÍR 0115: %@' },
     { key: 'code', label: 'Jegykód', value: ticket.code },
     { key: 'venue', label: 'Terminál', value: EVENT_DETAILS.venue },
     { key: 'address', label: 'Cím', value: EVENT_DETAILS.address },
@@ -126,15 +151,13 @@ export async function applePass(ticket) {
 
 /* ------------------------------ Google ----------------------------- */
 
-// Google fetches logos / checks origins itself: only a public https URL works
-// (not localhost or a LAN address like https://192.168.x.x during dev).
-const isPublicHttps = (u) =>
-  /^https:\/\//.test(u) && !/^https:\/\/(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(u);
-
 let googleCreds;
+export const googleCredentials = () => google();
 const google = () => (googleCreds ||= JSON.parse(file('certs/google-wallet.json').toString('utf8')));
 
 const lv = (value) => ({ defaultValue: { language: 'hu', value } });
+
+export const eventClassId = () => `${google().issuer_id}.${GOOGLE_CLASS_SUFFIX()}`;
 
 function eventClass() {
   const { issuer_id } = google();
@@ -147,6 +170,8 @@ function eventClass() {
     venue: { name: lv(EVENT_DETAILS.venue), address: lv(EVENT_DETAILS.address) },
     dateTime: { doorsOpen: EVENT_DETAILS.isoDate, start: EVENT_DETAILS.isoDate, end: EVENT_END.toISOString() },
     hexBackgroundColor: '#05030a',
+    // the venue (used when Google creates the class with the first saved ticket)
+    locations: [{ latitude: VENUE.latitude, longitude: VENUE.longitude }],
   };
   // Google fetches the logo itself, so it needs a public https URL (not localhost).
   if (isPublicHttps(base)) cls.logo = { sourceUri: { uri: `${base}/wallet/google-logo.png` } };
