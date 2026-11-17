@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
+import { SLOTS } from './onAir';
 
 /*
   Live ticket prices from the DB (supabase/seed_2027.sql is the single source).
   Returns { status, standard, vip, next, doorFrom, onlineLeft }:
     status: 'loading' | 'open' | 'between' (online closed, door not yet open)
             | 'soon' (sales not started yet, see opensAt)
-            | 'full' (fire-safety limit reached) | 'closed' | 'error'
+            | 'full' (fire-safety limit reached) | 'landed' (the night is over) | 'closed' | 'error'
     standard / vip: the tier on sale right now (or null)
     next: the next standard price step after the current one (or null)
 */
@@ -34,7 +35,9 @@ function parse(data) {
   // full: the fire-safety limit is reached (013_venue_limit.sql) – nothing can be sold
   const full = data.full === true;
   let status = 'open';
-  if (!data.event.sales_open) status = 'closed';
+  // the flight has landed (end of the last set): for good, whatever else is set
+  if (new Date(data.now) >= SLOTS[SLOTS.length - 1].end) status = 'landed';
+  else if (!data.event.sales_open) status = 'closed';
   else if (full) status = 'full';
   else if (!standard && !vip) {
     // before the very first tier starts → 'soon' (with the opening time), not 'online closed'

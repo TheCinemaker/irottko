@@ -4,6 +4,7 @@ import TicketButton from './TicketButton';
 import { EVENT_DETAILS, DJS } from '../data/eventData';
 import { useOnAir, SLOTS, clockNow, PREVIEW } from '../lib/onAir';
 import { Plane } from 'lucide-react';
+import { Flap } from './LineupBoard';
 
 /*
   Opening screen. When the hero film arrives, put it at public/hero.mp4
@@ -25,6 +26,8 @@ function useDaysLeft() {
 
 export default function HeroSection() {
   const pricing = usePricing();
+  // after the night (also with the ?ido= preview clock): the landed state, for good
+  const landed = pricing.status === 'landed' || clockNow() >= SLOTS[SLOTS.length - 1].end.getTime();
   const days = useDaysLeft();
   const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
   const videoSrc = HERO_VIDEO ? (portrait && HERO_VIDEO.portrait) || HERO_VIDEO.landscape : null;
@@ -48,7 +51,7 @@ export default function HeroSection() {
         <p className="mx-auto mt-5 max-w-md text-lg text-gray-300 sm:text-xl">Csak egy járat indul! Négy fellépő, három bár a fedélzeten.</p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <TicketButton pricing={pricing} />
+          {landed ? <LandedCard /> : <TicketButton pricing={pricing} />}
         </div>
 
         {pricing.status === 'soon' && pricing.opensAt ? (
@@ -146,9 +149,33 @@ function FlightProgress() {
   );
 }
 
+/* After the night: the flight has landed. Split-flap LANDED, the route with
+   the plane at ÍRK, and a thank-you. Stays on the site from then on. */
+function LandedCard() {
+  return (
+    <div className="mx-auto w-full max-w-xs rounded-[6px] border border-[#d4af37]/40 bg-[#05030a]/75 px-5 py-5 backdrop-blur-md sm:w-[24rem] sm:max-w-none">
+      <div className="flex justify-center" aria-label="Landed">
+        <Flap chars="LANDED" on delay={0} />
+      </div>
+      <div className="mt-4 flex items-center justify-between font-mono text-[12px] font-bold tracking-[0.15em] text-white">
+        <span>KSZ</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#f3d77a]">ÍR 0115</span>
+        <span>ÍRK</span>
+      </div>
+      <div className="relative mt-2 h-4">
+        <div className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-[1px] bg-[#d4af37]" />
+        <Plane className="absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 rotate-45 text-[#f3d77a]" fill="currentColor" />
+      </div>
+      <p className="display mt-5 text-[1.6rem] leading-tight text-white">Köszönjük, hogy velünk repültél!</p>
+      <p className="mt-2 text-[14px] text-gray-400">Az ÍR 0115 leszállt. Reméljük, jó volt a fedélzeten.</p>
+    </div>
+  );
+}
+
 /* Flight status line under the board, from live data (usePricing / onAir):
    "ÍR 0115 · ● CHECK-IN NYITVA". Nothing while loading. */
 const STATUS_LINE = {
+  landed: ['Landed', 'bg-emerald-400'],
   open: ['Check-in nyitva', 'bg-emerald-400'],
   soon: ['Check-in hamarosan', 'bg-amber-400'],
   between: ['Check-in a gate-nél, 19:00-tól', 'bg-amber-400'],
@@ -158,7 +185,8 @@ const STATUS_LINE = {
 function FlightStatus({ pricing }) {
   const onAir = useOnAir();
   // on the event night the flight-progress box shows who is playing
-  const [text, dot] = onAir >= 0 ? [] : STATUS_LINE[pricing.status] || [];
+  const after = clockNow() >= SLOTS[SLOTS.length - 1].end.getTime();
+  const [text, dot] = onAir >= 0 ? [] : STATUS_LINE[after ? 'landed' : pricing.status] || [];
   if (!text) return null;
   return (
     <div

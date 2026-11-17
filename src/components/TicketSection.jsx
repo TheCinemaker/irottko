@@ -515,6 +515,7 @@ function SalesState({ pricing }) {
       pricing.doorFrom ? `Beszállókártyát a gate-nél válthatsz: ${dayHu(pricing.doorFrom)}, 19:00-tól.` : 'Beszállókártyát a gate-nél válthatsz.',
     ],
     closed: ['A jegyértékesítés jelenleg nem elérhető.', null],
+    landed: ['Ez a járat már leszállt.', 'Köszönjük, hogy velünk repültél!'],
     soon: [
       'A check-in hamarosan nyílik.',
       pricing.opensAt
