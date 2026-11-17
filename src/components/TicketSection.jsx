@@ -15,7 +15,10 @@ import { normalizeTaxNumber } from '../lib/taxNumber';
   A sticky bar at the bottom (above the tab bar on phones) shows the total
   and the next action. Price and availability are decided on the server.
 */
-const STEPS = ['Járat', 'Utasok', 'Adatok', 'Fizetés'];
+// One flight (ÍR 0115): step 1 picks the travel class, not a flight.
+const STEPS = ['Osztály', 'Utasok', 'Adatok', 'Fizetés'];
+// The button says where it leads (like an airline booking flow).
+const NEXT = ['Tovább az utasokhoz', 'Tovább az adatokhoz', 'Tovább a fizetéshez'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function TicketSection() {
@@ -305,7 +308,7 @@ export default function TicketSection() {
           <>
             <StepTitle title="Utolsó ellenőrzés." />
             <dl className="divide-y divide-white/[0.08] overflow-hidden rounded-[6px] border border-white/10 bg-[#0b0812] px-5">
-              <SummaryRow label="Járat" onEdit={() => goTo(0)}>
+              <SummaryRow label="Osztály" onEdit={() => goTo(0)}>
                 {ticketCount} × {selectedTier.name} · {huf(selectedTier.price_huf)}
               </SummaryRow>
               <SummaryRow label={ticketCount > 1 ? 'Utasok' : 'Utas'} onEdit={() => goTo(1)}>
@@ -365,7 +368,7 @@ export default function TicketSection() {
             </div>
           )}
           <button type="submit" disabled={submitting} className="btn-primary h-12 w-full text-[15px] disabled:opacity-50">
-            {step < 3 ? 'Tovább' : 'Fizetés'}
+            {step < 3 ? NEXT[step] : 'Fizetés'}
           </button>
         </div>
       </form>
@@ -395,14 +398,14 @@ export default function TicketSection() {
             </div>
             <div className="font-mono text-xl font-bold tabular-nums text-[#f3d77a]">{huf(totalPrice)}</div>
           </div>
-          <button type="button" onClick={next} disabled={submitting} className="btn-primary h-12 shrink-0 px-6 text-[15px] disabled:opacity-50">
+          <button type="button" onClick={next} disabled={submitting} className="btn-primary h-12 shrink-0 px-4 text-[14px] disabled:opacity-50">
             {submitting ? (
               <>
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
                 Fizetés…
               </>
             ) : step < 3 ? (
-              'Tovább'
+              NEXT[step]
             ) : (
               <>
                 <Lock className="h-4 w-4" />

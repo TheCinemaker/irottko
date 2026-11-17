@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, DoorOpen, PlaneTakeoff, Plane, PlaneLanding } from 'lucide-react';
 import { DJS } from '../data/eventData';
+import { useOnAir } from '../lib/onAir';
 
 /*
   Home-page line-up as an airport departures board – it rhymes with the
@@ -68,11 +69,22 @@ function useCycle(on, ms = 13500) { // ≈3.5 s of flapping + 10 s standing stil
 const DIGITS = '0123456789';
 const LETTERS = 'ABCDEFGHIJKLMNOPRSTUVZ';
 
-function FlapTile({ ch, on, delay, small, cycle }) {
+// Tile sizes: small (line-up page), normal (home board), big (the /kijelzo TV board, scales with the screen)
+const TILE = {
+  small: 'h-[30px] w-[20px] text-[17px] rounded-[5px]',
+  normal: 'h-[38px] w-[26px] text-[24px] rounded-[5px]',
+  big: 'h-[5.2vw] w-[3.6vw] text-[3.7vw] rounded-[0.5vw]',
+};
+const COLON = { small: 'text-[16px]', normal: 'text-[22px]', big: 'text-[3.4vw]' };
+
+function FlapTile({ ch, on, delay, size, cycle }) {
   const [shown, setShown] = useState(ch);
   const [flip, setFlip] = useState(0); // 0 = first flip-in, then a short tick per change
   useEffect(() => {
-    if (!cycle) return undefined;
+    if (!cycle) {
+      setShown(ch); // the value itself changed (e.g. a clock) – show it
+      return undefined;
+    }
     // Like a mechanical Solari board: the tile flaps IN ORDER through its set
     // (… 8 → 9 → 0 → 1 …) one full lap and stops on its own value again. Each
     // tile has its own pace, so they click into place one after another.
@@ -99,7 +111,7 @@ function FlapTile({ ch, on, delay, small, cycle }) {
   return (
     <span
       key={flip}
-      className={`flap relative inline-flex ${small ? 'h-[30px] w-[20px] text-[17px]' : 'h-[38px] w-[26px] text-[24px]'} items-center justify-center rounded-[5px] bg-[#16121f] font-mono font-bold text-[#f3d77a] shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_2px_3px_rgba(0,0,0,0.8)] ${anim}`}
+      className={`flap relative inline-flex ${TILE[size]} items-center justify-center bg-[#16121f] font-mono font-bold text-[#f3d77a] shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_2px_3px_rgba(0,0,0,0.8)] ${anim}`}
       style={flip === 0 ? { animationDelay: `${delay}ms` } : undefined}
     >
       {shown}
@@ -109,15 +121,15 @@ function FlapTile({ ch, on, delay, small, cycle }) {
   );
 }
 
-export function Flap({ chars, on, delay, small = false }) {
+export function Flap({ chars, on, delay, small = false, size = small ? 'small' : 'normal' }) {
   const cycle = useCycle(on);
   return (
-    <span className="inline-flex gap-[3px]" aria-hidden="true">
+    <span className={`inline-flex ${size === 'big' ? 'gap-[0.35vw]' : 'gap-[3px]'}`} aria-hidden="true">
       {[...chars].map((ch, i) =>
         ch === ':' ? (
-          <span key={i} className={`self-center px-[1px] ${small ? 'text-[16px]' : 'text-[22px]'} font-bold text-[#d4af37]`}>:</span>
+          <span key={i} className={`self-center px-[1px] ${COLON[size]} font-bold text-[#d4af37]`}>:</span>
         ) : (
-          <FlapTile key={i} ch={ch} on={on} delay={delay + i * 70} small={small} cycle={cycle} />
+          <FlapTile key={i} ch={ch} on={on} delay={delay + i * 70} size={size} cycle={cycle} />
         )
       )}
     </span>
@@ -127,7 +139,10 @@ export function Flap({ chars, on, delay, small = false }) {
 export default function LineupBoard() {
   const board = useRef(null);
   const on = useInView(board);
-  const active = useWalk(on, DJS.length);
+  // On the event night the row of whoever is playing stays lit; otherwise the
+  // gold highlight walks down the board.
+  const onAir = useOnAir();
+  const active = useWalk(on && onAir < 0, DJS.length);
 
   return (
     <section className="mx-auto max-w-3xl px-5 pt-16 sm:pt-28">
@@ -147,7 +162,7 @@ export default function LineupBoard() {
         <ol>
           {DJS.map((dj, i) => {
             const start = dj.time.slice(0, 5);
-            const lit = active === -1 ? dj.headliner : active === i; // the gold "now" row
+            const lit = onAir >= 0 ? onAir === i : active === -1 ? dj.headliner : active === i; // the gold "now" row
             const fade = 'transition-[opacity,color] duration-[1500ms] ease-in-out';
             return (
               <li key={dj.id} className="relative flex items-center gap-4 border-b border-white/[0.06] px-5 py-4 last:border-b-0">
@@ -167,6 +182,7 @@ export default function LineupBoard() {
                   <div className="mt-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
                     <span className={`${fade} ${lit ? 'text-[#d4af37]' : 'text-gray-500'}`}>{STATUS[i]}</span>
                     <PhaseIcon i={i} gold={lit} />
+                    {onAir === i && <OnAirTag />}
                   </div>
                 </div>
               </li>
@@ -179,6 +195,19 @@ export default function LineupBoard() {
         Teljes menetrend <ChevronRight className="h-4 w-4" />
       </Link>
     </section>
+  );
+}
+
+/** "● Most a fedélzeten" – only on the event night, next to the DJ playing now. */
+export function OnAirTag() {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[#f3d77a]">
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+      </span>
+      Most a fedélzeten
+    </span>
   );
 }
 

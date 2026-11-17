@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { usePricing } from '../lib/usePricing';
 import TicketButton from './TicketButton';
-import { EVENT_DETAILS } from '../data/eventData';
+import { EVENT_DETAILS, DJS } from '../data/eventData';
+import { useOnAir } from '../lib/onAir';
 
 /*
   Opening screen. When the hero film arrives, put it at public/hero.mp4
@@ -55,8 +56,38 @@ export default function HeroSection() {
             <BoardCell label="Indulásig" value={String(days)} unit="nap" delay={4} />
           </div>
         )}
+        <FlightStatus pricing={pricing} />
       </div>
     </section>
+  );
+}
+
+/* Flight status line under the board, from live data (usePricing / onAir):
+   "ÍR 0115 · ● CHECK-IN NYITVA". Nothing while loading. */
+const STATUS_LINE = {
+  open: ['Check-in nyitva', 'bg-emerald-400'],
+  soon: ['Check-in hamarosan', 'bg-amber-400'],
+  between: ['Check-in a gate-nél, 19:00-tól', 'bg-amber-400'],
+  full: ['Telt ház', 'bg-red-500'],
+  closed: ['Check-in zárva', 'bg-red-500'],
+};
+function FlightStatus({ pricing }) {
+  const onAir = useOnAir();
+  const [text, dot] = onAir >= 0 ? [`Most a fedélzeten: ${DJS[onAir].name}`, 'bg-emerald-400'] : STATUS_LINE[pricing.status] || [];
+  if (!text) return null;
+  return (
+    <div
+      className="mx-auto mt-3 flex w-full max-w-xs items-center justify-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-gray-300 [text-shadow:0_1px_6px_rgba(0,0,0,0.9)] sm:w-[22rem] sm:max-w-none"
+      aria-live="polite"
+    >
+      <span className="text-[#f3d77a]">ÍR 0115</span>
+      <span className="text-gray-500">·</span>
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 motion-reduce:animate-none ${dot}`} />
+        <span className={`relative inline-flex h-2 w-2 rounded-full ${dot}`} />
+      </span>
+      <span className="truncate">{text}</span>
+    </div>
   );
 }
 

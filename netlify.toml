@@ -52,6 +52,12 @@
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow"
 
+# TV departures board for the venue – not for search engines
+[[headers]]
+  for = "/kijelzo"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
 [[headers]]
   for = "/success"
   [headers.values]

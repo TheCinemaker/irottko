@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 
 const NAV_LINKS = [
-  { to: '/lineup', label: 'Line-up' },
+  { to: '/lineup', label: 'Menetrend' },
   { to: '/barok', label: 'Bárok' },
   { to: '/vip', label: 'VIP' },
   { to: '/jegyek', label: 'Jegyek' },

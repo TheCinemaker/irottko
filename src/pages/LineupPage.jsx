@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { PlaneTakeoff, PlaneLanding, ArrowRight } from 'lucide-react';
 import PageShell from '../components/PageShell';
 import TicketButton from '../components/TicketButton';
-import { Flap, STATUS, PHASE } from '../components/LineupBoard';
+import { Flap, STATUS, PHASE, OnAirTag } from '../components/LineupBoard';
+import { useOnAir } from '../lib/onAir';
 import { DJS } from '../data/eventData';
 import { usePricing } from '../lib/usePricing';
 
@@ -35,6 +36,7 @@ function FlightCard({ dj, i }) {
   const on = useOnce(ref);
   const [from, to] = times(dj.time);
   const gold = dj.headliner;
+  const onAir = useOnAir(); // event night: the act playing now
   const { Icon } = PHASE[i] || {};
   return (
     <li ref={ref} className="relative pl-10">
@@ -54,6 +56,7 @@ function FlightCard({ dj, i }) {
           <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#d4af37]">
             {Icon && <Icon className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
             {STATUS[i]}
+            {onAir === i && <span className="ml-auto normal-case tracking-normal"><OnAirTag /></span>}
           </div>
           <h2 className={`artist mt-2 break-words ${gold ? 'text-[2rem] text-[#d4af37]' : 'text-[1.75rem] text-white'}`}>{dj.name}</h2>
         </div>
