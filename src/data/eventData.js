@@ -78,10 +78,10 @@ export const INFO = [
     label: "Dress code",
     value: "Hozd a 90-es, 2000-es évek hangulatát! Kockás ing, farmer, terepnadrág – minél „akkoribb”, annál jobb.",
   },
-  { label: "Beszállás", value: "Névre szóló beszállókártyával, 18 éven felülieknek. Fényképes igazolványt hozz magaddal." },
+  { label: "Beszállás", value: "A gate-nél: fényképes igazolvány (18+) és a névre szóló beszállókártyád – egy csipogás, és már a fedélzeten vagy." },
   // the hotel: leaving through the gate = no way back (the ticket is used); smoking area inside
-  { label: "Nincs visszaút", value: "Aki a gate-en kilép, az a földön marad: a beszállókártya egyszer érvényes, visszajönni nem lehet." },
-  { label: "Dohányzás", value: "Kijelölt dohányzóhely az udvaron, szabad levegőn – cigizni nem kell kimenned a gate-en." },
+  { label: "Nincs visszaút", value: "Aki a gate-en kiszáll, a földön marad: a beszállókártya egyszer érvényes, visszaszállás nincs." },
+  { label: "Dohányzás", value: "A fedélzeten tilos – a terminálban kijelölt dohányzóhely vár az udvaron, szabad levegőn. A gate-en nem kell kimenned hozzá." },
 ];
 
 // Ticket prices and sales windows live in the database (supabase/seed_2027.sql);
