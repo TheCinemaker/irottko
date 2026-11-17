@@ -23,8 +23,22 @@ export const SLOTS = DJS.map((dj, i) => {
   return { start: at(from), end: at(to || next || LAST_SET_END) };
 });
 
+/* Preview clock: ?ido=22:40 on any page puts THIS browser on the event night at
+   that time (before noon = the morning after) and lets it tick on from there –
+   to see the flight progress / "now on board" before the night. Sales, prices
+   and the server are not affected. Set once when the page loads. */
+const PREVIEW_OFFSET = (() => {
+  if (typeof window === 'undefined') return 0;
+  const m = new URLSearchParams(window.location.search).get('ido')?.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return 0;
+  return at(`${m[1].padStart(2, '0')}:${m[2]}`).getTime() - Date.now();
+})();
+export const PREVIEW = PREVIEW_OFFSET !== 0;
+/** "Now" for the event-night features (real time, or the preview clock). */
+export const clockNow = () => Date.now() + PREVIEW_OFFSET;
+
 /** Index of the DJ playing at `now`, or -1. */
-export const onAirIndex = (now = new Date()) => SLOTS.findIndex((s) => now >= s.start && now < s.end);
+export const onAirIndex = (now = new Date(clockNow())) => SLOTS.findIndex((s) => now >= s.start && now < s.end);
 
 /** Live version: re-checked every 30 s. */
 export function useOnAir() {

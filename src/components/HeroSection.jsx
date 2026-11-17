@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { usePricing } from '../lib/usePricing';
 import TicketButton from './TicketButton';
 import { EVENT_DETAILS, DJS } from '../data/eventData';
-import { useOnAir, SLOTS } from '../lib/onAir';
+import { useOnAir, SLOTS, clockNow, PREVIEW } from '../lib/onAir';
 import { Plane } from 'lucide-react';
 
 /*
@@ -14,7 +14,7 @@ const HERO_VIDEO = null; // e.g. { landscape: '/hero.mp4', portrait: '/hero-port
 const HERO_POSTER = '/hero.jpg';
 
 function useDaysLeft() {
-  const calc = () => Math.max(0, Math.ceil((new Date(EVENT_DETAILS.isoDate).getTime() - Date.now()) / 86400000));
+  const calc = () => Math.max(0, Math.ceil((new Date(EVENT_DETAILS.isoDate).getTime() - clockNow()) / 86400000));
   const [d, setD] = useState(calc);
   useEffect(() => {
     const id = setInterval(() => setD(calc()), 60000);
@@ -64,6 +64,12 @@ export default function HeroSection() {
         )}
         <FlightProgress />
         <FlightStatus pricing={pricing} />
+        {/* ?ido=HH:MM preview (this browser only) */}
+        {PREVIEW && (
+          <div className="mx-auto mt-3 w-fit rounded-full border border-red-400/50 bg-red-950/60 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-red-200">
+            Próbaidő – csak ebben a böngészőben
+          </div>
+        )}
       </div>
     </section>
   );
@@ -102,9 +108,9 @@ function OpeningCountdown({ opensAt }) {
    Only between gate open and the end; the same times as the departures board. */
 function FlightProgress() {
   const onAir = useOnAir();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => clockNow());
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30000);
+    const id = setInterval(() => setNow(clockNow()), 30000);
     return () => clearInterval(id);
   }, []);
   const from = new Date(EVENT_DETAILS.isoDate).getTime();
