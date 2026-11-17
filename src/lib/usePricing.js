@@ -58,6 +58,8 @@ function parse(data) {
     doorFrom: door?.sales_from || null,
     opensAt: tiers.filter((x) => !x.sales_until || new Date(x.sales_until) > new Date(data.now)).map((x) => x.sales_from).filter(Boolean).sort()[0] || null,
     onlineLeft: data.online_left,
+    // passenger announcement from the admin (015_announcement.sql), or null
+    announcement: data.announcement || null,
   };
 }
 

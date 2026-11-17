@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
+import { Megaphone } from 'lucide-react';
+import { usePricing } from '../lib/usePricing';
 
 const NAV_LINKS = [
   { to: '/lineup', label: 'Menetrend' },
@@ -11,6 +13,7 @@ const NAV_LINKS = [
 // Top bar. Phones: just the name (navigation is the bottom TabBar).
 // Desktop: links + ticket button.
 export default function Navbar() {
+  const { announcement } = usePricing();
   const linkClass = ({ isActive }) =>
     `text-[13px] tracking-wide transition-colors ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`;
 
@@ -33,6 +36,13 @@ export default function Navbar() {
           Check-in
         </Link>
       </div>
+      {/* "Utastájékoztatás" – a line the admin writes; live on every page */}
+      {announcement && (
+        <div className="border-t border-[#d4af37]/30 bg-[#d4af37]/[0.12] px-4 py-1.5 text-center text-[12px] font-semibold leading-snug text-[#f3d77a]" role="status">
+          <Megaphone className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px" aria-hidden="true" />
+          <span className="uppercase tracking-[0.18em] text-[#d4af37]">Utastájékoztatás:</span> {announcement}
+        </div>
+      )}
     </header>
   );
 }

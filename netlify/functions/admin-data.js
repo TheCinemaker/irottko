@@ -203,6 +203,8 @@ export const handler = async (event) => {
       event: {
         title: ev.title,
         salesOpen: ev.sales_open,
+        announcement: ev.announcement ?? null, // undefined before 015
+        announcementReady: 'announcement' in ev,
         onlineCapacity: ev.online_capacity,
         capacity: ev.capacity,
         // fire-safety limit (013_venue_limit.sql); undefined before the migration

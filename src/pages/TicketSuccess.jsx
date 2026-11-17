@@ -74,8 +74,18 @@ function Paid({ data }) {
   return (
     <>
       <div className="text-center">
-        <CheckCircle2 className="mx-auto h-12 w-12 text-[#d4af37]" />
+        {/* airline-style confirmation: a "checked in" stamp + the flight strip */}
+        <div className="mx-auto inline-flex -rotate-3 items-center gap-2 rounded-[6px] border-2 border-emerald-400/80 px-4 py-1.5 text-[13px] font-extrabold uppercase tracking-[0.25em] text-emerald-300">
+          <CheckCircle2 className="h-5 w-5" /> Checked in
+        </div>
         <h1 className="display mt-6 text-4xl sm:text-5xl">Check-in kész. Jó utat!</h1>
+        <div className="mx-auto mt-5 flex max-w-sm items-center justify-between gap-3 rounded-[4px] border border-white/10 bg-[#0b0812] px-4 py-2.5 font-mono text-[12px] font-bold tracking-[0.12em] text-white">
+          <span>
+            KSZ <span className="text-[#d4af37]">✈</span> ÍRK
+          </span>
+          <span className="text-[#f3d77a]">ÍR 0115</span>
+          <span>{EVENT_DETAILS.isoDate.slice(0, 10).replace(/-/g, '.')}.</span>
+        </div>
         <p className="mt-4 text-gray-300">
           Köszönjük, {order.fullName}! A beszállókártyákat elküldtük ide: <span className="text-white">{order.email}</span>. A számlát a Számlázz.hu külön
           e-mailben küldi.

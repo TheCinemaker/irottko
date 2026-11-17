@@ -8,6 +8,7 @@
 //                                  without the PIN (lib/enroll.js)
 //   action 'enroll-list'          → codes of the last 24 h (status only, no codes)
 //   action 'enroll-revoke', id    → revoke an unused code
+//   action 'set-announcement', text → "Utastájékoztatás" strip on the site ('' clears it)
 //   action 'set-sales-open', open → emergency stop / restart of all ticket sales
 //   action 'set-limits', venueLimit, nonTicketCount, enabled → fire-safety limit (013);
 //                                  enabled=false keeps the numbers but sells without a limit
@@ -70,6 +71,16 @@ async function guestlist() {
   return json(200, { generatedAt: new Date().toISOString(), guests });
 }
 
+// Passenger announcement strip on every page (015_announcement.sql); '' = none.
+async function setAnnouncement(text) {
+  if (typeof text !== 'string' || text.length > 200) return json(400, { error: 'BAD_VALUE' });
+  const clean = text.replace(/[\u0000-\u001f]/g, ' ').trim();
+  const { data, error } = await db().from('events').update({ announcement: clean || null }).eq('slug', SLUG).select('announcement').single();
+  if (error) throw error;
+  console.log(`admin: announcement ${clean ? 'set' : 'cleared'}`);
+  return json(200, { announcement: data.announcement });
+}
+
 // Emergency stop / restart of ALL ticket sales (online, VIP, door QR).
 async function setSalesOpen(open) {
   if (typeof open !== 'boolean') return json(400, { error: 'BAD_VALUE' });
@@ -117,6 +128,7 @@ export const handler = async (event) => {
     if (body.action === 'enroll-list') return json(200, { list: await listEnrollments() });
     if (body.action === 'enroll-revoke') return json(200, { revoked: await revokeEnrollment(body.id) });
     if (body.action === 'set-sales-open') return await setSalesOpen(body.open);
+    if (body.action === 'set-announcement') return await setAnnouncement(body.text);
     if (body.action === 'set-limits') return await setLimits(body.venueLimit, body.nonTicketCount, body.enabled);
     return json(400, { error: 'UNKNOWN_ACTION' });
   } catch (e) {

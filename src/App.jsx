@@ -12,6 +12,7 @@ import TicketsPage from './pages/TicketsPage';
 const TicketSuccess = lazy(() => import('./pages/TicketSuccess'));
 const TicketScanner = lazy(() => import('./pages/TicketScanner'));
 const TicketAdmin = lazy(() => import('./pages/TicketAdmin'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage')); // "Gate not found"
 const FidsPage = lazy(() => import('./pages/FidsPage')); // TV departures board for the venue
 const TermsPage = lazy(() => import('./pages/LegalPages').then((m) => ({ default: m.TermsPage })));
 const PrivacyPage = lazy(() => import('./pages/LegalPages').then((m) => ({ default: m.PrivacyPage })));
@@ -39,7 +40,7 @@ export default function App() {
         <Route path="/admin" element={<TicketAdmin />} />
         <Route path="/kijelzo" element={<FidsPage />} />
 
-        <Route path="*" element={<HomePage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </Suspense>
     </>

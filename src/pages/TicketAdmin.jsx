@@ -302,6 +302,7 @@ function Sales({ d }) {
 
       {/* remount when the saved settings change (e.g. page opened before the migration) */}
       <LimitsCard key={`${d.event.limitOn}-${d.event.venueLimit}-${d.event.nonTicketCount}`} d={d} />
+      <AnnouncementCard key={`ann-${d.event.announcement ?? ''}`} d={d} />
 
       <Card title="Jegytípusok" className="lg:col-span-3">
         <Table
@@ -333,6 +334,64 @@ function Sales({ d }) {
    Sellable tickets = venue limit − people inside without a ticket. Every ticket
    type counts (online, VIP, door QR). Switched off, the numbers are kept but
    sales are unlimited. */
+/* "Utastájékoztatás" strip at the top of every page of the site
+   (015_announcement.sql). Live: visitors see it within a second or two. */
+function AnnouncementCard({ d }) {
+  const { token, logout } = useContext(AdminAuth);
+  const saved = d.event.announcement ?? '';
+  const [text, setText] = useState(saved);
+  const [msg, setMsg] = useState(null); // [text, ok]
+  const [busy, setBusy] = useState(false);
+
+  const send = async (value) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await call('admin-action', { token }, { action: 'set-announcement', text: value });
+      if (!r.auth) return logout();
+      if (r.status !== 200) throw new Error();
+      setText(r.data.announcement ?? '');
+      setMsg([r.data.announcement ? 'Kint van az oldalon.' : 'A sáv eltűnt az oldalról.', true]);
+    } catch {
+      setMsg(['Nem sikerült menteni.', false]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card title="Utastájékoztatás (sáv az oldal tetején)" className="lg:col-span-3">
+      {!d.event.announcementReady ? (
+        <p className="text-sm text-amber-300">Futtasd le a Supabase-ben a 015_announcement.sql-t – utána itt írható.</p>
+      ) : (
+        <>
+          <p className="max-w-2xl text-sm text-gray-400">
+            Egy rövid mondat minden oldal tetején, a menü alatt (pl. „Az Early Bird ár vasárnap 23:59-ig érvényes.”). Mentés után a nyitott
+            oldalakon is azonnal megjelenik. Üresen hagyva nincs sáv.
+          </p>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              maxLength={200}
+              placeholder="Pl.: Az Early Bird ár vasárnap 23:59-ig érvényes."
+              className="field flex-1 py-2 text-sm"
+            />
+            <button onClick={() => send(text)} disabled={busy || text.trim() === saved} className="btn-secondary px-4 py-2 disabled:opacity-40">
+              <Check className="h-4 w-4" /> Mentés
+            </button>
+            <button onClick={() => send('')} disabled={busy || !saved} className="btn-secondary px-4 py-2 disabled:opacity-40">
+              <X className="h-4 w-4" /> Sáv levétele
+            </button>
+          </div>
+          <div className="mt-1 text-right text-xs text-gray-500">{text.length} / 200</div>
+          {msg && <p className={`mt-1 text-sm ${msg[1] ? 'text-emerald-400' : 'text-red-400'}`}>{msg[0]}</p>}
+        </>
+      )}
+    </Card>
+  );
+}
+
 function LimitsCard({ d }) {
   const { token, logout } = useContext(AdminAuth);
   const ev = d.event;

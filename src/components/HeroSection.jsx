@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { usePricing } from '../lib/usePricing';
 import TicketButton from './TicketButton';
 import { EVENT_DETAILS, DJS } from '../data/eventData';
-import { useOnAir } from '../lib/onAir';
+import { useOnAir, SLOTS } from '../lib/onAir';
+import { Plane } from 'lucide-react';
 
 /*
   Opening screen. When the hero film arrives, put it at public/hero.mp4
@@ -49,16 +50,92 @@ export default function HeroSection() {
           <TicketButton pricing={pricing} />
         </div>
 
-        {days > 0 && (
-          <div className="mx-auto mt-4 flex w-full max-w-xs items-stretch overflow-hidden rounded-[4px] border border-white/15 bg-[#05030a]/70 backdrop-blur-md sm:w-[22rem] sm:max-w-none">
-            <BoardCell label="Gate open" value={EVENT_DETAILS.doorsOpen} />
-            <span className="w-px border-l border-dashed border-white/15" />
-            <BoardCell label="Indulásig" value={String(days)} unit="nap" delay={4} />
-          </div>
+        {pricing.status === 'soon' && pricing.opensAt ? (
+          <OpeningCountdown opensAt={pricing.opensAt} />
+        ) : (
+          days > 0 && (
+            <div className="mx-auto mt-4 flex w-full max-w-xs items-stretch overflow-hidden rounded-[4px] border border-white/15 bg-[#05030a]/70 backdrop-blur-md sm:w-[22rem] sm:max-w-none">
+              <BoardCell label="Gate open" value={EVENT_DETAILS.doorsOpen} />
+              <span className="w-px border-l border-dashed border-white/15" />
+              <BoardCell label="Indulásig" value={String(days)} unit="nap" delay={4} />
+            </div>
+          )
         )}
+        <FlightProgress />
         <FlightStatus pricing={pricing} />
       </div>
     </section>
+  );
+}
+
+/* Before sales open: "Check-in nyílik" with days / hours / minutes on the
+   split-flap cells, ticking every 20 s. Goes away by itself when sales open
+   (usePricing switches from 'soon' to 'open'). */
+function OpeningCountdown({ opensAt }) {
+  const left = () => Math.max(0, new Date(opensAt).getTime() - Date.now());
+  const [ms, setMs] = useState(left);
+  useEffect(() => {
+    const id = setInterval(() => setMs(left()), 20000);
+    return () => clearInterval(id);
+  }, [opensAt]); // eslint-disable-line react-hooks/exhaustive-deps
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const two = (n) => String(n).padStart(2, '0');
+  return (
+    <div className="mx-auto mt-4 w-full max-w-xs overflow-hidden rounded-[4px] border border-white/15 bg-[#05030a]/70 backdrop-blur-md sm:w-[22rem] sm:max-w-none">
+      <div className="border-b border-dashed border-white/15 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] text-[#f3d77a]">Check-in nyílik</div>
+      <div className="flex items-stretch">
+        <BoardCell label="Nap" value={String(d)} />
+        <span className="w-px border-l border-dashed border-white/15" />
+        <BoardCell label="Óra" value={two(h)} delay={2} />
+        <span className="w-px border-l border-dashed border-white/15" />
+        <BoardCell label="Perc" value={two(m)} delay={4} />
+      </div>
+    </div>
+  );
+}
+
+/* The event night: the flight KSZ ✈ ÍRK with the plane moving along as the
+   night goes on (gate open → end of the last set), and the flight time so far.
+   Only between gate open and the end; the same times as the departures board. */
+function FlightProgress() {
+  const onAir = useOnAir();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const from = new Date(EVENT_DETAILS.isoDate).getTime();
+  const to = SLOTS[SLOTS.length - 1].end.getTime();
+  if (now < from || now >= to) return null;
+  const p = (now - from) / (to - from);
+  const min = Math.floor((now - from) / 60000);
+  return (
+    <div className="mx-auto mt-4 w-full max-w-xs rounded-[4px] border border-white/15 bg-[#05030a]/70 px-4 py-3 backdrop-blur-md sm:w-[22rem] sm:max-w-none">
+      <div className="flex items-center justify-between font-mono text-[12px] font-bold tracking-[0.15em] text-white">
+        <span>KSZ</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#f3d77a]">ÍR 0115 · In flight</span>
+        <span>ÍRK</span>
+      </div>
+      <div className="relative mt-2 h-4">
+        <div className="absolute inset-x-0 top-1/2 border-t-2 border-dashed border-white/25" />
+        <div className="absolute left-0 top-1/2 h-[2px] -translate-y-[1px] bg-[#d4af37]" style={{ width: `${p * 100}%` }} />
+        <Plane className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45 text-[#f3d77a]" style={{ left: `${p * 100}%` }} fill="currentColor" />
+      </div>
+      <div className="mt-2 text-[12px] font-semibold uppercase tracking-[0.15em] text-gray-300">
+        Repülési idő: {Math.floor(min / 60)} ó {String(min % 60).padStart(2, '0')} p
+      </div>
+      {onAir >= 0 && (
+        <div className="mt-1.5 flex items-center justify-center gap-2 text-[13px] font-semibold text-[#f3d77a]">
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:animate-none" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+          </span>
+          Most a fedélzeten: {DJS[onAir].name}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -73,7 +150,8 @@ const STATUS_LINE = {
 };
 function FlightStatus({ pricing }) {
   const onAir = useOnAir();
-  const [text, dot] = onAir >= 0 ? [`Most a fedélzeten: ${DJS[onAir].name}`, 'bg-emerald-400'] : STATUS_LINE[pricing.status] || [];
+  // on the event night the flight-progress box shows who is playing
+  const [text, dot] = onAir >= 0 ? [] : STATUS_LINE[pricing.status] || [];
   if (!text) return null;
   return (
     <div
