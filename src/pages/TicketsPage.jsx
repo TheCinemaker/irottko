@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import PageShell from '../components/PageShell';
 import TicketSection from '../components/TicketSection';
@@ -7,10 +7,11 @@ import { getMyTickets } from '../lib/myTickets';
 
 // Jegyek tab: the tickets on this phone first (if any), then buying.
 export default function TicketsPage() {
-  const hasTickets = getMyTickets().length > 0;
+  const [count, setCount] = useState(() => getMyTickets().length);
+  const hasTickets = count > 0;
   return (
     <PageShell>
-      <MyTickets />
+      <MyTickets onChange={setCount} />
       <header className={`mx-auto max-w-2xl px-5 pb-10 text-center ${hasTickets ? 'pt-14' : 'pt-32 sm:pt-40'}`}>
         <div className="kicker">{hasTickets ? 'Új foglalás' : 'Online check-in'}</div>
         <h1 className="display mt-4 whitespace-nowrap text-[clamp(1.5rem,7.4vw,4.5rem)]">{hasTickets ? 'Hozol még valakit?' : 'Foglald le a helyed.'}</h1>

@@ -16,6 +16,15 @@ export default function Footer() {
         <Link to="/adatkezeles" className="hover:text-white">Adatkezelés</Link>
         <Link to="/impresszum" className="hover:text-white">Impresszum</Link>
       </nav>
+      {/* Barion acceptance banner on every page (merchant review), official, unaltered */}
+      <img
+        src="/barion/barion-smart-banner-dark.svg"
+        alt="Fizetés Barionnal: Mastercard, Visa, Diners Club, Discover, Apple Pay, Google Pay"
+        width="756"
+        height="108"
+        loading="lazy"
+        className="mx-auto my-2 h-auto w-full max-w-[240px]"
+      />
       <div>© 2026–2027 IROTTKŐ HOTEL Kft. · Minden jog fenntartva · 18+</div>
       <div>
         Designed &amp; built by{' '}

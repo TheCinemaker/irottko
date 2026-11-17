@@ -33,7 +33,7 @@ export default function VipSection() {
         <div className="mt-14 text-center">
           <div className="kicker">Business · VIP Lounge</div>
           <p className="mt-2 text-[13px] text-gray-500">fő / bruttó, e-számlával</p>
-          <TicketButton label="VIP beszállókártya" price={vip.price_huf} from={false} className="mx-auto mt-5" />
+          <TicketButton label="VIP beszállókártya" to="/jegyek?jegy=vip" price={vip.price_huf} from={false} className="mx-auto mt-5" />
         </div>
       )}
     </section>

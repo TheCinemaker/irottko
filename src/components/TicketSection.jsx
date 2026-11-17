@@ -24,7 +24,10 @@ export default function TicketSection() {
   const turnstile = useRef(null);
 
   const [step, setStep] = useState(0);
-  const [selectedKind, setSelectedKind] = useState('standard');
+  // /jegyek?jegy=vip (the VIP page button) opens with the VIP ticket selected
+  const [selectedKind, setSelectedKind] = useState(() =>
+    new URLSearchParams(window.location.search).get('jegy') === 'vip' ? 'vip' : 'standard'
+  );
   const [ticketCount, setTicketCount] = useState(1);
   const [isCompany, setIsCompany] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);

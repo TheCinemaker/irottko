@@ -210,6 +210,15 @@ export default function FramePour({ clip, intro = null }) {
             >
               <span className="text-[10px] tracking-[0.3em] uppercase">Görgess, és töltünk egyet</span>
               <ChevronDown className="w-5 h-5 animate-bounce" />
+              {/* in a hurry at the bar: straight to the prices, skipping the film */}
+              {clip.finale && (
+                <a
+                  href="#itallap"
+                  className="pointer-events-auto mt-3 rounded-full border border-[#d4af37]/50 bg-black/40 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#f7e7a9] backdrop-blur-sm"
+                >
+                  Ugrás az itallapra
+                </a>
+              )}
             </div>
           </>
         )}

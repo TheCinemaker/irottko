@@ -97,9 +97,12 @@ function FullPass({ t, onClose }) {
         <div className="mt-5 font-mono text-[17px] tracking-[0.2em]">{t.code}</div>
         <p className="mt-6 max-w-xs text-[13px] text-gray-500">Tekerd fel a fényerőt. Egyszeri belépésre jogosít, névre szóló.</p>
       </div>
-      <div className="pb-[calc(env(safe-area-inset-bottom)+20px)] text-center">
+      <div className="flex flex-wrap justify-center gap-2 pb-[calc(env(safe-area-inset-bottom)+20px)] text-center">
         <a href={`/.netlify/functions/wallet-apple?c=${t.code}`} className="inline-block">
           <img src="/wallet/apple-wallet-badge-hu.svg" alt="Hozzáadás az Apple Tárcához" className="h-11 w-auto" />
+        </a>
+        <a href={`/.netlify/functions/wallet-google?c=${t.code}`} className="inline-block">
+          <img src="/wallet/google-wallet-badge-hu.svg" alt="Hozzáadás a Google Wallethez" className="h-11 w-auto" />
         </a>
       </div>
     </div>,
@@ -107,7 +110,9 @@ function FullPass({ t, onClose }) {
   );
 }
 
-export default function MyTickets() {
+// onChange(count): tells the page how many tickets are left on this phone
+// (TicketsPage switches its heading when the last one is removed).
+export default function MyTickets({ onChange } = {}) {
   const [tickets, setTickets] = useState(getMyTickets);
   const [open, setOpen] = useState(null);
   if (!tickets.length) return null;
@@ -115,7 +120,9 @@ export default function MyTickets() {
   const remove = (code) => {
     if (!window.confirm('Eltávolítod ezt a jegyet erről a telefonról? (Az e-mailben és a Tárcában megmarad.)')) return;
     removeMyTicket(code);
-    setTickets(getMyTickets());
+    const left = getMyTickets();
+    setTickets(left);
+    onChange?.(left.length);
   };
 
   return (

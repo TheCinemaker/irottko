@@ -34,7 +34,6 @@ export default function App() {
         <Route path="/adatkezeles" element={<PrivacyPage />} />
         <Route path="/impresszum" element={<ImprintPage />} />
         <Route path="/success" element={<TicketSuccess />} />
-        <Route path="/ticket/:id" element={<TicketSuccess />} />
         <Route path="/scan" element={<TicketScanner />} />
         <Route path="/admin" element={<TicketAdmin />} />
 

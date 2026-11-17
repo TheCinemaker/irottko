@@ -219,7 +219,8 @@ const Card = React.forwardRef(function Card({ bar, compact = false, className = 
         {!compact && <p className="mt-1 text-[15px] text-gray-300">{bar.shortDesc}</p>}
         {/* small ticket stub, same language as the hero's boarding-pass button */}
         <span className="mt-4 inline-flex items-center gap-1.5 rounded-[3px] border border-[#d4af37]/45 bg-[#d4af37]/15 py-1.5 pl-3 pr-2.5 text-[12px] font-bold uppercase tracking-[0.16em] text-[#f3d77a] backdrop-blur-md transition-colors group-hover:bg-[#d4af37]/25">
-          Itallap <ChevronRight className="h-3.5 w-3.5" />
+          {/* until a bar has its drinks list, the card leads to its description */}
+          {bar.items?.length ? 'Itallap' : 'Részletek'} <ChevronRight className="h-3.5 w-3.5" />
         </span>
       </div>
       {/* cover-flow depth shade (set per frame on phones) */}
