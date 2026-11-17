@@ -51,21 +51,68 @@ function useWalk(on, count, ms = 4000) { // ≈2.5 s lit + 1.5 s fade
   return active;
 }
 
+/* Every `ms` (while visible and the tab is in front) the board "re-flips" like a
+   real departures board: each tile spins through a few characters and lands on
+   its value again. Returns a counter that changes on every re-flip.
+   Reduced motion: never. */
+function useCycle(on, ms = 20000) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!on || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const id = setInterval(() => document.visibilityState === 'visible' && setN((x) => x + 1), ms);
+    return () => clearInterval(id);
+  }, [on, ms]);
+  return n;
+}
+
+const DIGITS = '0123456789';
+const LETTERS = 'ABCDEFGHIJKLMNOPRSTUVZ';
+
+function FlapTile({ ch, on, delay, small, cycle }) {
+  const [shown, setShown] = useState(ch);
+  const [flip, setFlip] = useState(0); // 0 = first flip-in, then a short tick per change
+  useEffect(() => {
+    if (!cycle) return undefined;
+    const pool = /\d/.test(ch) ? DIGITS : LETTERS;
+    // ~1–1.5 s of visible flapping per tile (a real board flaps 8–12 times per character)
+    const steps = 9 + Math.floor(Math.random() * 5);
+    let n = 0;
+    let t;
+    const step = () => {
+      n += 1;
+      setShown(n >= steps ? ch : pool[Math.floor(Math.random() * pool.length)]);
+      setFlip((f) => f + 1);
+      if (n < steps) t = setTimeout(step, 110);
+    };
+    t = setTimeout(step, delay);
+    return () => {
+      clearTimeout(t);
+      setShown(ch);
+    };
+  }, [cycle, ch, delay]);
+
+  const anim = flip === 0 ? (on ? 'flap-in' : 'opacity-0') : 'flap-tick';
+  return (
+    <span
+      key={flip}
+      className={`flap relative inline-flex ${small ? 'h-[30px] w-[20px] text-[17px]' : 'h-[38px] w-[26px] text-[24px]'} items-center justify-center rounded-[5px] bg-[#16121f] font-mono font-bold text-[#f3d77a] ${anim}`}
+      style={flip === 0 ? { animationDelay: `${delay}ms` } : undefined}
+    >
+      {shown}
+      <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-black/35" />
+    </span>
+  );
+}
+
 export function Flap({ chars, on, delay, small = false }) {
+  const cycle = useCycle(on);
   return (
     <span className="inline-flex gap-[3px]" aria-hidden="true">
       {[...chars].map((ch, i) =>
         ch === ':' ? (
           <span key={i} className={`self-center px-[1px] ${small ? 'text-[16px]' : 'text-[22px]'} font-bold text-[#d4af37]`}>:</span>
         ) : (
-          <span
-            key={i}
-            className={`flap relative inline-flex ${small ? 'h-[30px] w-[20px] text-[17px]' : 'h-[38px] w-[26px] text-[24px]'} items-center justify-center rounded-[5px] bg-[#16121f] font-mono font-bold text-[#f3d77a] ${on ? 'flap-in' : 'opacity-0'}`}
-            style={{ animationDelay: `${delay + i * 70}ms` }}
-          >
-            {ch}
-            <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-black/35" />
-          </span>
+          <FlapTile key={i} ch={ch} on={on} delay={delay + i * 70} small={small} cycle={cycle} />
         )
       )}
     </span>
