@@ -69,7 +69,7 @@ export function TermsPage() {
       <h2>4. A jegy</h2>
       <ul>
         <li>A jegyet a Vásárló e-mailben kapja meg (QR-kód, nyomtatható PDF), és hozzáadhatja az Apple Tárcához vagy a Google Wallethez.</li>
-        <li>Minden jegy egyedi kóddal rendelkezik, és <strong>egyszeri belépésre</strong> jogosít. Az első beolvasás után a kód érvényét veszti; a jegy másolata nem jogosít belépésre.</li>
+        <li>Minden jegy egyedi kóddal rendelkezik, és <strong>egyszeri belépésre</strong> jogosít. Az első beolvasás után a kód érvényét veszti; a jegy másolata nem jogosít belépésre. A rendezvény területét a beléptetési ponton át elhagyva a jegy nem használható újra, visszalépésre nincs lehetőség.</li>
         <li>
           A jegy <strong>névre szóló</strong>: a vásárláskor megadott résztvevő nevét tartalmazza, és csak ő léphet be vele. Nem átruházható,
           és nem értékesíthető tovább. A beléptetéskor a név ellenőrzése céljából fényképes igazolvány kérhető.

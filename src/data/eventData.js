@@ -79,6 +79,9 @@ export const INFO = [
     value: "Hozd a 90-es, 2000-es évek hangulatát! Kockás ing, farmer, terepnadrág – minél „akkoribb”, annál jobb.",
   },
   { label: "Beszállás", value: "Névre szóló beszállókártyával, 18 éven felülieknek. Fényképes igazolványt hozz magaddal." },
+  // the hotel: leaving through the gate = no way back (the ticket is used); smoking area inside
+  { label: "Nincs visszaút", value: "Aki a gate-en kilép, az a földön marad: a beszállókártya egyszer érvényes, visszajönni nem lehet." },
+  { label: "Dohányzás", value: "Kijelölt dohányzóhely az udvaron, szabad levegőn – cigizni nem kell kimenned a gate-en." },
 ];
 
 // Ticket prices and sales windows live in the database (supabase/seed_2027.sql);

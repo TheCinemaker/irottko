@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Info, DoorOpen, MapPin, Disc3, Shirt, IdCard, UtensilsCrossed } from 'lucide-react';
+import { ChevronDown, ChevronRight, Info, DoorOpen, MapPin, Disc3, Shirt, IdCard, UtensilsCrossed, Ban, Cigarette } from 'lucide-react';
 import PageShell from '../components/PageShell';
 import HeroSection from '../components/HeroSection';
 import BarTiles from '../components/BarTiles';
@@ -16,6 +16,8 @@ const INFO_ICON = {
   'DJ-pult': Disc3,
   'Dress code': Shirt,
   Beszállás: IdCard,
+  'Nincs visszaút': Ban,
+  Dohányzás: Cigarette,
   'Fedélzeti menü': UtensilsCrossed,
 };
 
