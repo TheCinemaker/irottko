@@ -36,10 +36,11 @@ begin
   (v_event, 'Elővétel 4',   'standard', 'online', 8490, null, 4, '2026-12-27 00:00+01', '2027-01-03 00:00+01', '{}'),
   (v_event, 'Elővétel 5',   'standard', 'online', 8990, null, 5, '2027-01-03 00:00+01', '2027-01-10 00:00+01', '{}'),
   (v_event, 'Elővétel 6',   'standard', 'online', 9490, null, 6, '2027-01-10 00:00+01', '2027-01-13 00:00+01', '{}'),
-  -- Utolsó 2 nap; online zárás jan. 14. 23:59
-  (v_event, 'Last Call',    'standard', 'online', 9900, null, 7, '2027-01-13 00:00+01', '2027-01-15 00:00+01', '{}'),
+  -- Utolsó napok: kapunyitásig (jan. 15. 19:00), utána a helyszíni jegy – hézag nélkül,
+  -- hogy MINDEN pillanatban lehessen jegyet venni (a user kérése, 2026-11-17)
+  (v_event, 'Last Call',    'standard', 'online', 9900, null, 7, '2027-01-13 00:00+01', '2027-01-15 19:00+01', '{}'),
   -- Helyszíni jegy: QR-plakát → ugyanez a vásárlás; a buli éjszakáján, korlátlan
   (v_event, 'Helyszíni jegy','standard','door',   9900, null, 8, '2027-01-15 19:00+01', '2027-01-16 03:00+01', '{}'),
-  -- VIP: fix ár, saját keret, csak online
-  (v_event, 'VIP',          'vip',      'online', 12000, 40,  1, null,                        '2027-01-15 00:00+01', '{}');
+  -- VIP: fix ár, saját keret, csak online, kapunyitásig
+  (v_event, 'VIP',          'vip',      'online', 12000, 40,  1, null,                        '2027-01-15 19:00+01', '{}');
 end $$;
