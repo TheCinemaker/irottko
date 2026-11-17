@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
-import { SLOTS } from './onAir';
+import { landingAt } from './schedule.js';
 
 /*
   Live ticket prices from the DB (supabase/seed_2027.sql is the single source).
@@ -36,7 +36,7 @@ function parse(data) {
   const full = data.full === true;
   let status = 'open';
   // the flight has landed (end of the last set): for good, whatever else is set
-  if (new Date(data.now) >= SLOTS[SLOTS.length - 1].end) status = 'landed';
+  if (new Date(data.now) >= landingAt(data.delays)) status = 'landed';
   else if (!data.event.sales_open) status = 'closed';
   else if (full) status = 'full';
   else if (!standard && !vip) {
@@ -63,6 +63,8 @@ function parse(data) {
     onlineLeft: data.online_left,
     // passenger announcement from the admin (015_announcement.sql), or null
     announcement: data.announcement || null,
+    // delays of the acts, { djId: minutes } (017_board_delays.sql)
+    delays: data.delays || {},
   };
 }
 

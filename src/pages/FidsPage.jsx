@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { DJS, EVENT_DETAILS } from '../data/eventData';
-import { SLOTS } from '../lib/onAir';
+import { SLOTS, useSchedule } from '../lib/onAir';
 
 /*
   /kijelzo – a real split-flap (Solari) departures board for the TVs /
@@ -42,7 +42,6 @@ const YELLOW = '#f6c945';
 const MIN = 60000;
 // on the board the gate opens 5 minutes before the official 19:00 (the user's call)
 const GATE_OPEN = new Date(new Date(EVENT_DETAILS.isoDate).getTime() - 5 * MIN); // 18:55
-const BARS_CLOSE = SLOTS[SLOTS.length - 1].end; // the end of the last set
 
 const plain = (s) =>
   s
@@ -63,18 +62,23 @@ function flightStatus(start, end, now) {
   return 'ON TIME';
 }
 
-/** The board's rows at `now`: flights first, then on-board services. */
-function rowsAt(now) {
+/** The board's rows at `now` for the timetable `slots` (with the admin's
+ *  delays): flights first, then on-board services. A delayed act shows its new
+ *  time and DELAYED until 10 minutes before it (then LAST CALL, IN FLIGHT). */
+function rowsAt(now, slots) {
+  const barsClose = slots[slots.length - 1].end;
   const rows = [];
   // the gate itself: on the board until half an hour after it opened
   const gate = now >= GATE_OPEN.getTime() ? (now < GATE_OPEN.getTime() + 30 * MIN ? 'OPEN' : null) : flightStatus(GATE_OPEN.getTime(), Infinity, now);
   if (gate) rows.push({ time: hhmm(GATE_OPEN), name: 'GATE OPEN', flight: FLIGHT, status: gate });
   DJS.forEach((dj, i) => {
-    const st = flightStatus(SLOTS[i].start.getTime(), SLOTS[i].end.getTime(), now);
-    if (st) rows.push({ time: dj.time.slice(0, 5), name: dj.name, flight: FLIGHT, status: st, blink: st === 'LAST CALL' });
+    const sl = slots[i];
+    let st = flightStatus(sl.start.getTime(), sl.end.getTime(), now);
+    if (sl.delay && (st === 'ON TIME' || st === 'BOARDING')) st = 'DELAYED';
+    if (st) rows.push({ time: sl.delay ? hhmm(sl.start) : dj.time.slice(0, 5), name: dj.name, flight: FLIGHT, status: st, blink: st === 'LAST CALL' || st === 'DELAYED' });
   });
   // services aboard
-  const open = now >= GATE_OPEN.getTime() ? (now < BARS_CLOSE.getTime() ? 'OPEN' : 'CLOSED') : 'ON TIME';
+  const open = now >= GATE_OPEN.getTime() ? (now < barsClose.getTime() ? 'OPEN' : 'CLOSED') : 'ON TIME';
   rows.push({ time: hhmm(GATE_OPEN), name: 'KOKTELBAR', flight: FLIGHT, status: open });
   rows.push({ time: hhmm(GATE_OPEN), name: 'BORBAR JAGODICS PINCE', flight: FLIGHT, status: open });
   rows.push({ time: hhmm(GATE_OPEN), name: 'SORBAR KOSZEGI SOR', flight: FLIGHT, status: open });
@@ -116,15 +120,16 @@ function landingLines(cols) {
    at every moment where the board changes: 35/30/10 minutes before each start
    (ON TIME → BOARDING → LAST CALL), the start (IN FLIGHT / OPEN), the gate row
    leaving, and 03:00 LANDED. Then it starts again. */
-function simulationTimes() {
+function simulationTimes(slots = SLOTS) {
+  const barsClose = slots[slots.length - 1].end;
   const t = new Set();
   const around = (start) => [-35, -30, -10, 0].forEach((m) => t.add(start + m * MIN));
   around(GATE_OPEN.getTime());
   t.add(GATE_OPEN.getTime() + 30 * MIN); // the gate row leaves the board
-  SLOTS.forEach((sl) => around(sl.start.getTime()));
-  t.add(BARS_CLOSE.getTime() - 5 * MIN);
-  t.add(BARS_CLOSE.getTime()); // 03:00 LANDED
-  t.add(BARS_CLOSE.getTime() + 5 * MIN);
+  slots.forEach((sl) => around(sl.start.getTime()));
+  t.add(barsClose.getTime() - 5 * MIN);
+  t.add(barsClose.getTime()); // 03:00 LANDED (later if the last act is delayed)
+  t.add(barsClose.getTime() + 5 * MIN);
   return [...t].sort((a, b) => a - b);
 }
 
@@ -251,7 +256,8 @@ const cols = (s) => [LEN.time, LEN.name, LEN.flight, LEN.status].map((n) => `${M
 export default function FidsPage() {
   const [step] = useState(simulationStep);
   const now = useBoardTime(step);
-  const landing = now >= BARS_CLOSE.getTime();
+  const slots = useSchedule(); // live, with the admin's delays
+  const landing = now >= slots[slots.length - 1].end.getTime();
   const remark = useEvery(15000, REMARKS.length);
   const s = useSize();
   // landing screen: one uniform grid of cards, as wide as the board's rows
@@ -262,7 +268,7 @@ export default function FidsPage() {
   }, []);
   const full = () => document.documentElement.requestFullscreen?.().catch(() => {});
   const grid = { gridTemplateColumns: cols(s), columnGap: Math.round(s * 0.8) };
-  const rows = rowsAt(now);
+  const rows = rowsAt(now, slots);
 
   return (
     <main onClick={full} className="sf-board">

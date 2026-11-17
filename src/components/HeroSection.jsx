@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { usePricing } from '../lib/usePricing';
 import TicketButton from './TicketButton';
 import { EVENT_DETAILS, DJS } from '../data/eventData';
-import { useOnAir, SLOTS, clockNow, PREVIEW } from '../lib/onAir';
+import { useOnAir, useSchedule, clockNow, PREVIEW } from '../lib/onAir';
 import { Plane } from 'lucide-react';
 import { Flap } from './LineupBoard';
 
@@ -27,7 +27,8 @@ function useDaysLeft() {
 export default function HeroSection() {
   const pricing = usePricing();
   // after the night (also with the ?ido= preview clock): the landed state, for good
-  const landed = pricing.status === 'landed' || clockNow() >= SLOTS[SLOTS.length - 1].end.getTime();
+  const schedule = useSchedule();
+  const landed = pricing.status === 'landed' || clockNow() >= schedule[schedule.length - 1].end.getTime();
   const days = useDaysLeft();
   const portrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth;
   const videoSrc = HERO_VIDEO ? (portrait && HERO_VIDEO.portrait) || HERO_VIDEO.landscape : null;
@@ -111,13 +112,14 @@ function OpeningCountdown({ opensAt }) {
    Only between gate open and the end; the same times as the departures board. */
 function FlightProgress() {
   const onAir = useOnAir();
+  const schedule = useSchedule();
   const [now, setNow] = useState(() => clockNow());
   useEffect(() => {
     const id = setInterval(() => setNow(clockNow()), 30000);
     return () => clearInterval(id);
   }, []);
   const from = new Date(EVENT_DETAILS.isoDate).getTime();
-  const to = SLOTS[SLOTS.length - 1].end.getTime();
+  const to = schedule[schedule.length - 1].end.getTime();
   if (now < from || now >= to) return null;
   const p = (now - from) / (to - from);
   const min = Math.floor((now - from) / 60000);
@@ -185,7 +187,8 @@ const STATUS_LINE = {
 function FlightStatus({ pricing }) {
   const onAir = useOnAir();
   // on the event night the flight-progress box shows who is playing
-  const after = clockNow() >= SLOTS[SLOTS.length - 1].end.getTime();
+  const schedule = useSchedule();
+  const after = clockNow() >= schedule[schedule.length - 1].end.getTime();
   const [text, dot] = onAir >= 0 ? [] : STATUS_LINE[after ? 'landed' : pricing.status] || [];
   if (!text) return null;
   return (

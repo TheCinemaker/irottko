@@ -8,12 +8,14 @@
 //                                  without the PIN (lib/enroll.js)
 //   action 'enroll-list'          → codes of the last 24 h (status only, no codes)
 //   action 'enroll-revoke', id    → revoke an unused code
+//   action 'set-delays', delays     → { djId: minutes } on the departures board / site (017)
 //   action 'wallet-message', text   → lock-screen message on all Wallet tickets (Apple push + Google)
 //   action 'set-announcement', text → "Utastájékoztatás" strip on the site ('' clears it)
 //   action 'set-sales-open', open → emergency stop / restart of all ticket sales
 //   action 'set-limits', venueLimit, nonTicketCount, enabled → fire-safety limit (013);
 //                                  enabled=false keeps the numbers but sells without a limit
 import { db, json } from './lib/db.js';
+import { DJS } from '../../src/data/eventData.js';
 import { authenticate } from './lib/pinGuard.js';
 import { loadOrder } from './lib/fulfill.js';
 import { sendTicketEmail } from './lib/ticketEmail.js';
@@ -71,6 +73,22 @@ async function guestlist() {
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'hu'));
   return json(200, { generatedAt: new Date().toISOString(), guests });
+}
+
+// Delays of the acts (017_board_delays.sql): { djId: minutes 0–240 }; 0 = on time.
+// The board shows the new time + DELAYED; the site's "now on board" follows it.
+async function setDelays(delays) {
+  if (!delays || typeof delays !== 'object' || Array.isArray(delays)) return json(400, { error: 'BAD_VALUE' });
+  const ids = new Set(DJS.map((d) => d.id));
+  const clean = {};
+  for (const [id, m] of Object.entries(delays)) {
+    if (!ids.has(id) || !Number.isInteger(m) || m < 0 || m > 240) return json(400, { error: 'BAD_VALUE' });
+    if (m > 0) clean[id] = m;
+  }
+  const { data, error } = await db().from('events').update({ board_delays: clean }).eq('slug', SLUG).select('board_delays').single();
+  if (error) throw error;
+  console.log('admin: delays', JSON.stringify(data.board_delays));
+  return json(200, { delays: data.board_delays });
 }
 
 // "Üzenet az utasoknak": lock-screen message on every Apple / Google Wallet
@@ -145,6 +163,7 @@ export const handler = async (event) => {
     if (body.action === 'enroll-list') return json(200, { list: await listEnrollments() });
     if (body.action === 'enroll-revoke') return json(200, { revoked: await revokeEnrollment(body.id) });
     if (body.action === 'set-sales-open') return await setSalesOpen(body.open);
+    if (body.action === 'set-delays') return await setDelays(body.delays);
     if (body.action === 'wallet-message') return await walletMessage(body.text);
     if (body.action === 'set-announcement') return await setAnnouncement(body.text);
     if (body.action === 'set-limits') return await setLimits(body.venueLimit, body.nonTicketCount, body.enabled);

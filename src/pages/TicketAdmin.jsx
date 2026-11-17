@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { useLive, LiveBadge } from '../lib/useLive';
 import { RefreshCw, LogOut, Download, Search, AlertTriangle, Check, X, Copy, Ban, Send, Printer, Smartphone } from 'lucide-react';
 import QRCode from 'qrcode';
+import { DJS } from '../data/eventData';
 
 /*
   Admin (/admin) – sales, orders and door check-ins at a glance.
@@ -304,6 +305,7 @@ function Sales({ d }) {
       <LimitsCard key={`${d.event.limitOn}-${d.event.venueLimit}-${d.event.nonTicketCount}`} d={d} />
       <AnnouncementCard key={`ann-${d.event.announcement ?? ''}`} d={d} />
       <WalletMessageCard d={d} />
+      <DelaysCard key={`delays-${JSON.stringify(d.event.delays ?? {})}`} d={d} />
 
       <Card title="Jegytípusok" className="lg:col-span-3">
         <Table
@@ -335,6 +337,83 @@ function Sales({ d }) {
    Sellable tickets = venue limit − people inside without a ticket. Every ticket
    type counts (online, VIP, door QR). Switched off, the numbers are kept but
    sales are unlimited. */
+/* Delays (DELAYED) on the departures board /kijelzo and the site's "now on
+   board" (017_board_delays.sql). Per act: +minutes; 0 = on time. Live. */
+const DELAY_STEPS = [0, 5, 10, 15, 20, 30, 45, 60, 90];
+function DelaysCard({ d }) {
+  const { token, logout } = useContext(AdminAuth);
+  const saved = d.event.delays ?? {};
+  const [delays, setDelays] = useState(saved);
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const dirty = DJS.some((dj) => (delays[dj.id] || 0) !== (saved[dj.id] || 0));
+  const at = (dj, m) => {
+    const [h, mm] = dj.time.slice(0, 5).split(':').map(Number);
+    const t = h * 60 + mm + m;
+    return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+  };
+  const save = async (next) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await call('admin-action', { token }, { action: 'set-delays', delays: next });
+      if (!r.auth) return logout();
+      if (r.status !== 200) throw new Error();
+      setDelays(r.data.delays);
+      setMsg([Object.keys(r.data.delays).length ? 'Mentve – a kijelzőn DELAYED és az új idő látszik.' : 'Mindenki menetrend szerint.', true]);
+    } catch {
+      setMsg(['Nem sikerült menteni.', false]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card title="Késés (DELAYED a kijelzőn)" className="lg:col-span-3">
+      {!d.event.delaysReady ? (
+        <p className="text-sm text-amber-300">Futtasd le a Supabase-ben a 017_board_delays.sql-t – utána itt állítható.</p>
+      ) : (
+        <>
+          <p className="max-w-2xl text-sm text-gray-400">
+            Ha egy fellépő később kezd: a kijelzőn az új idő és villogó DELAYED jelenik meg, az előző fellépő addig „In flight” marad, és az oldal
+            „Most a fedélzeten” része is ehhez igazodik. Üzenetet nem küld – ha kell, az „Üzenet az utasoknak” kártyáról.
+          </p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {DJS.map((dj) => (
+              <label key={dj.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 px-3 py-2 text-sm">
+                <span className="min-w-0 truncate text-white">{dj.name}</span>
+                <span className="flex shrink-0 items-center gap-2 text-gray-400">
+                  <span className="tabular-nums">{dj.time.slice(0, 5)}</span>
+                  <select
+                    value={delays[dj.id] || 0}
+                    onChange={(e) => setDelays({ ...delays, [dj.id]: Number(e.target.value) })}
+                    className="field w-auto py-1 text-sm"
+                  >
+                    {DELAY_STEPS.map((m) => (
+                      <option key={m} value={m}>
+                        {m ? `+${m} perc → ${at(dj, m)}` : 'menetrend szerint'}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button onClick={() => save(delays)} disabled={busy || !dirty} className="btn-secondary px-4 py-2 disabled:opacity-40">
+              <Check className="h-4 w-4" /> Mentés
+            </button>
+            <button onClick={() => save({})} disabled={busy || !Object.keys(saved).length} className="btn-secondary px-4 py-2 disabled:opacity-40">
+              <X className="h-4 w-4" /> Mindenki menetrend szerint
+            </button>
+          </div>
+          {msg && <p className={`mt-2 text-sm ${msg[1] ? 'text-emerald-400' : 'text-red-400'}`}>{msg[0]}</p>}
+        </>
+      )}
+    </Card>
+  );
+}
+
 /* "Üzenet az utasoknak": a lock-screen message on every Apple / Google Wallet
    ticket (lib/walletPush.js). Apple: the phones registered for updates get a
    push and show "ÍR 0115: <text>"; Google: a message on the ticket class. */

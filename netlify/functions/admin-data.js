@@ -208,6 +208,8 @@ export const handler = async (event) => {
         announcement: ev.announcement ?? null, // undefined before 015
         announcementReady: 'announcement' in ev,
         walletReady: 'wallet_message' in ev,
+        delaysReady: 'board_delays' in ev,
+        delays: ev.board_delays ?? {},
         walletMessage: ev.wallet_message ? ev.wallet_message.replace(/\u200B/g, '') : null, // without the change marker
         walletMessageAt: ev.wallet_message_at ?? null,
         onlineCapacity: ev.online_capacity,

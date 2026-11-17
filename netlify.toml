@@ -17,6 +17,10 @@
 [functions."retry-fulfillment"]
   schedule = "*/5 * * * *"
 
+# Nightly encrypted backup of the sales data to BACKUP_EMAIL (lib/backup.js), 03:00 Budapest
+[functions."backup-nightly"]
+  schedule = "0 2 * * *"
+
 # Data retention (privacy notice): old IPs after 30 days, event data 90 days after the event.
 [functions."purge-after-event"]
   schedule = "@daily"
