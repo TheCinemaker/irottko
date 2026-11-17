@@ -73,16 +73,20 @@ function FlapTile({ ch, on, delay, small, cycle }) {
   const [flip, setFlip] = useState(0); // 0 = first flip-in, then a short tick per change
   useEffect(() => {
     if (!cycle) return undefined;
+    // Like a mechanical Solari board: the tile flaps IN ORDER through its set
+    // (… 8 → 9 → 0 → 1 …) one full lap and stops on its own value again. Each
+    // tile has its own pace, so they click into place one after another.
     const pool = /\d/.test(ch) ? DIGITS : LETTERS;
-    // ~1–1.5 s of visible flapping per tile (a real board flaps 8–12 times per character)
-    const steps = 9 + Math.floor(Math.random() * 5);
+    const start = pool.indexOf(ch);
+    if (start < 0) return undefined; // a character we can't flap through stays still
+    const pace = 70 + Math.random() * 40; // ms per flap
     let n = 0;
     let t;
     const step = () => {
       n += 1;
-      setShown(n >= steps ? ch : pool[Math.floor(Math.random() * pool.length)]);
+      setShown(pool[(start + n) % pool.length]);
       setFlip((f) => f + 1);
-      if (n < steps) t = setTimeout(step, 110);
+      if (n < pool.length) t = setTimeout(step, pace);
     };
     t = setTimeout(step, delay);
     return () => {
@@ -95,11 +99,12 @@ function FlapTile({ ch, on, delay, small, cycle }) {
   return (
     <span
       key={flip}
-      className={`flap relative inline-flex ${small ? 'h-[30px] w-[20px] text-[17px]' : 'h-[38px] w-[26px] text-[24px]'} items-center justify-center rounded-[5px] bg-[#16121f] font-mono font-bold text-[#f3d77a] ${anim}`}
+      className={`flap relative inline-flex ${small ? 'h-[30px] w-[20px] text-[17px]' : 'h-[38px] w-[26px] text-[24px]'} items-center justify-center rounded-[5px] bg-[#16121f] font-mono font-bold text-[#f3d77a] shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_2px_3px_rgba(0,0,0,0.8)] ${anim}`}
       style={flip === 0 ? { animationDelay: `${delay}ms` } : undefined}
     >
       {shown}
-      <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-black/35" />
+      {/* the hinge: dark split + a hairline of light under it (two separate flaps) */}
+      <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-black/85 shadow-[0_1px_0_rgba(255,255,255,0.08)]" />
     </span>
   );
 }
