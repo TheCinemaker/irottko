@@ -148,19 +148,22 @@ function Flap({ ch, size, delay = 0, ink = WHITE }) {
   }, [ch, delay]);
 
   // glyph = the card (coloured TILE); the ink behind it shows through the letter,
-  // a dark band hides the hinge cut
+  // a dark band hides the hinge cut.
+  // '*' is a lit pixel of the LANDED dot-matrix: the blank card itself in the
+  // ink colour – a solid yellow flap, only the dark hinge across it.
+  const lit = shown === '*';
   return (
     <span
       key={n}
       className="sf-card"
       style={{
         fontSize: size,
-        color: TILE,
+        color: lit ? ink : TILE,
         // dark band over the hinge cut (48.7–51.3 % of the ink box, see CSS); wider so pixel rounding never leaves a light edge at any screen size
-        backgroundImage: `linear-gradient(${ink} 0 46%, ${HINGE} 46% 54%, ${ink} 54% 100%)`,
+        backgroundImage: lit ? `linear-gradient(${HINGE},${HINGE})` : `linear-gradient(${ink} 0 46%, ${HINGE} 46% 54%, ${ink} 54% 100%)`,
       }}
     >
-      {shown}
+      {lit ? ' ' : shown}
     </span>
   );
 }
