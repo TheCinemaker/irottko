@@ -30,7 +30,8 @@ export default function HeroSection() {
   const videoSrc = HERO_VIDEO ? (portrait && HERO_VIDEO.portrait) || HERO_VIDEO.landscape : null;
 
   return (
-    <section className="relative flex h-[100svh] min-h-[560px] items-end overflow-hidden">
+    <section className="relative flex min-h-[100svh] items-end overflow-hidden pt-20">
+      {/* min-h (not h) + top padding for the fixed bar: on short screens (laptops) the hero grows instead of sliding under the top bar */}
       {videoSrc ? (
         <video className="absolute inset-0 h-full w-full object-cover" src={videoSrc} poster={HERO_POSTER} autoPlay muted loop playsInline />
       ) : (
@@ -38,9 +39,9 @@ export default function HeroSection() {
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-[#05030a] via-[#05030a]/55 to-[#05030a]/30" />
 
-      <div className="relative mx-auto w-full max-w-6xl px-5 pb-[calc(var(--tabbar,0px)+10svh)] text-center sm:pb-[16vh]">
+      <div className="relative mx-auto w-full max-w-6xl px-5 pb-[calc(var(--tabbar,0px)+10svh)] text-center sm:pb-[min(16vh,7rem)]">
         <div className="kicker text-[13px] font-bold text-[#f3d77a] underline decoration-[#d4af37] decoration-2 underline-offset-[8px] [text-shadow:0_1px_8px_rgba(0,0,0,0.8)]">2027. január 15. · Kőszeg</div>
-        <h1 className="display mt-5 text-[2.9rem] sm:text-8xl">
+        <h1 className="display mt-5 text-[2.9rem] sm:text-[min(6rem,11vh)]">
           One Night
           <span className="block pt-[0.06em] text-[#d4af37]">at Írottkő</span>
         </h1>
