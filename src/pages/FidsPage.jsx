@@ -25,7 +25,9 @@ import { SLOTS } from '../lib/onAir';
   screen awake where the browser allows it.
 */
 
-const DRUM = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-.!';
+// the order of the cards on each flap's drum ('*' last: the LANDED pixels
+// spin a full turn before they light up)
+const DRUM = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-.!*';
 const FLIGHT = 'IR0115';
 const LEN = { time: 5, name: 23, flight: 6, status: 9 };
 const ROWS = 10;
@@ -47,7 +49,7 @@ const plain = (s) =>
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toUpperCase()
-    .replace(/[^ A-Z0-9:\-.!]/g, ' ');
+    .replace(/[^ A-Z0-9:\-.!*]/g, ' ');
 const pad = (s, n) => plain(s).padEnd(n, ' ').slice(0, n);
 const hhmm = (d = new Date()) =>
   new Intl.DateTimeFormat('hu-HU', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Budapest' }).format(d);
@@ -78,6 +80,52 @@ function rowsAt(now) {
   rows.push({ time: hhmm(GATE_OPEN), name: 'SORBAR KOSZEGI SOR', flight: FLIGHT, status: open });
   rows.push({ time: hhmm(GATE_OPEN), name: 'FEDELZETI MENU', flight: FLIGHT, status: open });
   return rows.slice(0, ROWS);
+}
+
+/* ---------- 03:00 – LANDED: the flaps become a dot-matrix display ----------
+   The flight has arrived (arrival boards say LANDED; "Landing" is the last
+   phase, while it is happening). Every card is one pixel ('*' or blank); the
+   word is drawn in a 3×5 font: 6 letters × 3 + 5 gaps = 23 cards wide,
+   5 rows tall, centred on the board. */
+const DOTS = {
+  L: ['X..', 'X..', 'X..', 'X..', 'XXX'],
+  A: ['.X.', 'X.X', 'XXX', 'X.X', 'X.X'],
+  N: ['X.X', 'XXX', 'XXX', 'X.X', 'X.X'],
+  D: ['XX.', 'X.X', 'X.X', 'X.X', 'XX.'],
+  E: ['XXX', 'X..', 'XX.', 'X..', 'XXX'],
+  I: ['XXX', '.X.', '.X.', '.X.', 'XXX'],
+  G: ['XXX', 'X..', 'X.X', 'X.X', 'XXX'],
+};
+const LANDING_TEXT = 'IR0115 - KOSZONJUK HOGY VELUNK REPULT';
+/** Lines of the landing screen, `cols` cards wide, ROWS lines. */
+function landingLines(cols) {
+  const word = 'LANDED';
+  const art = Array.from({ length: 5 }, (_, y) => [...word].map((c) => DOTS[c][y].replace(/X/g, '*').replace(/\./g, ' ')).join(' '));
+  const center = (s) => {
+    const left = Math.max(0, Math.floor((cols - s.length) / 2));
+    return (' '.repeat(left) + s).padEnd(cols, ' ').slice(0, cols);
+  };
+  const lines = Array(ROWS).fill(' '.repeat(cols));
+  art.forEach((l, i) => (lines[i + 2] = center(l)));
+  lines[8] = center(LANDING_TEXT);
+  return lines;
+}
+
+/* ---------- simulation: /kijelzo?szimulacio ----------
+   Steps through the evening every 5 s (?szimulacio=20 → every 20 s), stopping
+   at every moment where the board changes: 35/30/10 minutes before each start
+   (ON TIME → BOARDING → LAST CALL), the start (IN FLIGHT / OPEN), the gate row
+   leaving, and 03:00 LANDED. Then it starts again. */
+function simulationTimes() {
+  const t = new Set();
+  const around = (start) => [-35, -30, -10, 0].forEach((m) => t.add(start + m * MIN));
+  around(GATE_OPEN.getTime());
+  t.add(GATE_OPEN.getTime() + 30 * MIN); // the gate row leaves the board
+  SLOTS.forEach((sl) => around(sl.start.getTime()));
+  t.add(BARS_CLOSE.getTime() - 5 * MIN);
+  t.add(BARS_CLOSE.getTime()); // 03:00 LANDED
+  t.add(BARS_CLOSE.getTime() + 5 * MIN);
+  return [...t].sort((a, b) => a - b);
 }
 
 /** One flap. Flips through the drum, one card at a time, until it shows `ch`. */
@@ -127,14 +175,29 @@ function FlapText({ text, len, size, delay = 0, ink, blink }) {
   );
 }
 
-function useNow(ms = 5000) {
-  const [t, setT] = useState(() => Date.now());
+// the board's clock: real time, or the simulated evening (stepMs > 0)
+function useBoardTime(stepMs) {
+  const [t, setT] = useState(() => (stepMs ? simulationTimes()[0] : Date.now()));
   useEffect(() => {
-    const id = setInterval(() => setT(Date.now()), ms);
+    if (stepMs) {
+      const times = simulationTimes();
+      let i = 0;
+      const id = setInterval(() => setT(times[(i = (i + 1) % times.length)]), stepMs);
+      return () => clearInterval(id);
+    }
+    const id = setInterval(() => setT(Date.now()), 5000);
     return () => clearInterval(id);
-  }, [ms]);
+  }, [stepMs]);
   return t;
 }
+
+// ?szimulacio or ?szimulacio=<seconds per step>
+const simulationStep = () => {
+  const q = new URLSearchParams(window.location.search);
+  if (!q.has('szimulacio')) return 0;
+  const sec = Number(q.get('szimulacio'));
+  return (sec >= 2 && sec <= 600 ? sec : 5) * 1000;
+};
 
 function useEvery(ms, count) {
   const [i, setI] = useState(0);
@@ -183,9 +246,13 @@ function useSize() {
 const cols = (s) => [LEN.time, LEN.name, LEN.flight, LEN.status].map((n) => `${Math.round(n * 1.196 * s)}px`).join(' ');
 
 export default function FidsPage() {
-  const now = useNow();
+  const [step] = useState(simulationStep);
+  const now = useBoardTime(step);
+  const landing = now >= BARS_CLOSE.getTime();
   const remark = useEvery(15000, REMARKS.length);
   const s = useSize();
+  // landing screen: one uniform grid of cards, as wide as the board's rows
+  const landingCols = Math.floor((CARDS * 1.196 + 3 * 0.8) / 1.196);
   useWakeLock();
   useEffect(() => {
     document.title = 'Departures · IR0115';
@@ -216,26 +283,38 @@ export default function FidsPage() {
         <FlapText text={hhmm(new Date(now))} len={5} size={s * 1.5} />
       </header>
 
-      <div className="sf-cols sf-label" style={{ ...grid, fontSize: s * 0.5, marginBottom: s * 0.3 }}>
-        <span>Idő</span>
-        <span>Fellépő / úti cél</span>
-        <span>Járat</span>
-        <span>Állapot</span>
-      </div>
-
-      <ol className="sf-rows" style={{ rowGap: Math.round(s * 0.25) }}>
-        {Array.from({ length: ROWS }, (_, i) => {
-          const r = rows[i] || {};
-          return (
-            <li key={i} className="sf-cols" style={grid}>
-              <FlapText text={r.time || ''} len={LEN.time} size={s} delay={i * 220} />
-              <FlapText text={r.name || ''} len={LEN.name} size={s} delay={i * 220 + 120} ink={YELLOW} />
-              <FlapText text={r.flight || ''} len={LEN.flight} size={s} delay={i * 220 + 420} />
-              <FlapText text={r.status || ''} len={LEN.status} size={s} delay={i * 220 + 700} blink={r.blink} />
+      {landing ? (
+        <ol className="sf-rows" style={{ rowGap: Math.round(s * 0.25), marginTop: s * 0.5 + s * 0.3 }}>
+          {landingLines(landingCols).map((line, i) => (
+            <li key={`landing-${i}`}>
+              <FlapText text={line} len={landingCols} size={s} delay={i * 180} ink={i < 7 ? YELLOW : WHITE} />
             </li>
-          );
-        })}
-      </ol>
+          ))}
+        </ol>
+      ) : (
+        <>
+          <div className="sf-cols sf-label" style={{ ...grid, fontSize: s * 0.5, marginBottom: s * 0.3 }}>
+            <span>Idő</span>
+            <span>Fellépő / úti cél</span>
+            <span>Járat</span>
+            <span>Állapot</span>
+          </div>
+
+          <ol className="sf-rows" style={{ rowGap: Math.round(s * 0.25) }}>
+            {Array.from({ length: ROWS }, (_, i) => {
+              const r = rows[i] || {};
+              return (
+                <li key={i} className="sf-cols" style={grid}>
+                  <FlapText text={r.time || ''} len={LEN.time} size={s} delay={i * 220} />
+                  <FlapText text={r.name || ''} len={LEN.name} size={s} delay={i * 220 + 120} ink={YELLOW} />
+                  <FlapText text={r.flight || ''} len={LEN.flight} size={s} delay={i * 220 + 420} />
+                  <FlapText text={r.status || ''} len={LEN.status} size={s} delay={i * 220 + 700} blink={r.blink} />
+                </li>
+              );
+            })}
+          </ol>
+        </>
+      )}
 
       <footer className="sf-foot" style={{ gap: s * 0.6, marginTop: s * 0.6 }}>
         <span className="sf-label" style={{ fontSize: s * 0.5 }}>
@@ -243,6 +322,7 @@ export default function FidsPage() {
         </span>
         <FlapText text={REMARKS[remark]} len={REMARK_LEN} size={s} />
         <span className="sf-credit" style={{ fontSize: s * 0.28 }}>
+          {step ? <b className="sf-sim">Szimuláció · </b> : null}
           Font: Split-Flap TV
         </span>
       </footer>
@@ -264,6 +344,7 @@ const CSS = `
 .sf-rows { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .sf-row { display: inline-flex; }
 .sf-foot { display: flex; align-items: center; margin-top: auto; }
+.sf-sim { color: #e25555; font-size: 2.2em; letter-spacing: .1em; }
 .sf-credit { margin-left: auto; align-self: flex-end; font-family: Inter, Arial, sans-serif; color: #3d3d3a; }
 /* one card = one glyph. The glyph box (line-height 1.606 = ascent+descent)
    puts the card at x 0.1–1.096 em, y 0.1–1.506 em; the ink is painted well
