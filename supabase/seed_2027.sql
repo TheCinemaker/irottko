@@ -29,8 +29,9 @@ begin
    where id = v_event;
 
   insert into ticket_tiers (event_id, name, kind, channel, price_huf, quantity, sort_order, sales_from, sales_until, perks) values
+  -- Jegyeladás indul: 2026-12-06 00:01 (Early Bird + VIP), utána hézag nélkül a buli végéig.
   -- Online normál jegy: hetente emelkedik (vasárnap 00:00-kor vált), közös 550-es keret
-  (v_event, 'Early Bird',   'standard', 'online', 6990, null, 1, null,                        '2026-12-13 00:00+01', '{}'),
+  (v_event, 'Early Bird',   'standard', 'online', 6990, null, 1, '2026-12-06 00:01+01', '2026-12-13 00:00+01', '{}'),
   (v_event, 'Elővétel 2',   'standard', 'online', 7490, null, 2, '2026-12-13 00:00+01', '2026-12-20 00:00+01', '{}'),
   (v_event, 'Elővétel 3',   'standard', 'online', 7990, null, 3, '2026-12-20 00:00+01', '2026-12-27 00:00+01', '{}'),
   (v_event, 'Elővétel 4',   'standard', 'online', 8490, null, 4, '2026-12-27 00:00+01', '2027-01-03 00:00+01', '{}'),
@@ -39,8 +40,8 @@ begin
   -- Utolsó napok: kapunyitásig (jan. 15. 19:00), utána a helyszíni jegy – hézag nélkül,
   -- hogy MINDEN pillanatban lehessen jegyet venni (a user kérése, 2026-11-17)
   (v_event, 'Last Call',    'standard', 'online', 9900, null, 7, '2027-01-13 00:00+01', '2027-01-15 19:00+01', '{}'),
-  -- Helyszíni jegy: QR-plakát → ugyanez a vásárlás; a buli éjszakáján, korlátlan
+  -- Helyszíni jegy: QR-plakát → ugyanez a vásárlás; a buli éjszakáján (a létszám-plafon alatt, 013)
   (v_event, 'Helyszíni jegy','standard','door',   9900, null, 8, '2027-01-15 19:00+01', '2027-01-16 03:00+01', '{}'),
   -- VIP: fix ár, saját keret, csak online, kapunyitásig
-  (v_event, 'VIP',          'vip',      'online', 12000, 40,  1, null,                        '2027-01-15 19:00+01', '{}');
+  (v_event, 'VIP',          'vip',      'online', 12000, 40,  1, '2026-12-06 00:01+01', '2027-01-15 19:00+01', '{}');
 end $$;

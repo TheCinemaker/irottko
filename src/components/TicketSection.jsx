@@ -506,6 +506,12 @@ function SalesState({ pricing }) {
       pricing.doorFrom ? `Beszállókártyát a gate-nél válthatsz: ${dayHu(pricing.doorFrom)}, 19:00-tól.` : 'Beszállókártyát a gate-nél válthatsz.',
     ],
     closed: ['A jegyértékesítés jelenleg nem elérhető.', null],
+    soon: [
+      'A check-in hamarosan nyílik.',
+      pricing.opensAt
+        ? `Nyitás: ${new Intl.DateTimeFormat('hu-HU', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Budapest' }).format(new Date(pricing.opensAt))}.`
+        : null,
+    ],
     full: ['Telt ház – a járat megtelt.', 'Minden hely elkelt, jegyet már nem lehet venni – a helyszínen sem.'],
     open: pricing.onlineSoldOut
       ? ['Az online helyek elfogytak.', pricing.doorFrom ? `Beszállókártyát a gate-nél válthatsz: ${dayHu(pricing.doorFrom)}, 19:00-tól.` : null]

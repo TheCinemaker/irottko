@@ -5,6 +5,7 @@ import { supabase } from './supabaseClient';
   Live ticket prices from the DB (supabase/seed_2027.sql is the single source).
   Returns { status, standard, vip, next, doorFrom, onlineLeft }:
     status: 'loading' | 'open' | 'between' (online closed, door not yet open)
+            | 'soon' (sales not started yet, see opensAt)
             | 'full' (fire-safety limit reached) | 'closed' | 'error'
     standard / vip: the tier on sale right now (or null)
     next: the next standard price step after the current one (or null)
@@ -35,7 +36,18 @@ function parse(data) {
   let status = 'open';
   if (!data.event.sales_open) status = 'closed';
   else if (full) status = 'full';
-  else if (!standard && !vip) status = door && new Date(data.now) < new Date(door.sales_from) ? 'between' : 'closed';
+  else if (!standard && !vip) {
+    // before the very first tier starts → 'soon' (with the opening time), not 'online closed'
+    const now = new Date(data.now);
+    // tiers not over yet (an ended old tier must not count as "sales already started")
+    const starts = tiers
+      .filter((x) => !x.sales_until || new Date(x.sales_until) > now)
+      .map((x) => x.sales_from && new Date(x.sales_from))
+      .filter(Boolean)
+      .sort((a, b) => a - b);
+    if (starts.length && now < starts[0]) status = 'soon';
+    else status = door && now < new Date(door.sales_from) ? 'between' : 'closed';
+  }
 
   return {
     status,
@@ -44,6 +56,7 @@ function parse(data) {
     vip: full ? null : vip,
     next,
     doorFrom: door?.sales_from || null,
+    opensAt: tiers.filter((x) => !x.sales_until || new Date(x.sales_until) > new Date(data.now)).map((x) => x.sales_from).filter(Boolean).sort()[0] || null,
     onlineLeft: data.online_left,
   };
 }
