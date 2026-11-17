@@ -55,7 +55,7 @@ function useWalk(on, count, ms = 4000) { // ≈2.5 s lit + 1.5 s fade
    real departures board: each tile spins through a few characters and lands on
    its value again. Returns a counter that changes on every re-flip.
    Reduced motion: never. */
-function useCycle(on, ms = 20000) {
+function useCycle(on, ms = 5000) {
   const [n, setN] = useState(0);
   useEffect(() => {
     if (!on || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
@@ -79,7 +79,7 @@ function FlapTile({ ch, on, delay, small, cycle }) {
     const pool = /\d/.test(ch) ? DIGITS : LETTERS;
     const start = pool.indexOf(ch);
     if (start < 0) return undefined; // a character we can't flap through stays still
-    const pace = 70 + Math.random() * 40; // ms per flap
+    const pace = 170 + Math.random() * 70; // ms per flap – slow enough to read every digit
     let n = 0;
     let t;
     const step = () => {
