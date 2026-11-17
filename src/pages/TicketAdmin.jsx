@@ -377,7 +377,7 @@ function WalletMessageCard({ d }) {
         <>
           <p className="max-w-2xl text-sm text-gray-400">
             Zárképernyős értesítés minden Tárcába mentett beszállókártyára („ÍR 0115: …”), és a jegy hátoldalán is megjelenik. Csak
-            fontos dolgokra (pl. „A gate 18:55-kor nyit”, „Bárány Attila 22:00-kor kezd”) – a Google naponta csak néhányat enged.
+            fontos dolgokra (pl. „A gate 18:55-kor nyit”, „Bárány Attila 22:00-kor kezd”) – a Google naponta csak néhányat enged. Az „ÍR 0115:” előtagot a rendszer teszi elé. Az Apple a gyorsan egymás után küldött üzeneteket összevonhatja, és a kézbesítést nem garantálja – fontos infót a helyszínen is írjatok ki.
           </p>
           <div className="mt-3 text-sm text-gray-300">
             Apple Tárcában frissítésre feliratkozott telefonok: <b className="tabular-nums text-white">{num(d.walletDevices)}</b>
@@ -391,7 +391,7 @@ function WalletMessageCard({ d }) {
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
-              maxLength={150}
+              maxLength={149}
               placeholder="Pl.: A gate 18:55-kor nyit – készítsd elő a beszállókártyád!"
               className="field flex-1 py-2 text-sm"
             />
@@ -399,7 +399,7 @@ function WalletMessageCard({ d }) {
               <Send className="h-4 w-4" /> {busy ? 'Küldés…' : 'Kiküldés'}
             </button>
           </div>
-          <div className="mt-1 text-right text-xs text-gray-500">{text.length} / 150</div>
+          <div className="mt-1 text-right text-xs text-gray-500">{text.length} / 149</div>
           {msg && <p className={`mt-1 text-sm ${msg[1] ? 'text-emerald-400' : 'text-red-400'}`}>{msg[0]}</p>}
         </>
       )}

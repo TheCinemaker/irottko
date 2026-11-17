@@ -78,7 +78,7 @@ async function guestlist() {
 // (a double click must not notify everyone twice).
 async function walletMessage(text) {
   const clean = typeof text === 'string' ? text.replace(/\s+/g, ' ').trim() : '';
-  if (clean.length < 3 || clean.length > 150) return json(400, { error: 'BAD_VALUE' });
+  if (clean.length < 3 || clean.length > 149) return json(400, { error: 'BAD_VALUE' }); // +1 for the change marker (lib/walletPush.js)
   const { data: ev, error } = await db().from('events').select('*').eq('slug', SLUG).single();
   if (error) throw error;
   if (!('wallet_message' in ev)) return json(409, { error: 'MIGRATION' });

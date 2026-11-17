@@ -121,9 +121,22 @@ export async function messageGoogle(text) {
 }
 
 /* ---------- the admin's "send to passengers" ---------- */
-export async function sendPassengerMessage(text) {
+// Invisible marker: Apple shows the lock-screen message only when the field's
+// value CHANGES ("If the value of a field has changed and the field specifies a
+// change message, the device shows the message" – Wallet Developer Guide,
+// Updating a Pass). Sending the same text again toggles it, so it still notifies.
+const MARK = '\u200B';
+export const plainMessage = (v) => String(v || '').replace(new RegExp(MARK, 'g'), '');
+
+export async function sendPassengerMessage(input) {
+  // the pass adds "ÍR 0115: " (changeMessage) – don't double it
+  const text = String(input)
+    .replace(/^\s*[IÍ]R\s*0115\s*:\s*/i, '')
+    .trim();
+  const { data: prev } = await db().from('events').select('wallet_message').eq('slug', SLUG()).single();
+  const value = prev?.wallet_message === text ? text + MARK : text;
   const at = new Date().toISOString();
-  const { error } = await db().from('events').update({ wallet_message: text, wallet_message_at: at }).eq('slug', SLUG());
+  const { error } = await db().from('events').update({ wallet_message: value, wallet_message_at: at }).eq('slug', SLUG());
   if (error) throw error;
 
   const { data: regs, error: rErr } = await db().from('wallet_registrations').select('push_token').eq('pass_type_identifier', APPLE_PASS_TYPE_ID());
