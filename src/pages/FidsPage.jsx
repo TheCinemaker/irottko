@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { DJS, EVENT_DETAILS } from '../data/eventData';
-import { SLOTS, useSchedule } from '../lib/onAir';
+import { SLOTS, useSchedule, clockNow } from '../lib/onAir';
 
 /*
   /kijelzo – a real split-flap (Solari) departures board for the TVs /
@@ -183,9 +183,9 @@ function FlapText({ text, len, size, delay = 0, ink, blink }) {
   );
 }
 
-// the board's clock: real time, or the simulated evening (stepMs > 0)
+// the board's clock: real time (or the ?ido=HH:MM preview clock), or the simulated evening (stepMs > 0)
 function useBoardTime(stepMs) {
-  const [t, setT] = useState(() => (stepMs ? simulationTimes()[0] : Date.now()));
+  const [t, setT] = useState(() => (stepMs ? simulationTimes()[0] : clockNow()));
   useEffect(() => {
     if (stepMs) {
       const times = simulationTimes();
@@ -193,7 +193,7 @@ function useBoardTime(stepMs) {
       const id = setInterval(() => setT(times[(i = (i + 1) % times.length)]), stepMs);
       return () => clearInterval(id);
     }
-    const id = setInterval(() => setT(Date.now()), 5000);
+    const id = setInterval(() => setT(clockNow()), 5000);
     return () => clearInterval(id);
   }, [stepMs]);
   return t;
