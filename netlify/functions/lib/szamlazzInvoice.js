@@ -3,7 +3,10 @@
 // Element order follows the Agent XSD (xmlszamla / xmlszamlaxml); it matters.
 //
 // Env:
-//   SZAMLAZZ_AGENT_KEY       Számla Agent kulcs (Fiók → Számla Agent kulcsok)
+//   SZAMLAZZ_AGENT_KEY       Számla Agent kulcs (Fiók → Számla Agent kulcsok) – test account
+//   SZAMLAZZ_AGENT_KEY_LIVE  the hotel's live key (real NAV invoices)
+//   SZAMLAZZ_LIVE            '1' → use the live key. Switch on 12-05 (go-live test), then redeploy.
+//                            No silent fallback: '1' without the live key = error, not a test invoice.
 //   SZAMLAZZ_VAT             '27' (default; admission tickets – same as jegy.hu invoices) | 'AAM' | 'TAM' …
 //   SZAMLAZZ_EINVOICE        'true' (default) – e-számla; the account must have it enabled
 //   SZAMLAZZ_PAYMENT_METHOD  default 'Bankkártya (Barion)' (printed on the invoice)
@@ -27,9 +30,12 @@ const header = (tag, dir) =>
   `xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ` +
   `xsi:schemaLocation="http://www.szamlazz.hu/${tag} https://www.szamlazz.hu/szamla/docs/xsds/${dir}/${tag}.xsd">`;
 
+export const szamlazzLive = () => process.env.SZAMLAZZ_LIVE === '1';
+
 function agentKey() {
-  const k = process.env.SZAMLAZZ_AGENT_KEY;
-  if (!k) throw new Error('MISSING_SZAMLAZZ_AGENT_KEY');
+  const name = szamlazzLive() ? 'SZAMLAZZ_AGENT_KEY_LIVE' : 'SZAMLAZZ_AGENT_KEY';
+  const k = process.env[name];
+  if (!k) throw new Error(`MISSING_${name}`);
   return k;
 }
 
