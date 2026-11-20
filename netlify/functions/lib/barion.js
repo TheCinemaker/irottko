@@ -1,6 +1,10 @@
 // Barion Smart Gateway – minimal client (native fetch, no dependency).
-// Env: BARION_POS_KEY, BARION_PAYEE (the shop's Barion wallet e-mail),
-//      BARION_ENV = 'test' | 'prod' (default: test).
+// Env:
+//   BARION_POS_KEY, BARION_PAYEE            sandbox shop (api.test.barion.com) – the default
+//   BARION_POS_KEY_LIVE, BARION_PAYEE_LIVE  the hotel's live shop (api.barion.com, real money)
+//   BARION_LIVE = '1'                        → live shop. Switch on 12-05 (go-live test), then redeploy.
+// No silent fallback: '1' without the live key / payee = error, never a sandbox
+// payment, and never the live key against the sandbox. (BARION_ENV is no longer read.)
 //
 // Endpoints/field names follow Barion API v2 (Payment/Start, GetPaymentState),
 // as used by the node-barion library. POSKey is sent both in the body/query
@@ -11,14 +15,18 @@ const BASE = {
   prod: 'https://api.barion.com',
 };
 
-export const isProd = () => process.env.BARION_ENV === 'prod';
+export const isProd = () => process.env.BARION_LIVE === '1';
 const baseUrl = () => (isProd() ? BASE.prod : BASE.test);
+const envName = (base) => (isProd() ? `${base}_LIVE` : base);
 
-function posKey() {
-  const k = process.env.BARION_POS_KEY;
-  if (!k) throw new Error('MISSING_BARION_POS_KEY');
-  return k;
+function required(base) {
+  const name = envName(base);
+  const v = process.env[name];
+  if (!v) throw new Error(`MISSING_${name}`);
+  return v;
 }
+const posKey = () => required('BARION_POS_KEY');
+const payeeOf = () => required('BARION_PAYEE');
 
 async function call(method, path, { body, query } = {}) {
   const url = new URL(baseUrl() + path);
@@ -54,8 +62,7 @@ const timeSpan = (minutes) => {
  * Returns { paymentId, gatewayUrl, status }.
  */
 export async function startPayment({ orderId, email, items, redirectUrl, callbackUrl, windowMinutes }) {
-  const payee = process.env.BARION_PAYEE;
-  if (!payee) throw new Error('MISSING_BARION_PAYEE');
+  const payee = payeeOf();
 
   const barionItems = items.map((i) => ({
     Name: i.name.slice(0, 250),

@@ -1,6 +1,12 @@
+// NEVER against Számlázz.hu: the accounts are connected to NAV (every invoice is real).
+// With any Számlázz key in the environment this script refuses to run.
+if (Object.keys(process.env).some((k) => k.startsWith("SZAMLAZZ_AGENT_KEY"))) {
+  console.error("LEÁLLÍTVA: Számlázz.hu kulcs van a környezetben – ez a teszt valódi (NAV) számlát állítana ki.");
+  process.exit(1);
+}
 // Payment failure-path tests: real test-DB orders, simulated Barion answers.
 // Run: node --env-file=.env --import ./scripts/paytest/register.mjs ./scripts/paytest/run.mjs
-// Creates 6 'HIBATESZT …' orders (2 get paid: e-mail to delivered@resend.dev + a test invoice).
+// Creates 6 'HIBATESZT …' orders (2 get paid: e-mail to delivered@resend.dev). NO invoice: refuses to run with a Számlázz key.
 // TEST DATABASE ONLY – never against production.
 import crypto from 'crypto';
 const P = new URL('../../netlify/functions/lib/', import.meta.url).href;

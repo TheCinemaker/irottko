@@ -1,3 +1,9 @@
+// NEVER against Számlázz.hu: the accounts are connected to NAV (every invoice is real).
+// With any Számlázz key in the environment this script refuses to run.
+if (Object.keys(process.env).some((k) => k.startsWith("SZAMLAZZ_AGENT_KEY"))) {
+  console.error("LEÁLLÍTVA: Számlázz.hu kulcs van a környezetben – ez a teszt valódi (NAV) számlát állítana ki.");
+  process.exit(1);
+}
 // ONE PURCHASE = ONE INVOICE – tests against the Számlázz.hu TEST account.
 // Run: node --env-file=.env scripts/invoicetest.mjs
 // Takes the latest paid test order that already has an invoice, makes the

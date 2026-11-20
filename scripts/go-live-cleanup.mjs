@@ -7,7 +7,8 @@
 // Safety: after sales opened (SALES_OPEN below) it refuses unless you also pass
 // --after-sales-opened – so real buyers' orders can't be wiped by accident.
 // Afterwards: check the price tiers (supabase/seed_2027.sql) and that
-// BARION_ENV / BARION_POS_KEY / SZAMLAZZ_AGENT_KEY point to the hotel's live accounts.
+// on Netlify BARION_LIVE=1 (+ BARION_POS_KEY_LIVE, BARION_PAYEE_LIVE) and SZAMLAZZ_LIVE=1
+// (+ SZAMLAZZ_AGENT_KEY_LIVE) are set, then redeploy.
 import { purgeEvent } from '../netlify/functions/lib/purge.js';
 
 const SLUG = process.env.VITE_EVENT_SLUG || 'one-night-irottko';
