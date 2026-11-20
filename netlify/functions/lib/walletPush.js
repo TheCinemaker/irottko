@@ -36,19 +36,31 @@ export async function pushApple(tokens) {
   client.on('error', (e) => result.errors.push(e.message));
   const one = (token) =>
     new Promise((resolve) => {
-      const req = client.request({
-        ':method': 'POST',
-        ':path': `/3/device/${token}`,
-        'apns-topic': APPLE_PASS_TYPE_ID(),
-        'content-type': 'application/json',
-      });
+      if (!/^[A-Za-z0-9]{16,200}$/.test(String(token || ''))) {
+        return resolve({ token, status: 400, body: 'BadDeviceToken' });
+      }
+      let req;
+      try {
+        req = client.request({
+          ':method': 'POST',
+          ':path': `/3/device/${token}`,
+          'apns-topic': APPLE_PASS_TYPE_ID(),
+          'content-type': 'application/json',
+        });
+      } catch (e) {
+        return resolve({ token, status: 0, body: e.message });
+      }
       let status = 0;
       let body = '';
       req.on('response', (h) => (status = h[':status']));
       req.on('data', (c) => (body += c));
       req.on('end', () => resolve({ token, status, body }));
       req.on('error', (e) => resolve({ token, status: 0, body: e.message }));
-      req.setTimeout(8000, () => req.close());
+      req.on('close', () => resolve({ token, status, body: body || 'closed' }));
+      req.setTimeout(8000, () => {
+        resolve({ token, status: 0, body: 'timeout' });
+        req.close();
+      });
       req.end('{}'); // pass updates: an empty payload
     });
   try {
@@ -130,9 +142,11 @@ export const plainMessage = (v) => String(v || '').replace(new RegExp(MARK, 'g')
 
 export async function sendPassengerMessage(input) {
   // the pass adds "ÍR 0115: " (changeMessage) – don't double it
-  const text = String(input)
+  const text = String(input || '')
     .replace(/^\s*[IÍ]R\s*0115\s*:\s*/i, '')
+    .replace(/\s+/g, ' ')
     .trim();
+  if (text.length < 3 || text.length > 149) throw new Error('BAD_WALLET_MESSAGE');
   const { data: prev } = await db().from('events').select('wallet_message').eq('slug', SLUG()).single();
   const value = prev?.wallet_message === text ? text + MARK : text;
   const at = new Date().toISOString();

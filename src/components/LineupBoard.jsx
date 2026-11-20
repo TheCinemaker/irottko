@@ -179,7 +179,7 @@ export default function LineupBoard() {
                   <div className={`artist break-words ${fade} ${dj.headliner ? 'text-[1.2rem]' : 'text-[1.15rem]'} ${lit || dj.headliner ? 'text-[#d4af37]' : 'text-white'}`}>
                     {dj.name}
                   </div>
-                  <div className="mt-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.18em]">
                     <span className={`${fade} ${lit ? 'text-[#d4af37]' : 'text-gray-500'}`}>{STATUS[i]}</span>
                     <PhaseIcon i={i} gold={lit} />
                     {onAir === i && <OnAirTag />}

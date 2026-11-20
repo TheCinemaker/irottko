@@ -53,7 +53,7 @@ function FlightCard({ dj, i }) {
           </span>
         )}
         <div className="px-5 pb-4 pt-5">
-          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#d4af37]">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#d4af37]">
             {Icon && <Icon className="h-4 w-4" strokeWidth={2} aria-hidden="true" />}
             {STATUS[i]}
             {onAir === i && <span className="ml-auto normal-case tracking-normal"><OnAirTag /></span>}

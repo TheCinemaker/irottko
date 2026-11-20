@@ -22,7 +22,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
-      <Suspense fallback={<div className="min-h-screen bg-black" />}>
+      <Suspense fallback={<div className="min-h-screen bg-[#05030a]" />}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/lineup" element={<LineupPage />} />

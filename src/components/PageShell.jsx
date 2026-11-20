@@ -31,7 +31,8 @@ export default function PageShell({ children }) {
   return (
     <div className="min-h-screen bg-[#05030a] pb-[var(--tabbar)] text-[#f5f5f7] selection:bg-[#d4af37] selection:text-black">
       <Navbar />
-      <main key={pathname} className="page-in">
+      {/* --ann-h: the announcement strip under the fixed top bar (Navbar.jsx) */}
+      <main key={pathname} className="page-in" style={{ paddingTop: 'var(--ann-h, 0px)' }}>
         {children}
       </main>
       <Footer />
@@ -45,7 +46,7 @@ export function PageHeader({ kicker, title, children, compact = false }) {
   return (
     <header className={`mx-auto max-w-4xl px-5 pb-14 text-center sm:pb-20 ${compact ? 'pt-14' : 'pt-32 sm:pt-40'}`}>
       {kicker && <div className="kicker">{kicker}</div>}
-      <h1 className="display mt-4 text-5xl sm:text-7xl">{title}</h1>
+      <h1 className="display mt-4 text-[clamp(2rem,9vw,3rem)] sm:text-7xl">{title}</h1>
       {children && <p className="mx-auto mt-5 max-w-xl text-lg text-gray-400 sm:text-xl">{children}</p>}
     </header>
   );

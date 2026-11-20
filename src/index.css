@@ -82,56 +82,6 @@ a, button { -webkit-tap-highlight-color: transparent; }
   font-family: 'Cinzel', serif;
 }
 
-.font-montserrat {
-  font-family: 'Montserrat', sans-serif;
-}
-
-.font-outfit {
-  font-family: 'Outfit', sans-serif;
-}
-
-/* Gold Gradient Text */
-.text-gold-gradient {
-  background: linear-gradient(135deg, #fff2be 0%, #d4af37 50%, #aa820a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.text-neon-purple {
-  text-shadow: 0 0 10px rgba(168, 85, 247, 0.7), 0 0 20px rgba(168, 85, 247, 0.4);
-}
-
-.border-gold-glow {
-  border-color: rgba(212, 175, 55, 0.4);
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.15), inset 0 0 15px rgba(212, 175, 55, 0.05);
-}
-
-.border-gold-glow-hover:hover {
-  border-color: rgba(212, 175, 55, 0.8);
-  box-shadow: 0 0 25px rgba(212, 175, 55, 0.3), inset 0 0 20px rgba(212, 175, 55, 0.1);
-}
-
-/* Background Grain Effect */
-.bg-grain {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
-  background-size: 24px 24px;
-}
-
-/* Glassmorphism */
-.glass-panel {
-  background: rgba(18, 11, 33, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-}
-
-.glass-panel-subtle {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 /* Split-flap tiles (line-up departures board): each tile flips down into place. */
 @keyframes flap-in {
   0% { opacity: 0; transform: perspective(200px) rotateX(-95deg); }

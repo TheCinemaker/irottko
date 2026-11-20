@@ -15,6 +15,6 @@ export const handler = async () => {
     return json(200, r);
   } catch (e) {
     console.error('backup-nightly failed:', e.message);
-    return json(500, { error: e.message });
+    return json(500, { error: 'BACKUP_FAILED' });
   }
 };

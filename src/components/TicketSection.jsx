@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Lock, AlertCircle, ChevronLeft, Minus, Plus, Plane, Armchair, Crown, Users } from 'lucide-react';
 import Turnstile from './Turnstile';
+import { announcementHeight } from './Navbar';
 import { TICKET_PERKS } from '../data/eventData';
 import { usePricing, refreshPricing, huf, dayHu } from '../lib/usePricing';
 import { normalizeTaxNumber } from '../lib/taxNumber';
@@ -83,7 +84,7 @@ export default function TicketSection() {
   const goTo = (s) => {
     setErrorMsg('');
     setStep(s);
-    const y = (top.current?.getBoundingClientRect().top || 0) + window.scrollY - 72;
+    const y = (top.current?.getBoundingClientRect().top || 0) + window.scrollY - 72 - announcementHeight();
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   };
   const next = () => {

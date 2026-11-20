@@ -57,6 +57,7 @@ async function guestlist() {
       .eq('event_id', ev.id)
       .in('status', ['valid', 'used'])
       .eq('orders.status', 'paid')
+      .order('id')
       .range(from, from + 999);
     if (error) throw error;
     rows.push(...data);
@@ -95,7 +96,7 @@ async function setDelays(delays) {
 // ticket (lib/walletPush.js, 016_wallet_push.sql). At most one every 2 minutes
 // (a double click must not notify everyone twice).
 async function walletMessage(text) {
-  const clean = typeof text === 'string' ? text.replace(/\s+/g, ' ').trim() : '';
+  const clean = typeof text === 'string' ? text.replace(/^\s*[IÍ]R\s*0115\s*:\s*/i, '').replace(/\s+/g, ' ').trim() : '';
   if (clean.length < 3 || clean.length > 149) return json(400, { error: 'BAD_VALUE' }); // +1 for the change marker (lib/walletPush.js)
   const { data: ev, error } = await db().from('events').select('*').eq('slug', SLUG).single();
   if (error) throw error;

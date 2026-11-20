@@ -195,7 +195,7 @@ export default function FramePour({ clip, intro = null }) {
         {intro && (
           <>
             <div
-              className="absolute inset-x-0 top-[12svh] z-20 px-5 flex flex-col items-center text-center pointer-events-none"
+              className="absolute inset-x-0 top-[calc(12svh+var(--ann-h,0px))] z-20 px-5 flex flex-col items-center text-center pointer-events-none"
               style={{ opacity: 1 - introT, transform: `translateY(${-introT * 60}px) scale(${1 - introT * 0.1})` }}
             >
               <span className="text-[10px] sm:text-xs tracking-[0.35em] uppercase text-[#d4af37]">{intro.kicker}</span>
@@ -306,7 +306,7 @@ function Caption({ progress, side, inStart, outStart, outEnd, kicker, title, tex
       : side === 'right'
       ? 'top-1/2 -translate-y-1/2 right-[6vw] w-[min(30vw,440px)] text-right'
       : side === 'top'
-      ? 'top-[11svh] inset-x-0 text-center'
+      ? 'top-[calc(11svh+var(--ann-h,0px))] inset-x-0 text-center'
       : 'bottom-[calc(var(--tabbar)+9svh)] inset-x-0 text-center';
 
   // soft dark scrim behind the text so it stays legible over bright labels

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Megaphone } from 'lucide-react';
 import { usePricing } from '../lib/usePricing';
@@ -10,10 +10,39 @@ const NAV_LINKS = [
   { to: '/jegyek', label: 'Jegyek' },
 ];
 
+// The announcement strip's height → <html style="--ann-h">, so the page (PageShell)
+// and the scroll offsets move down by exactly that much; 0px without a strip.
+function useAnnouncementHeight(ref, on) {
+  useEffect(() => {
+    const root = document.documentElement.style;
+    const el = ref.current;
+    if (!on || !el) {
+      root.setProperty('--ann-h', '0px');
+      return undefined;
+    }
+    const set = () => root.setProperty('--ann-h', `${Math.ceil(el.getBoundingClientRect().height)}px`);
+    set();
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(set) : null;
+    ro?.observe(el);
+    window.addEventListener('resize', set);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', set);
+      root.setProperty('--ann-h', '0px');
+    };
+  }, [ref, on]);
+}
+
+/** Current announcement strip height in px (for JS scroll offsets). */
+export const announcementHeight = () =>
+  parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ann-h')) || 0;
+
 // Top bar. Phones: just the name (navigation is the bottom TabBar).
 // Desktop: links + ticket button.
 export default function Navbar() {
   const { announcement } = usePricing();
+  const strip = useRef(null);
+  useAnnouncementHeight(strip, Boolean(announcement));
   const linkClass = ({ isActive }) =>
     `text-[13px] tracking-wide transition-colors ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`;
 
@@ -38,7 +67,7 @@ export default function Navbar() {
       </div>
       {/* "Utastájékoztatás" – a line the admin writes; live on every page */}
       {announcement && (
-        <div className="border-t border-[#d4af37]/30 bg-[#d4af37]/[0.12] px-4 py-1.5 text-center text-[12px] font-semibold leading-snug text-[#f3d77a]" role="status">
+        <div ref={strip} className="border-t border-[#d4af37]/30 bg-[#d4af37]/[0.12] px-4 py-1.5 text-center text-[12px] font-semibold leading-snug text-[#f3d77a]" role="status">
           <Megaphone className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px" aria-hidden="true" />
           <span className="uppercase tracking-[0.18em] text-[#d4af37]">Utastájékoztatás:</span> {announcement}
         </div>

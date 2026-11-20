@@ -3,6 +3,7 @@ import { useLive, LiveBadge } from '../lib/useLive';
 import { RefreshCw, LogOut, Download, Search, AlertTriangle, Check, X, Copy, Ban, Send, Printer, Smartphone } from 'lucide-react';
 import QRCode from 'qrcode';
 import { DJS } from '../data/eventData';
+import { slotsWith } from '../lib/schedule';
 
 /*
   Admin (/admin) – sales, orders and door check-ins at a glance.
@@ -347,6 +348,8 @@ function DelaysCard({ d }) {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const dirty = DJS.some((dj) => (delays[dj.id] || 0) !== (saved[dj.id] || 0));
+  const board = slotsWith(delays); // what the board will show (a too-late act pushes the next one)
+  const hm = (t) => t.toLocaleTimeString('hu-HU', { timeZone: 'Europe/Budapest', hour: '2-digit', minute: '2-digit' });
   const at = (dj, m) => {
     const [h, mm] = dj.time.slice(0, 5).split(':').map(Number);
     const t = h * 60 + mm + m;
@@ -379,15 +382,20 @@ function DelaysCard({ d }) {
             „Most a fedélzeten” része is ehhez igazodik. Üzenetet nem küld – ha kell, az „Üzenet az utasoknak” kártyáról.
           </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {DJS.map((dj) => (
-              <label key={dj.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 px-3 py-2 text-sm">
-                <span className="min-w-0 truncate text-white">{dj.name}</span>
+            {DJS.map((dj, i) => (
+              <label key={dj.id} className="flex flex-col gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <span className="min-w-0 text-white sm:truncate">
+                  {dj.name}
+                  {board[i].delay !== (delays[dj.id] || 0) && (
+                    <span className="mt-0.5 block text-xs text-amber-300">A táblán {hm(board[i].start)} – az előző fellépő késése miatt</span>
+                  )}
+                </span>
                 <span className="flex shrink-0 items-center gap-2 text-gray-400">
                   <span className="tabular-nums">{dj.time.slice(0, 5)}</span>
                   <select
                     value={delays[dj.id] || 0}
                     onChange={(e) => setDelays({ ...delays, [dj.id]: Number(e.target.value) })}
-                    className="field w-auto py-1 text-sm"
+                    className="field w-auto py-1 text-base sm:text-sm"
                   >
                     {DELAY_STEPS.map((m) => (
                       <option key={m} value={m}>
@@ -472,7 +480,7 @@ function WalletMessageCard({ d }) {
               onChange={(e) => setText(e.target.value)}
               maxLength={149}
               placeholder="Pl.: A gate 18:55-kor nyit – készítsd elő a beszállókártyád!"
-              className="field flex-1 py-2 text-sm"
+              className="field flex-1 py-2 text-base sm:text-sm"
             />
             <button onClick={send} disabled={busy || text.trim().length < 3} className="btn-secondary px-4 py-2 disabled:opacity-40">
               <Send className="h-4 w-4" /> {busy ? 'Küldés…' : 'Kiküldés'}
@@ -527,7 +535,7 @@ function AnnouncementCard({ d }) {
               onChange={(e) => setText(e.target.value)}
               maxLength={200}
               placeholder="Pl.: Az Early Bird ár vasárnap 23:59-ig érvényes."
-              className="field flex-1 py-2 text-sm"
+              className="field flex-1 py-2 text-base sm:text-sm"
             />
             <button onClick={() => send(text)} disabled={busy || text.trim() === saved} className="btn-secondary px-4 py-2 disabled:opacity-40">
               <Check className="h-4 w-4" /> Mentés
@@ -619,11 +627,11 @@ function LimitsCard({ d }) {
             <div className="mt-4 grid grid-cols-2 gap-3">
               <label className="text-xs text-gray-400">
                 Tűzvédelmi létszám (fő)
-                <input inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value.replace(/\D/g, ''))} className="field mt-1 py-2 text-sm" />
+                <input inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value.replace(/\D/g, ''))} className="field mt-1 py-2 text-base sm:text-sm" />
               </label>
               <label className="text-xs text-gray-400">
                 Bent jegy nélkül (staff, fellépő, vendég)
-                <input inputMode="numeric" value={crew} onChange={(e) => setCrew(e.target.value.replace(/\D/g, ''))} className="field mt-1 py-2 text-sm" />
+                <input inputMode="numeric" value={crew} onChange={(e) => setCrew(e.target.value.replace(/\D/g, ''))} className="field mt-1 py-2 text-base sm:text-sm" />
               </label>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -780,7 +788,7 @@ function Orders({ d }) {
           <div className="flex w-full gap-2 sm:w-auto">
             <label className="relative flex-1 sm:w-64">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Név, e-mail, rendelésszám…" className="field py-2 !pl-10 text-sm" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Név, e-mail, rendelésszám…" className="field py-2 !pl-10 text-base sm:text-sm" />
             </label>
             <button onClick={csv} className="btn-secondary shrink-0 px-4 py-2" title="Letöltés Excelhez (CSV)">
               <Download className="h-4 w-4" /> CSV
@@ -970,7 +978,7 @@ function EnrollCard() {
         bejelentkezik. Akkor is működik, ha a PIN-es belépést túl sok hibás próbálkozás miatt lezárta a rendszer. Ne fotózd le, ne küldd tovább.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
-        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Eszköz neve (pl. 2. kapu)" maxLength={40} className="field max-w-xs py-2 text-sm" />
+        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Eszköz neve (pl. 2. kapu)" maxLength={40} className="field max-w-xs py-2 text-base sm:text-sm" />
         <button onClick={create} className="btn-secondary px-4 py-2">
           <Smartphone className="h-4 w-4" /> QR-kód készítése
         </button>
@@ -1083,7 +1091,7 @@ function Door({ d }) {
         className="lg:col-span-3"
         right={
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-            <select value={filter} onChange={(e) => setFilter(e.target.value)} className="field !w-auto py-2 text-sm">
+            <select value={filter} onChange={(e) => setFilter(e.target.value)} className="field !w-auto py-2 text-base sm:text-sm">
               <option value="all">Mind</option>
               {Object.entries(RESULT).map(([k, r]) => (
                 <option key={k} value={k}>
@@ -1093,7 +1101,7 @@ function Door({ d }) {
             </select>
             <label className="relative flex-1 sm:w-56">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Név, e-mail, kód…" className="field py-2 !pl-10 text-sm" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Név, e-mail, kód…" className="field py-2 !pl-10 text-base sm:text-sm" />
             </label>
           </div>
         }

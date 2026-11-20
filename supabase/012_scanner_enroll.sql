@@ -16,4 +16,4 @@ create table if not exists public.scanner_enrollments (
 
 alter table public.scanner_enrollments enable row level security;
 revoke all on public.scanner_enrollments from public, anon, authenticated;
-grant select, insert, update on public.scanner_enrollments to service_role;
+grant select, insert, update, delete on public.scanner_enrollments to service_role;

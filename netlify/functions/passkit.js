@@ -15,7 +15,8 @@ import { validPassAuth } from './lib/passAuth.js';
 import { currentMessage } from './lib/walletPush.js';
 
 const SERIAL = /^irottko-([0-9A-F]{18})$/;
-const DEVICE = /^[A-Za-z0-9._-]{1,128}$/;
+const DEVICE = /^[A-Za-z0-9._-]{16,128}$/;
+const MAX_DEVICES_PER_SERIAL = 5;
 const res = (statusCode, body = '', headers = {}) => ({ statusCode, headers, body });
 const jsonRes = (statusCode, obj) => res(statusCode, JSON.stringify(obj), { 'Content-Type': 'application/json' });
 const header = (event, name) => {
@@ -81,6 +82,15 @@ export const handler = async (event) => {
           .eq('pass_type_identifier', passType)
           .eq('serial_number', serial)
           .maybeSingle();
+        if (!existing) {
+          const { count, error: cErr } = await db()
+            .from('wallet_registrations')
+            .select('id', { count: 'exact', head: true })
+            .eq('pass_type_identifier', passType)
+            .eq('serial_number', serial);
+          if (cErr) throw cErr;
+          if ((count ?? 0) >= MAX_DEVICES_PER_SERIAL) return res(429);
+        }
         const { error } = await db().from('wallet_registrations').upsert(
           {
             device_library_identifier: device,

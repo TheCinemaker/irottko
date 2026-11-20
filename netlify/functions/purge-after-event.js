@@ -24,6 +24,6 @@ export const handler = async () => {
     return json(200, { ips, purged: done });
   } catch (e) {
     console.error('purge-after-event failed:', e.message);
-    return json(500, { error: e.message });
+    return json(500, { error: 'PURGE_FAILED' });
   }
 };

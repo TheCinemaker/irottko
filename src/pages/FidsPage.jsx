@@ -216,32 +216,41 @@ function useEvery(ms, count) {
   return i;
 }
 
-// keep the TV / laptop screen on
+// keep the TV / laptop screen on all night. Some browsers refuse the lock until
+// someone clicks, and the system can drop it (power event, fullscreen switch) –
+// so ask again on every click (the fullscreen click) and whenever it is lost.
 function useWakeLock() {
+  const get = useRef(() => {});
   useEffect(() => {
     let lock = null;
-    const get = async () => {
+    let gone = false;
+    get.current = async () => {
+      if (gone || (lock && !lock.released) || document.visibilityState !== 'visible') return;
       try {
         lock = await navigator.wakeLock?.request('screen');
+        lock?.addEventListener?.('release', () => setTimeout(() => get.current(), 1000));
       } catch {
         /* not allowed / not supported – fine */
       }
     };
-    get();
-    const again = () => document.visibilityState === 'visible' && get();
+    get.current();
+    const again = () => get.current();
     document.addEventListener('visibilitychange', again);
     return () => {
+      gone = true;
       document.removeEventListener('visibilitychange', again);
       lock?.release?.().catch(() => {});
     };
   }, []);
+  return () => get.current();
 }
 
 // font size from the screen: all cards of a row (1.196 em each) + column gaps
 const CARDS = LEN.time + LEN.name + LEN.flight + LEN.status;
 function useSize() {
   const calc = () =>
-    Math.floor(Math.min((window.innerWidth * 0.94) / (CARDS * 1.196 + 3 * 0.8), window.innerHeight / (ROWS * 1.72 + 6.5)));
+    // height: minus the 7vh padding; ~25.2 em = header + labels + rows + footer (measured)
+    Math.floor(Math.min((window.innerWidth * 0.94) / (CARDS * 1.196 + 3 * 0.8), (window.innerHeight * 0.93) / (ROWS * 1.72 + 8)));
   const [s, setS] = useState(calc);
   useEffect(() => {
     const on = () => setS(calc());
@@ -262,11 +271,14 @@ export default function FidsPage() {
   const s = useSize();
   // landing screen: one uniform grid of cards, as wide as the board's rows
   const landingCols = Math.floor((CARDS * 1.196 + 3 * 0.8) / 1.196);
-  useWakeLock();
+  const keepAwake = useWakeLock();
   useEffect(() => {
     document.title = 'Departures · IR0115';
   }, []);
-  const full = () => document.documentElement.requestFullscreen?.().catch(() => {});
+  const full = () => {
+    keepAwake();
+    document.documentElement.requestFullscreen?.().catch(() => {});
+  };
   const grid = { gridTemplateColumns: cols(s), columnGap: Math.round(s * 0.8) };
   const rows = rowsAt(now, slots);
 
@@ -341,7 +353,7 @@ export default function FidsPage() {
 
 const CSS = `
 @font-face { font-family: 'Split-Flap TV'; src: url(/fonts/SplitFlapTV-Regular.ttf) format('truetype'); font-display: block; }
-.sf-board { min-height: 100vh; background: #0c0c0e; padding: 3.5vh 3vw; cursor: none; user-select: none;
+.sf-board { height: 100vh; overflow: hidden; background: #0c0c0e; padding: 3.5vh 3vw; cursor: none; user-select: none;
   display: flex; flex-direction: column; }
 /* painted parts (sign, column heads): plain bold sans, yellow, like on real boards */
 .sf-sign { display: flex; align-items: center; color: ${YELLOW}; font-family: Inter, 'Helvetica Neue', Arial, sans-serif; font-weight: 800; letter-spacing: -.01em; }

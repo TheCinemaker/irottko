@@ -21,7 +21,7 @@ const SLUG = () => process.env.VITE_EVENT_SLUG || 'one-night-irottko';
 async function all(table, select, filter) {
   const rows = [];
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await filter(db().from(table).select(select)).range(from, from + 999);
+    const { data, error } = await filter(db().from(table).select(select)).order('id', { ascending: true }).range(from, from + 999);
     if (error) throw error;
     rows.push(...data);
     if (data.length < 1000) return rows;
@@ -68,7 +68,7 @@ export function sealBackup(obj) {
 
 /** Tries every BACKUP_KEY (current and _PREVIOUS). Throws if none fits. */
 export function openBackup(buf) {
-  if (!buf.subarray(0, 5).equals(MAGIC)) throw new Error('Not an IRTK1 backup file');
+  if (!Buffer.isBuffer(buf) || buf.length < 50 || !buf.subarray(0, 5).equals(MAGIC)) throw new Error('Not an IRTK1 backup file');
   const salt = buf.subarray(5, 21);
   const iv = buf.subarray(21, 33);
   const tag = buf.subarray(33, 49);
@@ -94,10 +94,11 @@ export async function sendBackup() {
   const data = await collectBackup();
   const file = sealBackup(data);
   const day = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Budapest' }).format(new Date());
+  const fileHash = crypto.createHash('sha256').update(file).digest('hex').slice(0, 16);
   const c = data.counts;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'Idempotency-Key': `backup-${day}` },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'Idempotency-Key': `backup-${day}-${fileHash}` },
     body: JSON.stringify({
       from,
       to: [to],

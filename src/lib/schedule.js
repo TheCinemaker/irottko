@@ -33,13 +33,21 @@ const delayOf = (delays, i) => {
   return Number.isFinite(m) && m > 0 ? Math.min(m, 240) : 0;
 };
 
-/** The timetable with delays: [{ start, end, delay }] (delay in minutes). */
+/** The timetable with delays: [{ start, end, delay }] (delay in minutes).
+ *  Each act's delay is its own (a late act can shorten its set, the next one
+ *  stays on time). Only when an act's delay would push it past the next act's
+ *  start does the delay carry over – otherwise the earlier act would vanish
+ *  from the board before it even started. */
 export function slotsWith(delays) {
-  const starts = SLOTS.map((s, i) => new Date(s.start.getTime() + delayOf(delays, i) * MIN));
+  const own = SLOTS.map((_, i) => delayOf(delays, i));
+  for (let i = 1; i < own.length; i++) {
+    if (SLOTS[i].start.getTime() + own[i] * MIN <= SLOTS[i - 1].start.getTime() + own[i - 1] * MIN) own[i] = Math.max(own[i], own[i - 1]);
+  }
+  const starts = SLOTS.map((s, i) => new Date(s.start.getTime() + own[i] * MIN));
   return SLOTS.map((s, i) => ({
     start: starts[i],
-    end: i < SLOTS.length - 1 ? starts[i + 1] : new Date(s.end.getTime() + delayOf(delays, i) * MIN),
-    delay: delayOf(delays, i),
+    end: i < SLOTS.length - 1 ? starts[i + 1] : new Date(s.end.getTime() + own[i] * MIN),
+    delay: own[i],
   }));
 }
 
