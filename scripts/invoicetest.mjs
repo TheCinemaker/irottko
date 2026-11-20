@@ -1,7 +1,7 @@
-// NEVER against Számlázz.hu: the accounts are connected to NAV (every invoice is real).
-// With any Számlázz key in the environment this script refuses to run.
-if (Object.keys(process.env).some((k) => k.startsWith("SZAMLAZZ_AGENT_KEY"))) {
-  console.error("LEÁLLÍTVA: Számlázz.hu kulcs van a környezetben – ez a teszt valódi (NAV) számlát állítana ki.");
+// Test account only: the live Számlázz.hu account is connected to NAV (every
+// invoice there is real). With the live key or switch in the environment this refuses.
+if (process.env.SZAMLAZZ_LIVE === "1" || process.env.SZAMLAZZ_AGENT_KEY_LIVE || process.env.BARION_LIVE === "1") {
+  console.error("LEÁLLÍTVA: éles Számlázz.hu / Barion beállítás van a környezetben – ez a teszt csak sandboxszal futhat.");
   process.exit(1);
 }
 // ONE PURCHASE = ONE INVOICE – tests against the Számlázz.hu TEST account.
