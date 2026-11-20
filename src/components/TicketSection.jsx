@@ -170,6 +170,8 @@ export default function TicketSection() {
                       </span>
                       <div className="min-w-0">
                         <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#d4af37]">
+                          {/* airline fare class letters: J = business, Y = economy */}
+                          <span className={on ? 'text-white' : 'text-gray-400'}>Class {tier.kind === 'vip' ? 'J' : 'Y'} · </span>
                           {tier.kind === 'vip' ? 'Business · VIP Lounge' : tier.channel === 'door' ? 'Gate-nél váltott jegy' : 'Economy'}
                         </div>
                         <div className="mt-0.5 text-xl font-semibold text-white">{tier.name}</div>
@@ -195,7 +197,10 @@ export default function TicketSection() {
                     )}
                    </div>
                    {/* price stub after a perforation – like the hero's boarding-pass button */}
-                   <div className={`flex w-[6.5rem] shrink-0 flex-col items-center justify-start border-l-2 border-dashed px-2 pt-6 text-center ${on ? 'border-[#d4af37]/40 bg-[#d4af37]/10' : 'border-white/10'}`}>
+                   <div className={`relative flex w-[6.5rem] shrink-0 flex-col items-center justify-start self-stretch border-l-2 border-dashed px-2 pt-6 text-center ${on ? 'border-[#d4af37]/40 bg-[#d4af37]/10' : 'border-white/10'}`}>
+                     {/* notches where the stub tears off */}
+                     <span className="absolute -left-[9px] -top-2 h-4 w-4 rounded-full border border-white/10 bg-[#05030a]" aria-hidden="true" />
+                     <span className="absolute -bottom-2 -left-[9px] h-4 w-4 rounded-full border border-white/10 bg-[#05030a]" aria-hidden="true" />
                      <div className="text-[17px] font-bold leading-tight tabular-nums text-white">{huf(tier.price_huf)}</div>
                      <div className="text-[11px] text-gray-400">/ fő</div>
                    </div>

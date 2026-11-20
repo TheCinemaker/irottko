@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import PageShell from '../components/PageShell';
 import { EVENT_DETAILS } from '../data/eventData';
 import { saveMyTickets } from '../lib/myTickets';
+import { BoardingPass, FullPass } from '../components/MyTickets';
 import { SELLER } from '../data/legal';
 
 /*
@@ -15,7 +16,6 @@ import { SELLER } from '../data/legal';
 const POLL_MS = 4000; // Barion allows 2 state queries / 5 s per payment
 const MAX_POLLS = 30;
 
-const qrSrc = (code) => `/.netlify/functions/ticket-qr?c=${encodeURIComponent(code)}`;
 
 export default function TicketSuccess() {
   const [params] = useSearchParams();
@@ -71,6 +71,7 @@ export default function TicketSuccess() {
 
 function Paid({ data }) {
   const { order, tickets } = data;
+  const [open, setOpen] = useState(null);
   return (
     <>
       <div className="text-center">
@@ -95,23 +96,17 @@ function Paid({ data }) {
         </p>
       </div>
 
-      <ul className="mt-14 space-y-6">
+      <ul className="mx-auto mt-14 max-w-md space-y-8">
         {tickets.map((t, i) => (
-          <li key={t.code} className="surface flex flex-col items-center p-8 text-center">
-            <div className="text-[12px] font-medium uppercase tracking-[0.15em] text-gray-400">
-              {i + 1}. utas · {t.tier}
-            </div>
-            <div className="mt-2 text-xl font-semibold text-white">{t.name}
-            </div>
-            <img src={qrSrc(t.code)} alt={`QR-kód: ${t.code}`} width="220" height="220" className="mt-5 rounded-[4px] bg-white p-2" />
-            <div className="mt-4 font-mono text-[15px] tracking-[0.2em] text-white">{t.code}</div>
+          <li key={t.code}>
+            <BoardingPass t={t} label={tickets.length > 1 ? `${i + 1}. utas` : null} onOpen={() => setOpen(t)} />
             {/* Official Apple / Google badges (unaltered, as required by both) */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
               <a href={`/.netlify/functions/wallet-apple?c=${t.code}`}>
-                <img src="/wallet/apple-wallet-badge-hu.svg" alt="Hozzáadás az Apple Tárcához" className="h-11 w-auto" />
+                <img src="/wallet/apple-wallet-badge-hu.svg" alt="Hozzáadás az Apple Tárcához" className="h-10 w-auto" />
               </a>
               <a href={`/.netlify/functions/wallet-google?c=${t.code}`}>
-                <img src="/wallet/google-wallet-badge-hu.svg" alt="Hozzáadás a Google Wallethez" className="h-11 w-auto" />
+                <img src="/wallet/google-wallet-badge-hu.svg" alt="Hozzáadás a Google Wallethez" className="h-10 w-auto" />
               </a>
             </div>
           </li>
@@ -119,8 +114,9 @@ function Paid({ data }) {
       </ul>
 
       <p className="mt-8 text-center text-[13px] text-gray-500">
-        A belépéskor mutasd fel a QR-kódot. Minden kód egyszer használható. Rendelésszám: {order.id}
+        A belépéskor mutasd fel a QR-kódot (koppints a kártyára a nagyításhoz). Minden kód egyszer használható. Rendelésszám: {order.id}
       </p>
+      {open && <FullPass t={open} onClose={() => setOpen(null)} />}
     </>
   );
 }

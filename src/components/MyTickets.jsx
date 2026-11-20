@@ -24,7 +24,9 @@ function useQr(code, size) {
   return src;
 }
 
-function Pass({ t, onOpen }) {
+// Boarding pass card: gold "BOARDING PASS" band, class + name, perforation
+// with side notches, QR stub. Used here and on /success. `label`: e.g. "1. utas".
+export function BoardingPass({ t, onOpen, label }) {
   const qr = useQr(t.code, 360);
   return (
     <button
@@ -34,10 +36,22 @@ function Pass({ t, onOpen }) {
         t.vip ? 'bg-[#d4af37] text-[#05030a]' : 'border border-white/10 bg-white/[0.05] text-white'
       }`}
     >
+      {/* the band at the top of a real boarding pass */}
+      <div
+        className={`flex items-center justify-between gap-3 px-6 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.18em] ${
+          t.vip ? 'bg-[#05030a] text-[#d4af37]' : 'bg-[#d4af37] text-[#05030a]'
+        }`}
+      >
+        <span>Boarding pass</span>
+        <span className="whitespace-nowrap font-mono tracking-[0.1em]">
+          ÍR 0115 · KSZ <span aria-hidden="true">✈</span> ÍRK
+        </span>
+      </div>
       <div className="flex items-start justify-between gap-4 p-6 pb-4">
         <div className="min-w-0">
           <div className={`text-[11px] font-semibold uppercase tracking-[0.2em] ${t.vip ? 'text-[#05030a]/70' : 'text-[#d4af37]'}`}>
-            {t.vip ? 'VIP Lounge' : t.tier}
+            {label && <span className={t.vip ? 'text-[#05030a]/55' : 'text-gray-400'}>{label} · </span>}
+            {t.vip ? 'Class J · VIP Lounge' : `Class Y · ${t.tier}`}
           </div>
           <div className="mt-2 truncate text-2xl font-bold leading-tight">{t.name}</div>
           <div className={`mt-1 text-[13px] ${t.vip ? 'text-[#05030a]/70' : 'text-gray-400'}`}>
@@ -66,7 +80,7 @@ function Pass({ t, onOpen }) {
   );
 }
 
-function FullPass({ t, onClose }) {
+export function FullPass({ t, onClose }) {
   const qr = useQr(t.code, 720);
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
@@ -135,7 +149,7 @@ export default function MyTickets({ onChange } = {}) {
       <div className="mt-6 space-y-4">
         {tickets.map((t) => (
           <div key={t.code}>
-            <Pass t={t} onOpen={() => setOpen(t)} />
+            <BoardingPass t={t} onOpen={() => setOpen(t)} />
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               <a href={`/.netlify/functions/wallet-apple?c=${t.code}`}>
                 <img src="/wallet/apple-wallet-badge-hu.svg" alt="Hozzáadás az Apple Tárcához" className="h-10 w-auto" />

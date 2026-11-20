@@ -154,7 +154,18 @@ export default function LineupBoard() {
       </h2>
       <p className="mt-3 text-[15px] text-gray-400">Négy fellépő, nulla megállás.</p>
 
-      <div ref={board} className="mt-7 overflow-hidden rounded-3xl border border-white/10 bg-[#0b0812]">
+      <div ref={board} className="mt-7 overflow-hidden rounded-[6px] border border-white/10 bg-[#0b0812]">
+        {/* the sign over a real departures board */}
+        <div className="flex items-center gap-3 border-b border-white/[0.07] px-4 py-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] bg-[#d4af37] text-[#05030a]" aria-hidden="true">
+            <PlaneTakeoff className="h-5 w-5" strokeWidth={2.5} />
+          </span>
+          <span className="min-w-0 flex-1 leading-tight">
+            <span className="block text-[15px] font-extrabold uppercase tracking-[0.08em] text-white">Departures</span>
+            <span className="block text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500">Indulások</span>
+          </span>
+          <span className="shrink-0 font-mono text-[12px] font-bold tracking-[0.1em] text-[#f3d77a]">ÍR 0115</span>
+        </div>
         <div className="flex items-center gap-4 border-b border-white/[0.07] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">
           <span className="w-[124px] shrink-0">Idő</span>
           <span>Fellépő</span>

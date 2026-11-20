@@ -33,7 +33,7 @@ export default function HomePage() {
 
       {/* Bars – one swipeable row */}
       <section className="mx-auto max-w-6xl px-5 pt-16 sm:pt-28">
-        <SectionHead kicker="Bárok · Fedélzeti ellátás" title="Három bár a fedélzeten." />
+        <SectionHead kicker="Gates A–C & VIP · Fedélzeti ellátás" title="Három bár a fedélzeten." />
         <BarTiles carousel />
         <div className="mt-6 text-center">
           <Link to="/barok" className="link-more text-[14px]">

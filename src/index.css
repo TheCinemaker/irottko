@@ -43,7 +43,7 @@ body {
     @apply font-extrabold leading-[1.02] tracking-[-0.03em] text-white;
   }
   .surface {
-    @apply rounded-3xl border border-white/10 bg-white/[0.035];
+    @apply rounded-[6px] border border-white/10 bg-white/[0.035];
   }
   .field {
     @apply w-full rounded-[4px] border border-white/10 bg-white/[0.04] px-4 py-3 text-[16px] text-white placeholder-gray-500 transition-colors focus:border-[#d4af37] focus:outline-none;
