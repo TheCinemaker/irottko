@@ -33,9 +33,11 @@ body {
   .kicker {
     @apply text-xs font-medium uppercase tracking-[0.25em] text-[#d4af37];
   }
+  /* Page titles: airport-signage sans (Inter ExtraBold). Cinzel is kept only for
+     the ONE NIGHT AT ÍROTTKŐ wordmark (.font-cinzel). */
   .display {
-    font-family: 'Cinzel', serif;
-    @apply font-bold leading-[1.1] tracking-tight text-white;
+    font-family: 'Inter', system-ui, sans-serif;
+    @apply font-extrabold leading-[1.05] tracking-[-0.035em] text-white;
   }
   /* Artist names: keep their own spelling ("fromBOB") – Cinzel has no lowercase. */
   .artist {

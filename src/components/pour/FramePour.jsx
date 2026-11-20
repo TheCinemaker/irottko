@@ -327,7 +327,7 @@ function Caption({ progress, side, inStart, outStart, outEnd, kicker, title, tex
         >
           {kicker}
         </span>
-        <h2 className="font-cinzel text-[2.1rem] sm:text-5xl font-bold text-white mt-2 leading-[1.1] drop-shadow-[0_2px_18px_rgba(0,0,0,0.95)]">
+        <h2 className="text-[2.1rem] sm:text-5xl font-extrabold tracking-[-0.03em] text-white mt-2 leading-[1.1] drop-shadow-[0_2px_18px_rgba(0,0,0,0.95)]">
           {words.map((w, wi) => {
             const wIn = smooth((inT - wi * 0.35) / 1.2);
             return (

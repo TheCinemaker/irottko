@@ -52,7 +52,7 @@ export default function HeroSection() {
 
       <div className="relative mx-auto w-full max-w-6xl px-5 pb-[calc(var(--tabbar,0px)+10svh)] text-center sm:pb-[min(16vh,7rem)]">
         <div className="kicker text-[13px] font-bold text-[#f3d77a] underline decoration-[#d4af37] decoration-2 underline-offset-[8px] [text-shadow:0_1px_8px_rgba(0,0,0,0.8)]">2027. január 15. · Kőszeg</div>
-        <h1 className="display mt-5 text-[2.9rem] sm:text-[min(6rem,11vh)]">
+        <h1 className="display font-cinzel mt-5 font-bold leading-[1.1] tracking-tight text-[2.9rem] sm:text-[min(6rem,11vh)]">
           One Night
           <span className="block pt-[0.06em] text-[#d4af37]">at Írottkő</span>
         </h1>
