@@ -13,6 +13,7 @@ import { Flap } from './LineupBoard';
 */
 const HERO_VIDEO = null; // e.g. { landscape: '/hero.mp4', portrait: '/hero-portrait.mp4' }
 const HERO_POSTER = '/hero.jpg';
+const HERO_PORTRAIT = '/hero-portrait.jpg';
 
 function useDaysLeft() {
   const calc = () => Math.max(0, Math.ceil((new Date(EVENT_DETAILS.isoDate).getTime() - clockNow()) / 86400000));
@@ -39,9 +40,15 @@ export default function HeroSection() {
       {videoSrc ? (
         <video className="absolute inset-0 h-full w-full object-cover" src={videoSrc} poster={HERO_POSTER} autoPlay muted loop playsInline />
       ) : (
-        <img className="absolute inset-0 h-full w-full object-cover" src={HERO_POSTER} alt="" />
+        <picture>
+          {/* phones (portrait): the terminal at the top, the runway under the text */}
+          <source media="(orientation: portrait)" srcSet={HERO_PORTRAIT} />
+          <img className="absolute inset-0 h-full w-full object-cover" src={HERO_POSTER} alt="" fetchPriority="high" />
+        </picture>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-[#05030a] via-[#05030a]/55 to-[#05030a]/30" />
+      {/* desktop: the photo's lit signage sits behind the text – a soft dark pool keeps it readable */}
+      <div className="absolute inset-0 hidden bg-[radial-gradient(ellipse_58%_34%_at_50%_62%,rgba(5,3,10,0.88)_35%,transparent)] sm:block" />
 
       <div className="relative mx-auto w-full max-w-6xl px-5 pb-[calc(var(--tabbar,0px)+10svh)] text-center sm:pb-[min(16vh,7rem)]">
         <div className="kicker text-[13px] font-bold text-[#f3d77a] underline decoration-[#d4af37] decoration-2 underline-offset-[8px] [text-shadow:0_1px_8px_rgba(0,0,0,0.8)]">2027. január 15. · Kőszeg</div>

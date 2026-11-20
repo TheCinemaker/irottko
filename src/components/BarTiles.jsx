@@ -8,7 +8,7 @@ import { POUR_CLIPS } from '../data/pourClips';
 export function barPoster(barId) {
   const clip = POUR_CLIPS.find((c) => c.bar === barId);
   if (clip) return `/frames/${clip.dir}/f${String(Math.round(clip.count * 0.66)).padStart(3, '0')}.webp`;
-  if (barId === 'vip-bar') return '/hero.jpg';
+  if (barId === 'vip-bar') return '/posters/vip-pezsgo.jpg';
   // Illustrated posters (no brands) until the real films arrive.
   if (barId === 'wine-bar') return '/posters/jagodics-bor.jpg'; // photo from the client (Jagodics Pince)
   if (barId === 'beer-bar') return '/posters/koszegi-sor.jpg'; // photo from the client (Kőszegi Sör)
