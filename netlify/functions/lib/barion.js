@@ -10,6 +10,8 @@
 // as used by the node-barion library. POSKey is sent both in the body/query
 // and in the x-pos-key header, which Barion's newer docs use.
 
+import { assertLiveAllowed } from './liveGate.js';
+
 const BASE = {
   test: 'https://api.test.barion.com',
   prod: 'https://api.barion.com',
@@ -20,6 +22,7 @@ const baseUrl = () => (isProd() ? BASE.prod : BASE.test);
 const envName = (base) => (isProd() ? `${base}_LIVE` : base);
 
 function required(base) {
+  if (isProd()) assertLiveAllowed('BARION'); // not before 2026-12-05 20:00 (liveGate.js)
   const name = envName(base);
   const v = process.env[name];
   if (!v) throw new Error(`MISSING_${name}`);

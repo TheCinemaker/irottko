@@ -30,9 +30,12 @@ const header = (tag, dir) =>
   `xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ` +
   `xsi:schemaLocation="http://www.szamlazz.hu/${tag} https://www.szamlazz.hu/szamla/docs/xsds/${dir}/${tag}.xsd">`;
 
+import { assertLiveAllowed } from './liveGate.js';
+
 export const szamlazzLive = () => process.env.SZAMLAZZ_LIVE === '1';
 
 function agentKey() {
+  if (szamlazzLive()) assertLiveAllowed('SZAMLAZZ'); // not before 2026-12-05 20:00 (liveGate.js)
   const name = szamlazzLive() ? 'SZAMLAZZ_AGENT_KEY_LIVE' : 'SZAMLAZZ_AGENT_KEY';
   const k = process.env[name];
   if (!k) throw new Error(`MISSING_${name}`);
