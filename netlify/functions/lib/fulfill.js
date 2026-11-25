@@ -88,7 +88,7 @@ const release = (orderId, patch = {}) =>
 // A paid order whose buyer ticked the newsletter box → the marketing list
 // (019). A new consent also undoes an earlier unsubscribe. Never blocks the
 // tickets or the invoice.
-async function addMarketingContact(order) {
+export async function addMarketingContact(order) {
   if (!order.marketing_consent_at || order.status !== 'paid') return;
   try {
     // fulfillment is retried: once this order is on the list, never re-add it
