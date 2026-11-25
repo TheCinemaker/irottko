@@ -61,7 +61,14 @@ export function TermsPage() {
       <h2>3. Árak és fizetés</h2>
       <ul>
         <li>A jegyárak bruttó árak, az általános forgalmi adót tartalmazzák. Az ár a vásárlás időpontjától függ (időszakonként emelkedő árazás); a vásárláskor érvényes ár a kosárban látható.</li>
-        <li>A fizetés bankkártyával vagy más, a Barion által kínált módon történik, a Barion Payment Zrt. biztonságos fizetési oldalán. A kártyaadatokat az eladó nem látja és nem tárolja.</li>
+        <li>
+          <strong>Fizetés Barionnal.</strong> A fizetést a Barion Payment Zrt. (1083 Budapest, Bókay János utca 44–46., a Magyar Nemzeti
+          Bank felügyelete alatt álló elektronikus pénzkibocsátó intézmény, engedélyszám: H-EN-I-1064/2013) Barion Smart Gateway
+          szolgáltatása bonyolítja le. A „Fizetés” gomb után a Vásárló a Barion biztonságos fizetési oldalára kerül, ahol bankkártyával
+          (Mastercard, Visa, Diners Club, Discover), Apple Payjel, Google Payjel vagy Barion-egyenleggel fizethet; ehhez Barion-fiók nem
+          szükséges. A fizetés forintban történik. A kártyaadatokat kizárólag a Barion kezeli, az eladó nem látja és nem tárolja.
+          A sikeres vagy sikertelen fizetésről a Barion azonnal értesíti az eladót, a Vásárló pedig visszakerül a jegyoldalra.
+        </li>
         <li>A jegyek a fizetés idejére (legfeljebb 8 percre) lefoglalásra kerülnek. Sikertelen vagy megszakított fizetés esetén a foglalás megszűnik, terhelés nem történik.</li>
         <li>Az eladó a vásárlásról elektronikus számlát állít ki, amelyet a Számlázz.hu rendszere e-mailben küld el.</li>
       </ul>
@@ -69,6 +76,11 @@ export function TermsPage() {
       <h2>4. A jegy</h2>
       <ul>
         <li>A jegyet a Vásárló e-mailben kapja meg (QR-kód, nyomtatható PDF), és hozzáadhatja az Apple Tárcához vagy a Google Wallethez.</li>
+        <li>
+          <strong>Teljesítési idő:</strong> a jegy elektronikus, fizikai kiszállítás nincs. A jegyet és a számlát a rendszer a sikeres
+          fizetés után azonnal, automatikusan küldi el, általában 1–5 percen belül; a jegy a fizetés után a sikeroldalon is azonnal
+          megjelenik. Ha 24 órán belül nem érkezik meg (a levélszemét mappát is érdemes megnézni), a Vásárló a(z) {SELLER.email} címen kérheti az újraküldést.
+        </li>
         <li>Minden jegy egyedi kóddal rendelkezik, és <strong>egyszeri belépésre</strong> jogosít. Az első beolvasás után a kód érvényét veszti; a jegy másolata nem jogosít belépésre. A rendezvény területét a beléptetési ponton át elhagyva a jegy nem használható újra, visszalépésre nincs lehetőség.</li>
         <li>
           A jegy <strong>névre szóló</strong>: a vásárláskor megadott résztvevő nevét tartalmazza, és csak ő léphet be vele. Nem átruházható,
@@ -188,7 +200,7 @@ export function PrivacyPage() {
         <li>Apple Inc. (One Apple Park Way, Cupertino, CA 95014, USA) és Google Ireland Ltd. (Gordon House, Barrow Street, Dublin 4, Írország) – a Tárcába mentett beszállókártyák frissítése és értesítései.</li>
         <li>Plus Five Five, Inc. – Resend (2261 Market Street #5039, San Francisco, CA 94114, USA, resend.com) – a jegyküldő e-mailek kézbesítése.</li>
         <li>KBOSS.hu Kft. – Számlázz.hu (1031 Budapest, Záhony utca 7., szamlazz.hu) – számlakészítés és -küldés.</li>
-        <li>Barion Payment Zrt. (1083 Budapest, Bókay János utca 44–46., barion.com) – a fizetés lebonyolítása (önálló adatkezelőként).</li>
+        <li>Barion Payment Zrt. (1083 Budapest, Bókay János utca 44–46., barion.com) – a fizetés lebonyolítása és a Barion Pixel csalásmegelőzési adatai (önálló adatkezelőként).</li>
       </ul>
       <p>
         Az Európai Gazdasági Térségen kívülre (USA, Szingapúr) irányuló adattovábbítás az Európai Bizottság általános szerződési feltételei (SCC), illetve az EU–USA adatvédelmi
@@ -198,8 +210,25 @@ export function PrivacyPage() {
 
       <h2>5. Sütik</h2>
       <p>
-        A weboldal nem használ követő, reklám- vagy elemző sütiket. Csak a működéshez szükséges, a böngészőben tárolt technikai
-        adatokat használ (például a beléptető személyzet bejelentkezését, illetve a „Jegyem” részben a megvásárolt jegyeket ezen az eszközön), ezekhez nem kell hozzájárulás. A „Jegyem” adatai nem kerülnek a szerverre, és az „Eltávolítás” gombbal vagy a böngészőadatok törlésével bármikor törölhetők.
+        A weboldal nem használ reklám- vagy elemző sütiket. A működéshez szükséges, a böngészőben tárolt technikai adatokat használ
+        (például a beléptető személyzet bejelentkezését, illetve a „Jegyem” részben a megvásárolt jegyeket ezen az eszközön), ezekhez
+        nem kell hozzájárulás. A „Jegyem” adatai nem kerülnek a szerverre, és az „Eltávolítás” gombbal vagy a böngészőadatok törlésével
+        bármikor törölhetők.
+      </p>
+      <p>
+        <strong>Barion Pixel (csalásmegelőzés).</strong> A bankkártyás fizetés biztonsága érdekében az oldalon a Barion Payment Zrt.
+        „Base Barion Pixel” kódja fut. Ez a látogatás technikai adatait (az oldal megnyitása, a böngésző digitális ujjlenyomata) a
+        Barionnak küldi, amely azokat kizárólag a kártyacsalások felismerésére használja, marketingcélra nem. Jogalap: az eladó és a
+        Barion jogos érdeke a csalások megelőzésében (GDPR 6. cikk (1) f)), ezért hozzájárulás nem szükséges. A Barion által elhelyezett sütik:
+      </p>
+      <ul>
+        <li><code>ba_vid</code>, <code>ba_vid.xxx</code> – a böngésző azonosítása a csalásfelismeréshez (az első, az aktuális és az utolsó látogatás ideje); élettartam: az utolsó frissítéstől legfeljebb 1,5 év.</li>
+        <li><code>ba_sid</code>, <code>ba_sid.xxx</code> – a munkamenet azonosítása a csalásfelismeréshez; élettartam: 30 perc.</li>
+      </ul>
+      <p>
+        Ezek az adatok a Barionhoz kerülnek, amely önálló adatkezelőként kezeli őket; részletek a Barion{' '}
+        <a href="https://www.barion.com/hu/adatvedelmi-tajekoztato/" target="_blank" rel="noreferrer">adatkezelési tájékoztatójában</a>.
+        A sütik a böngésző beállításaiban letilthatók vagy törölhetők; ez a fizetés biztonsági ellenőrzését nehezítheti.
       </p>
 
       <h2>6. Az Ön jogai</h2>

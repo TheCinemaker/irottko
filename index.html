@@ -3,6 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Base Barion Pixel (fraud prevention, required for the Smart Gateway;
+         docs.barion.com/Implementing_the_Base_Barion_Pixel). Legitimate interest,
+         no consent needed; described in /adatkezeles (5. Sütik).
+         PLACEHOLDER ID (Barion's sample): set the live shop's own ID (BP-XXXXXXXXXX-XX,
+         Barion wallet → Manage my shops → Details) here AND in the noscript img on 12-05. -->
+    <script>
+      window.barion_pixel_id = 'BP-0000000000-00';
+      (function (w, d, s) {
+        w.bp = w.bp || function () { (w.bp.q = w.bp.q || []).push(arguments); };
+        w.bp.l = 1 * new Date();
+        var el = d.createElement(s); el.async = true; el.src = 'https://pixel.barion.com/bp.js';
+        var first = d.getElementsByTagName(s)[0]; first.parentNode.insertBefore(el, first);
+      })(window, document, 'script');
+      bp('init', 'addBarionPixelId', window.barion_pixel_id);
+    </script>
+    <noscript><img height="1" width="1" style="display:none" alt="Barion Pixel" src="https://pixel.barion.com/a.gif?ba_pixel_id='BP-0000000000-00'&ev=contentView&noscript=1" /></noscript>
     <title>ONE NIGHT AT ÍROTTKŐ – Csak egy járat indul! · 2027. január 15., Kőszeg</title>
     <meta name="description" content="2027. január 15. · Hotel Írottkő, Kőszeg · Gate open 19:00. Négy fellépő, három bár a fedélzeten. Headliner: DJ Bárány Attila. Beszállókártya online." />
 
