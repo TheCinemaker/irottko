@@ -85,12 +85,34 @@ const release = (orderId, patch = {}) =>
   db().from('orders').update({ ...patch, fulfillment_started_at: null }).eq('id', orderId);
 
 // opts.invoice=false: deliver tickets only (used by the retry job for older orders).
+// A paid order whose buyer ticked the newsletter box → the marketing list
+// (019). A new consent also undoes an earlier unsubscribe. Never blocks the
+// tickets or the invoice.
+async function addMarketingContact(order) {
+  if (!order.marketing_consent_at || order.status !== 'paid') return;
+  try {
+    // fulfillment is retried: once this order is on the list, never re-add it
+    // (the buyer may have unsubscribed meanwhile)
+    const { data: had, error: readErr } = await db().from('marketing_contacts').select('order_id').eq('email', order.email.toLowerCase()).maybeSingle();
+    if (readErr) throw readErr;
+    if (had?.order_id === order.id) return;
+    const { error } = await db().from('marketing_contacts').upsert(
+      { email: order.email.toLowerCase(), full_name: order.full_name, consented_at: order.marketing_consent_at, order_id: order.id, withdrawn_at: null },
+      { onConflict: 'email' }
+    );
+    if (error) console.error(`marketing contact not saved for ${order.id}:`, error.message);
+  } catch (e) {
+    console.error(`marketing contact not saved for ${order.id}:`, e.message);
+  }
+}
+
 export async function fulfillPaid(orderId, { invoice = true } = {}) {
   if (!(await claim(orderId))) return; // done already, or another call is on it
 
   try {
     let { order, tickets } = await loadOrder(orderId);
     const patch = {};
+    await addMarketingContact(order);
 
     // ONE PURCHASE = ONE INVOICE (it goes to the tax authority, NAV). Rules:
     //  1. Only one call works on an order at a time (claim() above).

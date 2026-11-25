@@ -824,7 +824,97 @@ function Orders({ d }) {
           empty={q ? 'Nincs találat.' : 'Még nincs fizetett rendelés.'}
         />
       </Card>
+      <MarketingCard />
     </div>
+  );
+}
+
+// Newsletter list (019): only buyers who ticked the separate consent box.
+const csvDownload = (name, head, rows) => {
+  const lines = rows.map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';'));
+  const blob = new Blob(['﻿' + [head.join(';'), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+function MarketingCard() {
+  const { token, logout } = useContext(AdminAuth);
+  const [list, setList] = useState(null); // { contacts, withdrawn } | null
+  const [msg, setMsg] = useState('');
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const r = await call('admin-action', { token }, { action: 'marketing-list' });
+      if (!r.auth) return logout();
+      if (r.status === 200) return setList(r.data);
+      setMsg(r.data.error === 'NO_TABLE' ? 'A hírlevél-lista még nincs bekapcsolva (019_marketing_consent.sql).' : 'Nem sikerült betölteni.');
+    } catch {
+      setMsg('Nincs kapcsolat.');
+    }
+  }, [token, logout]);
+  useEffect(() => { load(); }, [load]);
+
+  const unsubscribe = async (e) => {
+    e.preventDefault();
+    const addr = email.trim();
+    if (!addr || !window.confirm(`Leiratkoztatjuk ezt a címet a hírlevélről?\n\n${addr}`)) return;
+    setBusy(true);
+    setMsg('');
+    try {
+      const r = await call('admin-action', { token }, { action: 'marketing-unsubscribe', email: addr });
+      if (!r.auth) return logout();
+      if (r.status !== 200) setMsg(r.data.error === 'BAD_EMAIL' ? 'Ez nem érvényes e-mail cím.' : 'Nem sikerült.');
+      else {
+        setMsg(r.data.removed ? `Leiratkoztatva: ${addr}` : `Ez a cím nincs a listán: ${addr}`);
+        setEmail('');
+        load();
+      }
+    } catch {
+      setMsg('Nincs kapcsolat.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const n = list?.contacts.length ?? 0;
+  return (
+    <Card
+      title={`Hírlevél-lista${list ? ` (${num(n)})` : ''}`}
+      right={
+        <button
+          onClick={() => csvDownload(`irottko-hirlevel-${new Date().toISOString().slice(0, 10)}.csv`, ['Név', 'E-mail', 'Feliratkozott'], list.contacts.map((c) => [c.name, c.email, new Date(c.at).toLocaleString('hu-HU', { timeZone: TZ })]))}
+          disabled={!n}
+          className="btn-secondary shrink-0 px-4 py-2 disabled:opacity-40"
+          title="Letöltés Excelhez (CSV)"
+        >
+          <Download className="h-4 w-4" /> CSV
+        </button>
+      }
+    >
+      <p className="text-sm text-gray-400">
+        Csak azok, akik a vásárláskor külön bepipálták, hogy kérnek értesítést{list?.withdrawn ? ` (leiratkozott: ${num(list.withdrawn)})` : ''}.
+        Hírlevelet <strong className="text-gray-200">csak erre a listára</strong> szabad küldeni – a fenti rendelések e-mail címeire nem, és minden
+        levélben legyen leiratkozási lehetőség.
+      </p>
+      <form onSubmit={unsubscribe} className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Leiratkozás kérése: e-mail cím"
+          className="field flex-1 py-2 text-base sm:text-sm"
+        />
+        <button disabled={busy || !email.trim()} className="btn-secondary shrink-0 px-4 py-2 disabled:opacity-40">
+          {busy ? 'Folyamatban…' : 'Leiratkoztatás'}
+        </button>
+      </form>
+      {msg && <p className="mt-2 text-sm text-amber-300">{msg}</p>}
+    </Card>
   );
 }
 

@@ -35,6 +35,8 @@ export default function TicketSection() {
   const [ticketCount, setTicketCount] = useState(1);
   const [isCompany, setIsCompany] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  // newsletter: separate, optional, never pre-ticked (GDPR + Grt. 6. §)
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [humanToken, setHumanToken] = useState('');
@@ -108,6 +110,7 @@ export default function TicketSection() {
           turnstileToken: humanToken === 'no-key' ? '' : humanToken,
           isCompany,
           acceptTerms,
+          marketingConsent,
           ...formData,
           fullName: buyerName.trim(),
           expectedTotal: totalPrice, // the server refuses if the price changed meanwhile
@@ -350,6 +353,23 @@ export default function TicketSection() {
                   adatkezelési tájékoztatót
                 </a>
                 . Tudomásul veszem, hogy dátumhoz kötött rendezvényjegy esetén nincs elállási jog.
+              </span>
+            </label>
+
+            <label className="mt-4 flex cursor-pointer items-start gap-3 text-[14px] leading-snug text-gray-400">
+              <input
+                type="checkbox"
+                checked={marketingConsent}
+                onChange={(e) => setMarketingConsent(e.target.checked)}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-[#d4af37]"
+              />
+              <span>
+                <span className="text-gray-300">Kérek e-mailt a következő Írottkő-bulikról és a Hotel Írottkő ajánlatairól.</span> Nem
+                feltétele a vásárlásnak, és bármikor leiratkozhatok (részletek az{' '}
+                <a href="/adatkezeles#hirlevel" target="_blank" rel="noreferrer" className="text-[#d4af37] underline">
+                  adatkezelési tájékoztatóban
+                </a>
+                ).
               </span>
             </label>
 

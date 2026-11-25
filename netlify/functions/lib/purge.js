@@ -9,6 +9,8 @@
 //   pin_failures  – wrong-PIN log (IP addresses)
 //   scanner_enrollments – door-phone enrolment codes (hashes only)
 //   wallet_registrations – Apple Wallet device ids + push tokens (016)
+//   marketing_contacts – ONLY in the go-live cleanup (test purchases); after the
+//                  event the newsletter consents stay until withdrawn (019)
 // Invoices stay in Számlázz.hu (8-year legal retention) – nothing to do here.
 // dryRun: true → only counts, nothing is deleted.
 import { db } from './db.js';
@@ -19,7 +21,8 @@ async function count(q) {
   return n ?? 0;
 }
 
-export async function purgeEvent(slug, { dryRun = true, removeRetiredTiers = false } = {}) {
+// testData: the go-live cleanup (before any real sale) – also clears the test retired tiers and the newsletter list.
+export async function purgeEvent(slug, { dryRun = true, removeRetiredTiers = false, testData = removeRetiredTiers } = {}) {
   const { data: ev, error: evErr } = await db().from('events').select('id, slug').eq('slug', slug).single();
   if (evErr) throw evErr;
 
@@ -41,6 +44,9 @@ export async function purgeEvent(slug, { dryRun = true, removeRetiredTiers = fal
     // Apple Wallet registrations (device id + push token, 016) – table may not exist yet
     wallet_registrations: await count(head('wallet_registrations')).catch(() => 0),
     retired_tiers: removeRetiredTiers ? await count(head('ticket_tiers').eq('event_id', ev.id).like('name', '%(régi teszt)%')) : 0,
+    // newsletter consents (019) are kept until withdrawn, NOT deleted with the
+    // event – only the go-live cleanup removes the test purchases' entries
+    marketing_contacts: testData ? await count(head('marketing_contacts')).catch(() => 0) : 0,
   };
   if (dryRun) return { dryRun: true, ...plan };
 
@@ -62,6 +68,7 @@ export async function purgeEvent(slug, { dryRun = true, removeRetiredTiers = fal
   await del(db().from('scanner_enrollments').delete().gte('created_at', '1970-01-01'));
   if (plan.wallet_registrations) await del(db().from('wallet_registrations').delete().gte('created_at', '1970-01-01'));
   if (removeRetiredTiers) await del(db().from('ticket_tiers').delete().eq('event_id', ev.id).like('name', '%(régi teszt)%'));
+  if (testData && plan.marketing_contacts) await del(db().from('marketing_contacts').delete().neq('email', ''));
 
   return { dryRun: false, ...plan };
 }

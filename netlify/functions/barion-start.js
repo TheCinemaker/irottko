@@ -173,6 +173,11 @@ export const handler = async (event) => {
     // Proof of accepting the terms (005_terms.sql). Never blocks the purchase.
     const { error: termsErr } = await db().from('orders').update({ terms_accepted_at: new Date().toISOString() }).eq('id', orderId);
     if (termsErr) console.error('terms_accepted_at not saved (run 005_terms.sql):', termsErr.message);
+    // Optional newsletter consent (separate, unticked checkbox; 019). Never blocks the purchase.
+    if (input.marketingConsent === true) {
+      const { error: mErr } = await db().from('orders').update({ marketing_consent_at: new Date().toISOString() }).eq('id', orderId);
+      if (mErr) console.error('marketing_consent_at not saved (run 019_marketing_consent.sql):', mErr.message);
+    }
     if (ip) {
       const { error: ipErr } = await db().from('orders').update({ client_ip: ip }).eq('id', orderId);
       if (ipErr) console.error('client_ip not saved (run 006_client_ip.sql):', ipErr.message);

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PageShell, { PageHeader } from '../components/PageShell';
 import { EVENT_DETAILS } from '../data/eventData';
@@ -10,6 +11,14 @@ import { SELLER, OPERATOR, HOSTING, DB_REGION, RETENTION_DAYS_AFTER_EVENT, LEGAL
 */
 
 function LegalLayout({ kicker, title, children }) {
+  // links like /adatkezeles#hirlevel (from the checkout): the SPA renders after
+  // the browser's own jump, so scroll to the section once it exists
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id) return;
+    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }), 150);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <PageShell>
       <PageHeader kicker={kicker} title={title}>
@@ -177,6 +186,14 @@ export function PrivacyPage() {
           küldhessünk rá (pl. kapunyitás). Google Wallet esetén ilyen adatot nem kapunk, az üzenetet a Google juttatja el. A
           Tárcából a jegy bármikor törölhető, ezzel a frissítés is megszűnik. Jogalap: szerződés teljesítése (GDPR 6. cikk (1) b)).
         </li>
+        <li id="hirlevel" className="scroll-mt-28">
+          <strong>Hírlevél (csak ha kéri):</strong> ha a vásárláskor a külön, nem kötelező jelölőnégyzetet bepipálja, a nevét és
+          e-mail címét arra használjuk, hogy az eladó ({SELLER.shortName}) e-mailben értesítse a következő Írottkő-bulikról és a Hotel
+          Írottkő ajánlatairól. A hozzájárulás nem feltétele a jegyvásárlásnak. Jogalap: az Ön hozzájárulása (GDPR 6. cikk (1) a), a
+          gazdasági reklámtevékenységről szóló 2008. évi XLVIII. törvény 6. §). A hozzájárulás bármikor, indoklás nélkül visszavonható
+          minden levél alján lévő leiratkozási linkkel vagy a(z) {SELLER.email} címre írt e-maillel; ez nem érinti a visszavonás előtti
+          adatkezelés jogszerűségét. A hozzájárulás időpontját bizonyítékként megőrizzük.
+        </li>
         <li>
           <strong>Visszaélések megelőzése:</strong> a foglalást indító eszköz IP-címe. Cél: hogy egy forrásból ne lehessen tömegesen,
           fizetés nélkül lefoglalni a jegyeket. Jogalap: az adatkezelő jogos érdeke (GDPR 6. cikk (1) f)).
@@ -188,6 +205,10 @@ export function PrivacyPage() {
       <ul>
         <li>A rendelési, jegy- és beléptetési adatokat a rendezvény után {RETENTION_DAYS_AFTER_EVENT} napig (az esetleges panaszok rendezéséig), utána töröljük.</li>
         <li>A foglalást indító eszköz IP-címét 30 nap után töröljük.</li>
+        <li>
+          A hírlevélhez megadott nevet és e-mail címet a hozzájárulás visszavonásáig kezeljük. Leiratkozás után levelet már nem
+          küldünk; csak a címet és a leiratkozás időpontját őrizzük meg, hogy igazolni tudjuk, hogy a kérését teljesítettük.
+        </li>
         <li>A Tárca-értesítésekhez kapott eszköz- és értesítési azonosítókat a rendezvény után ugyanekkor töröljük.</li>
         <li>A számlát és a számviteli bizonylatokat a számviteli törvény szerint 8 évig.</li>
       </ul>

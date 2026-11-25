@@ -12,6 +12,8 @@
 //   action 'wallet-message', text   → lock-screen message on all Wallet tickets (Apple push + Google)
 //   action 'set-announcement', text → "Utastájékoztatás" strip on the site ('' clears it)
 //   action 'set-sales-open', open → emergency stop / restart of all ticket sales
+//   action 'marketing-list'        → newsletter consents (019), not unsubscribed
+//   action 'marketing-unsubscribe', email → takes an address off that list
 //   action 'set-limits', venueLimit, nonTicketCount, enabled → fire-safety limit (013);
 //                                  enabled=false keeps the numbers but sells without a limit
 import { db, json } from './lib/db.js';
@@ -108,6 +110,42 @@ async function walletMessage(text) {
 }
 
 // Passenger announcement strip on every page (015_announcement.sql); '' = none.
+// Newsletter list (019): ONLY buyers who ticked the separate consent box,
+// minus those who unsubscribed. The order list's e-mails must not be used.
+async function marketingList() {
+  const rows = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db()
+      .from('marketing_contacts')
+      .select('email, full_name, consented_at')
+      .is('withdrawn_at', null)
+      .order('consented_at')
+      .range(from, from + 999);
+    if (error) {
+      if (/marketing_contacts/.test(error.message)) return json(409, { error: 'NO_TABLE' });
+      throw error;
+    }
+    rows.push(...data);
+    if (data.length < 1000) break;
+  }
+  const { count: withdrawn } = await db().from('marketing_contacts').select('email', { count: 'exact', head: true }).not('withdrawn_at', 'is', null);
+  return json(200, { contacts: rows.map((r) => ({ email: r.email, name: r.full_name, at: r.consented_at })), withdrawn: withdrawn ?? 0 });
+}
+
+async function marketingUnsubscribe(email) {
+  const e = typeof email === 'string' ? email.trim().toLowerCase() : '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) || e.length > 254) return json(400, { error: 'BAD_EMAIL' });
+  const { data, error } = await db()
+    .from('marketing_contacts')
+    .update({ withdrawn_at: new Date().toISOString(), full_name: null }) // keep only address + time (privacy notice)
+    .eq('email', e)
+    .is('withdrawn_at', null)
+    .select('email');
+  if (error) throw error;
+  console.log(`admin: marketing unsubscribe (${data.length ? 'done' : 'not on the list'})`);
+  return json(200, { removed: data.length });
+}
+
 async function setAnnouncement(text) {
   if (typeof text !== 'string' || text.length > 200) return json(400, { error: 'BAD_VALUE' });
   const clean = text.replace(/[\u0000-\u001f]/g, ' ').trim();
@@ -168,6 +206,8 @@ export const handler = async (event) => {
     if (body.action === 'wallet-message') return await walletMessage(body.text);
     if (body.action === 'set-announcement') return await setAnnouncement(body.text);
     if (body.action === 'set-limits') return await setLimits(body.venueLimit, body.nonTicketCount, body.enabled);
+    if (body.action === 'marketing-list') return await marketingList();
+    if (body.action === 'marketing-unsubscribe') return await marketingUnsubscribe(body.email);
     return json(400, { error: 'UNKNOWN_ACTION' });
   } catch (e) {
     console.error('admin-action failed:', e.message);
